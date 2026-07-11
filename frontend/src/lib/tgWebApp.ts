@@ -70,20 +70,18 @@ export function getTgWebApp(): TgWebApp | undefined {
 }
 
 const EMPTY_INSET: SafeAreaInset = { top: 0, bottom: 0, left: 0, right: 0 };
-const TG_HEADER_FALLBACK_PX = 56;
+/** Telegram "Закрыть" header row below the status bar. */
+const TG_HEADER_BAR_PX = 52;
+/** Minimum top offset on phones (status bar + header). */
+const TG_MIN_CONTENT_TOP_PX = 96;
 
 function resolveContentTopInset(webApp: TgWebApp): number {
   const safe = webApp.safeAreaInset ?? EMPTY_INSET;
   const content = webApp.contentSafeAreaInset ?? EMPTY_INSET;
 
-  if (content.top > 0) return content.top;
-
-  // Older Telegram clients may not report contentSafeAreaInset — leave room for "Закрыть".
-  if (webApp.platform) {
-    return Math.max(safe.top + 46, TG_HEADER_FALLBACK_PX);
-  }
-
-  return safe.top;
+  // contentSafeAreaInset can under-report on some clients — always reserve header space.
+  const withHeader = safe.top + TG_HEADER_BAR_PX;
+  return Math.max(content.top, withHeader, TG_MIN_CONTENT_TOP_PX);
 }
 
 export function syncTelegramSafeAreaInsets(): void {
@@ -91,12 +89,15 @@ export function syncTelegramSafeAreaInsets(): void {
   const root = document.documentElement;
 
   if (!webApp) {
+    delete root.dataset.tg;
     root.style.setProperty('--tg-content-safe-area-inset-top', '0px');
     root.style.setProperty('--tg-content-safe-area-inset-bottom', '0px');
     root.style.setProperty('--tg-content-safe-area-inset-left', '0px');
     root.style.setProperty('--tg-content-safe-area-inset-right', '0px');
     return;
   }
+
+  root.dataset.tg = '1';
 
   const safe = webApp.safeAreaInset ?? EMPTY_INSET;
   const content = webApp.contentSafeAreaInset ?? EMPTY_INSET;
