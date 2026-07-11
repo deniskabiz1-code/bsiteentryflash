@@ -14,7 +14,10 @@ try {
   console.log('Running prisma db push...');
   execSync('npx prisma db push --skip-generate', { stdio: 'inherit', env: process.env });
 } catch {
-  console.error('ERROR: prisma db push failed. Check DATABASE_URL / DIRECT_URL in Render env vars.');
+  console.error('ERROR: prisma db push failed.');
+  console.error('For Render + Supabase, DIRECT_URL must use the Session pooler (port 5432 on pooler.supabase.com).');
+  console.error('Do NOT use db.[ref].supabase.co — it causes P1001 from Render.');
+  console.error('Also check: Supabase project is not paused, password is correct, ?pgbouncer=true&sslmode=require on DATABASE_URL.');
   process.exit(1);
 }
 
