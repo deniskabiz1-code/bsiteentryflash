@@ -6,6 +6,7 @@ interface PhotoUploadProps {
   preview?: string | null;
   label?: string;
   tips?: string[];
+  compact?: boolean;
 }
 
 export default function PhotoUpload({
@@ -13,6 +14,7 @@ export default function PhotoUpload({
   preview,
   label = 'Загрузить фото',
   tips,
+  compact = false,
 }: PhotoUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(preview || null);
@@ -28,14 +30,26 @@ export default function PhotoUpload({
     if (inputRef.current) inputRef.current.value = '';
   };
 
+  const openGallery = () => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.removeAttribute('capture');
+    input.click();
+    input.setAttribute('capture', 'user');
+  };
+
   if (localPreview) {
     return (
-      <div className="relative rounded-3xl overflow-hidden shadow-card">
-        <img src={localPreview} alt="Preview" className="w-full aspect-[3/4] object-cover" />
+      <div className={`relative overflow-hidden rounded-3xl shadow-card ${compact ? 'h-52' : ''}`}>
+        <img
+          src={localPreview}
+          alt="Preview"
+          className={`w-full object-cover ${compact ? 'h-full' : 'aspect-[3/4]'}`}
+        />
         <button
           type="button"
           onClick={clear}
-          className="absolute top-4 right-4 w-9 h-9 bg-black/50 backdrop-blur rounded-full flex items-center justify-center text-white"
+          className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur"
         >
           <X size={16} />
         </button>
@@ -44,7 +58,7 @@ export default function PhotoUpload({
   }
 
   return (
-    <div className="space-y-4">
+    <div className={compact ? 'space-y-2' : 'space-y-4'}>
       {tips && (
         <div className="card !p-4 space-y-2">
           <p className="text-[13px] font-semibold text-app-muted">Советы для лучшего результата</p>
@@ -71,31 +85,33 @@ export default function PhotoUpload({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="w-full aspect-[3/4] rounded-3xl bg-brand-greenTint border-2 border-dashed border-brand-green/25
-                   flex flex-col items-center justify-center gap-4 active:bg-brand-greenLight/40 transition-colors shadow-card"
+        className={`flex w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed
+          border-brand-green/25 bg-brand-greenTint shadow-card transition-colors active:bg-brand-greenLight/40
+          ${compact ? 'h-44' : 'aspect-[3/4] gap-4'}`}
       >
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-green shadow-pill">
-          <Camera size={32} className="text-white" strokeWidth={1.5} />
+        <div className={`flex items-center justify-center rounded-full bg-brand-green shadow-pill ${compact ? 'h-16 w-16' : 'h-20 w-20'}`}>
+          <Camera size={compact ? 28 : 32} className="text-white" strokeWidth={1.5} />
         </div>
-        <span className="text-[15px] font-medium text-app-text">{label}</span>
-        <span className="text-[13px] text-brand-greenDark">Нажмите, чтобы сделать селфи</span>
+        <span className={`font-medium text-app-text ${compact ? 'text-[14px]' : 'text-[15px]'}`}>{label}</span>
+        {!compact && (
+          <span className="text-[13px] text-brand-greenDark">Нажмите, чтобы сделать селфи</span>
+        )}
       </button>
 
-      <button
-        type="button"
-        onClick={() => {
-          const input = inputRef.current;
-          if (input) {
-            input.removeAttribute('capture');
-            input.click();
-            input.setAttribute('capture', 'user');
-          }
-        }}
-        className="btn-light flex items-center justify-center gap-2"
-      >
-        <Upload size={18} />
-        Выбрать из галереи
-      </button>
+      {compact ? (
+        <button
+          type="button"
+          onClick={openGallery}
+          className="w-full text-center text-[13px] font-medium text-brand-greenDark"
+        >
+          Выбрать из галереи
+        </button>
+      ) : (
+        <button type="button" onClick={openGallery} className="btn-light flex items-center justify-center gap-2">
+          <Upload size={18} />
+          Выбрать из галереи
+        </button>
+      )}
     </div>
   );
 }

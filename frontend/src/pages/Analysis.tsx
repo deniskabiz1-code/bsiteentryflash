@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Scissors, Sparkles } from 'lucide-react';
 
@@ -35,6 +35,15 @@ export default function Analysis() {
     isFirstAnalysis ||
     (user?.referralCredits ?? 0) > 0;
 
+  useEffect(() => {
+    if (!isFirstAnalysis) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isFirstAnalysis]);
+
   const handleAnalyze = async () => {
     if (!photo) { setError('Загрузите фото'); return; }
 
@@ -53,36 +62,56 @@ export default function Analysis() {
     }
   };
 
-  return (
-    <div className="page">
-      <div className="page-inner space-y-6">
-        {isFirstAnalysis ? (
-          <section className="card-green space-y-4 py-6 text-center">
+  if (isFirstAnalysis) {
+    return (
+      <div className="flex h-dvh max-h-dvh flex-col overflow-hidden overscroll-none bg-app-canvas">
+        <div className="page-inner flex min-h-0 flex-1 flex-col gap-3 pb-28 pt-1">
+          <section className="card-green shrink-0 space-y-2 py-4 text-center">
             <div className="flex justify-center">
               <span className="pill-green">
                 <Sparkles size={14} />
                 1 анализ бесплатно
               </span>
             </div>
-            <div>
-              <h1 className="heading-lg">
-                {justOnboarded && user?.name
-                  ? `Привет, ${user.name}!`
-                  : 'Ваш первый анализ'}
-              </h1>
-              <p className="mx-auto mt-3 max-w-sm text-[15px] leading-relaxed text-app-muted">
-                Сделайте селфи — AI бесплатно оценит внешность и откроет персональный план.
-              </p>
-            </div>
-            <p className="text-[13px] text-app-faint">~1 минута · без подписки</p>
+            <h1 className="heading-md">
+              {justOnboarded && user?.name
+                ? `Привет, ${user.name}!`
+                : 'Ваш первый анализ'}
+            </h1>
+            <p className="mx-auto max-w-sm text-[14px] leading-snug text-app-muted">
+              Сделайте селфи — AI бесплатно оценит внешность и откроет ваш план.
+            </p>
           </section>
-        ) : (
-          <section className="text-center pt-2">
-            <p className="label-sm mb-2">AI-анализ</p>
-            <h1 className="heading-md">Анализ лица</h1>
-            <p className="text-[15px] text-app-muted mt-2">Загрузите селфи для оценки</p>
-          </section>
-        )}
+
+          <div className="flex min-h-0 flex-1 flex-col justify-center">
+            <PhotoUpload onPhotoSelect={setPhoto} label="Сделать селфи" compact />
+          </div>
+
+          {error && (
+            <p className="shrink-0 text-center text-sm font-medium text-red-500">{error}</p>
+          )}
+
+          <button
+            type="button"
+            onClick={handleAnalyze}
+            disabled={!photo || loading || !canAnalyze}
+            className="btn-accent shrink-0"
+          >
+            {loading ? 'Анализируем...' : 'Начать бесплатный анализ'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="page">
+      <div className="page-inner space-y-6">
+        <section className="text-center pt-2">
+          <p className="label-sm mb-2">AI-анализ</p>
+          <h1 className="heading-md">Анализ лица</h1>
+          <p className="text-[15px] text-app-muted mt-2">Загрузите селфи для оценки</p>
+        </section>
 
         {!canAnalyze && (
           <div className="card border border-red-200 bg-red-50">
@@ -99,18 +128,7 @@ export default function Analysis() {
           </div>
         )}
 
-        <PhotoUpload onPhotoSelect={setPhoto} tips={isFirstAnalysis ? undefined : TIPS} label="Сделать селфи" />
-
-        {isFirstAnalysis && (
-          <div className="card !p-4 space-y-2">
-            <p className="text-[13px] font-semibold text-brand-greenDark">Советы для лучшего результата</p>
-            <ul className="space-y-1.5 text-[14px] text-app-muted">
-              {TIPS.map((tip, i) => (
-                <li key={i}>• {tip}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <PhotoUpload onPhotoSelect={setPhoto} tips={TIPS} label="Сделать селфи" />
 
         {error && <p className="text-red-500 text-sm text-center font-medium">{error}</p>}
 
@@ -118,13 +136,9 @@ export default function Analysis() {
           type="button"
           onClick={handleAnalyze}
           disabled={!photo || loading || !canAnalyze}
-          className={isFirstAnalysis ? 'btn-accent' : 'btn-dark'}
+          className="btn-dark"
         >
-          {loading
-            ? 'Анализируем...'
-            : isFirstAnalysis
-              ? 'Начать бесплатный анализ'
-              : 'Начать анализ'}
+          {loading ? 'Анализируем...' : 'Начать анализ'}
         </button>
 
         {user?.subscriptionActive && (
