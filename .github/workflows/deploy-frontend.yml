@@ -38,8 +38,10 @@ jobs:
           VITE_CHANNEL_USERNAME: ${{ secrets.VITE_CHANNEL_USERNAME }}
         run: npm run build
 
-      - name: SPA fallback for GitHub Pages
-        run: cp dist/index.html dist/404.html
+      - name: Prepare GitHub Pages output
+        run: |
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

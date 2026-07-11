@@ -33,9 +33,12 @@ router.post('/complete', validateTelegramAuth, async (req: AuthRequest, res: Res
       return;
     }
 
-    const subscribed = await checkChannelSubscription(req.telegramUser!.id);
-    if (!subscribed) {
-      res.status(403).json({ error: 'Подпишитесь на канал, чтобы продолжить' });
+    const channelCheck = await checkChannelSubscription(req.telegramUser!.id);
+    if (!channelCheck.subscribed) {
+      res.status(403).json({
+        error: channelCheck.error || 'Подпишитесь на канал, чтобы продолжить',
+        hint: channelCheck.hint,
+      });
       return;
     }
 

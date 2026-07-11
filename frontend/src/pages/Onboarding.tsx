@@ -1,19 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import WebApp from '@twa-dev/sdk';
 import ProgressDots from '@/components/ProgressDots';
-import { completeOnboarding, checkChannel } from '@/api/client';
+import { completeOnboarding, checkChannel, getChannelInfo } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { GOAL_LABELS } from '@/types';
 
 const GOALS = ['skin', 'face', 'style'] as const;
 const GOAL_COLORS = ['#3B82F6', '#F97316', '#8B5CF6'];
-const CHANNEL = import.meta.env.VITE_CHANNEL_USERNAME || 'primeform_channel';
 
 export default function Onboarding() {
   const navigate = useNavigate();
   const { refreshUser } = useApp();
-  const { openLink, haptic } = useTelegram();
+  const { openTelegramLink, haptic } = useTelegram();
 
   const [step, setStep] = useState(0);
   const [subscribed, setSubscribed] = useState(false);
@@ -23,10 +23,23 @@ export default function Onboarding() {
   const [goals, setGoals] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [hint, setHint] = useState('');
+  const [channelLink, setChannelLink] = useState('https://t.me/primeform_channel');
+  const [channelUsername, setChannelUsername] = useState('primeform_channel');
 
-  const checkSubscription = async () => {
+  useEffect(() => {
+    getChannelInfo()
+      .then((info) => {
+        setChannelLink(info.link);
+        setChannelUsername(info.username);
+      })
+      .catch(() => {});
+  }, []);
+
+  const checkSubscription = useCallback(async () => {
     setChecking(true);
     setError('');
+    setHint('');
     try {
       const data = await checkChannel();
       setSubscribed(data.subscribed);
@@ -35,13 +48,26 @@ export default function Onboarding() {
         setStep(1);
       } else {
         haptic('error');
-        setError('Подпишитесь на канал, чтобы продолжить');
+        setError(data.error || 'Подпишитесь на канал, чтобы продолжить');
+        setHint(data.hint || '');
       }
     } catch {
       setError('Ошибка проверки подписки');
     } finally {
       setChecking(false);
     }
+  }, [haptic]);
+
+  useEffect(() => {
+    const onActivated = () => {
+      if (step === 0) checkSubscription();
+    };
+    WebApp.onEvent('activated', onActivated);
+    return () => WebApp.offEvent('activated', onActivated);
+  }, [step, checkSubscription]);
+
+  const openChannel = () => {
+    openTelegramLink(channelLink);
   };
 
   const toggleGoal = (goal: string) => {
@@ -62,14 +88,16 @@ export default function Onboarding() {
 
     setLoading(true);
     setError('');
+    setHint('');
     try {
       await completeOnboarding({ name: name.trim(), age: ageNum, goals });
       await refreshUser();
       haptic('success');
       navigate('/');
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(msg || 'Ошибка сохранения');
+      const res = (err as { response?: { data?: { error?: string; hint?: string } } })?.response?.data;
+      setError(res?.error || 'Ошибка сохранения');
+      setHint(res?.hint || '');
       haptic('error');
     } finally {
       setLoading(false);
@@ -92,10 +120,11 @@ export default function Onboarding() {
             <p className="text-[15px] text-app-muted leading-relaxed max-w-xs mb-2">
               AI-ассистент для улучшения внешности
             </p>
-            <p className="text-[14px] text-app-muted mb-8">
+            <p className="text-[14px] text-app-muted mb-4">
               Подпишитесь на канал, чтобы начать
             </p>
-            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+            {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+            {hint && <p className="text-amber-600 text-xs mb-4 max-w-xs">{hint}</p>}
           </div>
         )}
 
@@ -173,8 +202,8 @@ export default function Onboarding() {
         <div className="max-w-md mx-auto space-y-3">
           {step === 0 && (
             <>
-              <button type="button" onClick={() => openLink(`https://t.me/${CHANNEL}`)} className="btn-dark">
-                Подписаться на @{CHANNEL}
+              <button type="button" onClick={openChannel} className="btn-dark">
+                Подписаться на @{channelUsername}
               </button>
               <button type="button" onClick={checkSubscription} disabled={checking} className="btn-light">
                 {checking ? 'Проверяем...' : subscribed ? '✓ Подписка подтверждена' : 'Я подписался — проверить'}

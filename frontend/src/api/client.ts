@@ -32,6 +32,12 @@ export async function checkChannel() {
   return data;
 }
 
+export async function getChannelInfo() {
+  if (MOCK) return { link: 'https://t.me/primeform_channel', username: 'primeform_channel' };
+  const { data } = await api.get('/auth/channel-info');
+  return data;
+}
+
 export async function completeOnboarding(payload: {
   name: string;
   age: number;

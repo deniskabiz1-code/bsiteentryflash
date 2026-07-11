@@ -1,6 +1,11 @@
 import { Router, Response } from 'express';
 import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegramAuth';
-import { findOrCreateUser, checkChannelSubscription, isSubscriptionActive } from '../services/telegram';
+import {
+  findOrCreateUser,
+  checkChannelSubscription,
+  isSubscriptionActive,
+  getChannelLink,
+} from '../services/telegram';
 import { prisma } from '../utils/prisma';
 
 const router = Router();
@@ -8,7 +13,8 @@ const router = Router();
 router.post('/me', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
   try {
     const user = await findOrCreateUser(req.telegramUser!);
-    const subscribed = await checkChannelSubscription(req.telegramUser!.id);
+    const channelCheck = await checkChannelSubscription(req.telegramUser!.id);
+    const subscribed = channelCheck.subscribed;
 
     const faceAnalysisCount = await prisma.analysis.count({
       where: { userId: user.id, type: 'face' },
@@ -40,8 +46,16 @@ router.post('/me', validateTelegramAuth, async (req: AuthRequest, res: Response)
 });
 
 router.get('/channel-check', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
-  const subscribed = await checkChannelSubscription(req.telegramUser!.id);
-  res.json({ subscribed });
+  const result = await checkChannelSubscription(req.telegramUser!.id);
+  res.json(result);
+});
+
+router.get('/channel-info', (_req, res: Response) => {
+  const username = (process.env.CHANNEL_USERNAME || 'primeform_channel').replace(/^@/, '');
+  res.json({
+    link: getChannelLink(),
+    username,
+  });
 });
 
 export default router;

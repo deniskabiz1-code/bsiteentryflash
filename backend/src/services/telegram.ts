@@ -3,29 +3,90 @@ import { TelegramUser } from '../middleware/validateTelegramAuth';
 
 const BOT_API = 'https://api.telegram.org/bot';
 
-export async function checkChannelSubscription(telegramId: number): Promise<boolean> {
-  const botToken = process.env.BOT_TOKEN;
-  const channelUsername = process.env.CHANNEL_USERNAME || 'primeform_channel';
+export interface ChannelCheckResult {
+  subscribed: boolean;
+  error?: string;
+  hint?: string;
+}
 
-  if (!botToken) return false;
+export function getChannelLink(): string {
+  if (process.env.CHANNEL_INVITE_LINK) {
+    return process.env.CHANNEL_INVITE_LINK;
+  }
+  const username = normalizeUsername(process.env.CHANNEL_USERNAME || 'primeform_channel');
+  return `https://t.me/${username}`;
+}
+
+function normalizeUsername(username: string): string {
+  return username.replace(/^@/, '');
+}
+
+function getChannelChatId(): string {
+  if (process.env.CHANNEL_ID) {
+    return process.env.CHANNEL_ID;
+  }
+  return `@${normalizeUsername(process.env.CHANNEL_USERNAME || 'primeform_channel')}`;
+}
+
+export async function checkChannelSubscription(telegramId: number): Promise<ChannelCheckResult> {
+  const botToken = process.env.BOT_TOKEN;
+  const chatId = getChannelChatId();
+
+  if (!botToken) {
+    return {
+      subscribed: false,
+      error: 'BOT_TOKEN не настроен на сервере',
+    };
+  }
 
   try {
     const res = await fetch(
-      `${BOT_API}${botToken}/getChatMember?chat_id=@${channelUsername}&user_id=${telegramId}`
+      `${BOT_API}${botToken}/getChatMember?chat_id=${encodeURIComponent(chatId)}&user_id=${telegramId}`
     );
     const data = (await res.json()) as {
       ok: boolean;
+      description?: string;
+      error_code?: number;
       result?: { status: string };
     };
 
-    if (!data.ok) return false;
+    if (!data.ok) {
+      console.error('getChatMember failed:', data.description, { chatId, telegramId });
+      return {
+        subscribed: false,
+        error: data.description || 'Ошибка проверки подписки',
+        hint: getChannelCheckHint(data.description),
+      };
+    }
 
     const status = data.result?.status;
-    if (!status) return false;
-    return ['creator', 'administrator', 'member'].includes(status);
-  } catch {
-    return false;
+    const subscribed = ['creator', 'administrator', 'member'].includes(status || '');
+
+    return {
+      subscribed,
+      error: subscribed ? undefined : 'Вы не подписаны на канал',
+    };
+  } catch (err) {
+    console.error('checkChannelSubscription error:', err);
+    return {
+      subscribed: false,
+      error: 'Сервер не смог связаться с Telegram',
+    };
   }
+}
+
+function getChannelCheckHint(apiError?: string): string {
+  if (!apiError) return 'Добавьте бота администратором в канал';
+  if (apiError.includes('chat not found')) {
+    return 'Канал не найден. Проверьте CHANNEL_USERNAME или CHANNEL_ID на Render';
+  }
+  if (apiError.includes('member list is inaccessible')) {
+    return 'Добавьте бота администратором канала (обязательно!)';
+  }
+  if (apiError.includes('user not found')) {
+    return 'Не удалось найти ваш Telegram-аккаунт';
+  }
+  return 'Добавьте бота администратором в канал';
 }
 
 export async function sendBotMessage(telegramId: number, text: string): Promise<void> {

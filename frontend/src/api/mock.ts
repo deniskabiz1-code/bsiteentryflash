@@ -19,7 +19,7 @@ export const mockApi = {
 
   checkChannel: async () => {
     await delay(200);
-    return { subscribed: true };
+    return { subscribed: true, error: undefined, hint: undefined };
   },
 
   completeOnboarding: async (payload: { name: string; age: number; goals: string[] }) => {

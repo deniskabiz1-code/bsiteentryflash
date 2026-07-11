@@ -13,6 +13,14 @@ export function useTelegram() {
     WebApp.openLink(url);
   }, []);
 
+  const openTelegramLink = useCallback((url: string) => {
+    if (url.includes('t.me/') && WebApp.openTelegramLink) {
+      WebApp.openTelegramLink(url);
+    } else {
+      WebApp.openLink(url);
+    }
+  }, []);
+
   const haptic = useCallback((type: 'light' | 'medium' | 'heavy' | 'success' | 'error') => {
     if (type === 'success' || type === 'error') {
       WebApp.HapticFeedback.notificationOccurred(type);
@@ -51,6 +59,7 @@ export function useTelegram() {
   return {
     user: WebApp.initDataUnsafe.user,
     openLink,
+    openTelegramLink,
     haptic,
     showBackButton,
     showMainButton,
