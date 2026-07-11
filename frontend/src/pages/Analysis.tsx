@@ -57,9 +57,9 @@ export default function Analysis() {
     <div className="page">
       <div className="page-inner space-y-6">
         {isFirstAnalysis ? (
-          <section className="card-accent space-y-4 py-6 text-center">
+          <section className="card-green space-y-4 py-6 text-center">
             <div className="flex justify-center">
-              <span className="pill-accent">
+              <span className="pill-green">
                 <Sparkles size={14} />
                 1 анализ бесплатно
               </span>
@@ -103,7 +103,7 @@ export default function Analysis() {
 
         {isFirstAnalysis && (
           <div className="card !p-4 space-y-2">
-            <p className="text-[13px] font-semibold text-accent-violet">Советы для лучшего результата</p>
+            <p className="text-[13px] font-semibold text-brand-greenDark">Советы для лучшего результата</p>
             <ul className="space-y-1.5 text-[14px] text-app-muted">
               {TIPS.map((tip, i) => (
                 <li key={i}>• {tip}</li>

@@ -19,19 +19,7 @@ module.exports = {
           greenLight: '#EAF9EE',
           greenTint: '#F3FBF5',
         },
-        accent: {
-          coral: '#FF6B4A',
-          coralDark: '#E85A3A',
-          coralLight: '#FFF0EC',
-          blue: '#007AFF',
-          blueLight: '#E8F2FF',
-          violet: '#7C5CFC',
-          violetLight: '#F0ECFF',
-          amber: '#FF9F0A',
-          amberLight: '#FFF5E6',
-          teal: '#2EC4B6',
-          tealLight: '#E6FAF8',
-        },
+
       },
       fontFamily: {
         sans: ['SF Pro Text', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],

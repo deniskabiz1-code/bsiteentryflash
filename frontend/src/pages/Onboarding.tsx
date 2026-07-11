@@ -172,7 +172,7 @@ export default function Onboarding() {
         <div className="max-w-md mx-auto space-y-3">
           {step === 0 && (
             <>
-              <button type="button" onClick={openChannel} className="btn-accent">
+              <button type="button" onClick={openChannel} className="btn-dark">
                 Подписаться на @{channelUsername}
               </button>
               <button type="button" onClick={checkSubscription} disabled={checking} className="btn-light">

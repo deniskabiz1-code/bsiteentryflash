@@ -95,9 +95,9 @@ export default function Home() {
           <button
             type="button"
             onClick={() => navigate('/analysis', { state: { firstAnalysis: true } })}
-            className="card-accent w-full py-4 text-center"
+            className="card-green w-full py-4 text-center"
           >
-            <p className="text-[15px] font-semibold text-accent-coralDark">Сделайте первый анализ бесплатно</p>
+            <p className="text-[15px] font-semibold text-brand-greenDark">Сделайте первый анализ бесплатно</p>
             <p className="mt-1 text-[13px] text-app-muted">Загрузите селфи и получите балл</p>
           </button>
         )}
@@ -121,7 +121,7 @@ export default function Home() {
         </section>
 
         <div className="btn-row">
-          <button type="button" onClick={() => navigate('/analysis')} className="btn-accent">
+          <button type="button" onClick={() => navigate('/analysis')} className="btn-dark">
             Новый анализ
           </button>
           <button type="button" onClick={() => navigate('/progress')} className="btn-light">
