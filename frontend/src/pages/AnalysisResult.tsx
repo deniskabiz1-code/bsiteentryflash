@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Sparkles } from 'lucide-react';
 import { SCORE_LABELS, SKIN_TYPE_LABELS, PUFFINESS_LABELS } from '@/types';
 import { getAnalysis } from '@/api/client';
 import { toAnalysisResultView, type AnalysisResultView } from '@/utils/analysisView';
 import { assetUrl } from '@/utils/assets';
+import { useFirstAnalysisViewportLock } from '@/hooks/useFirstAnalysisViewportLock';
 
 export default function AnalysisResult() {
   const { id } = useParams();
@@ -16,6 +19,8 @@ export default function AnalysisResult() {
   );
   const [loading, setLoading] = useState(Boolean(id && !stateAnalysis));
   const [error, setError] = useState('');
+  const showCompact = Boolean(result && !loading && !error);
+  const viewportRef = useFirstAnalysisViewportLock(showCompact);
 
   useEffect(() => {
     if (!id || stateAnalysis) return;
@@ -66,134 +71,98 @@ export default function AnalysisResult() {
     ? new Date(result.createdAt).toLocaleDateString('ru-RU', {
         day: 'numeric',
         month: 'long',
-        year: 'numeric',
       })
     : null;
+  const topTip = result.improvement_tips?.[0];
 
-  return (
-    <div className="page">
-      <div className="page-inner space-y-6">
-        {result.photoUrl && (
-          <div className="flex justify-center pt-2">
-            <img
-              src={assetUrl(result.photoUrl)}
-              alt="Анализ"
-              className="h-40 w-40 rounded-3xl object-cover shadow-card"
-            />
+  const screen = (
+    <div ref={viewportRef} className="bg-app-canvas">
+      <div className="page-inner analysis-result-grid h-full px-5 py-3">
+        <header className="min-h-0 shrink-0 space-y-2 overflow-hidden text-center">
+          <div className="flex flex-wrap justify-center gap-2">
+            <span className="pill-green inline-flex">
+              <Sparkles size={14} />
+              Анализ завершён
+            </span>
+            {isDemo && <span className="pill-gray">Демо</span>}
           </div>
-        )}
-
-        <section className="text-center pt-2">
-          {formattedDate && (
-            <p className="label-sm mb-2">{formattedDate}</p>
-          )}
-          <p className="label-sm mb-3">Общий балл</p>
-          <p className="heading-xl">
+          <p className="heading-lg">
             {overall}
-            <span className="text-[20px] text-app-muted font-semibold">/100</span>
+            <span className="text-[18px] text-app-muted font-semibold">/100</span>
           </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <span className="pill-green">Анализ завершён</span>
-            {isDemo && (
-              <span className="pill-gray">Демо · OpenAI не подключён</span>
-            )}
-          </div>
-        </section>
+          {formattedDate && (
+            <p className="text-[13px] text-app-muted">{formattedDate}</p>
+          )}
+        </header>
 
-        <section className="card-green">
-          <p className="label-sm mb-3">По параметрам</p>
-          <div className="space-y-0">
-            {Object.entries(scores).map(([key, value]) => (
-              <div key={key} className="list-row">
-                <span className="text-[15px] text-app-text">{SCORE_LABELS[key]}</span>
-                <span className="text-[15px] font-bold text-brand-greenDark">{value as number}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="card space-y-0">
-          <div className="list-row">
-            <span className="text-[15px] text-app-muted">Тип кожи</span>
-            <span className="text-[15px] font-semibold">{SKIN_TYPE_LABELS[result.skin_type]}</span>
-          </div>
-          <div className="list-row">
-            <span className="text-[15px] text-app-muted">Отёчность</span>
-            <span className="text-[15px] font-semibold">{PUFFINESS_LABELS[result.puffiness]}</span>
-          </div>
-        </section>
-
-        {result.problem_zones?.length > 0 && (
-          <section>
-            <h2 className="text-[17px] font-bold mb-3 px-1">Проблемные зоны</h2>
-            <div className="card space-y-4">
-              {result.problem_zones.map((zone, i) => (
-                <div key={i} className={i > 0 ? 'pt-4 border-t border-app-border' : ''}>
-                  <p className="font-semibold text-[15px]">{zone.zone}</p>
-                  <p className="text-[14px] text-app-muted mt-1 leading-relaxed">{zone.description}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {result.improvement_tips?.length > 0 && (
-          <section>
-            <h2 className="text-[17px] font-bold mb-3 px-1">Рекомендации</h2>
-            <div className="card space-y-3">
-              {result.improvement_tips.map((tip, i) => (
-                <p key={i} className="text-[14px] leading-relaxed">• {tip}</p>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {result.growth_plan?.length > 0 && (
-          <section>
-            <h2 className="text-[17px] font-bold mb-3 px-1">План роста</h2>
-            <div className="space-y-3">
-              {result.growth_plan.map((step) => (
-                <div key={step.step} className="card">
-                  <div className="flex items-start gap-3">
-                    <span className="w-7 h-7 rounded-full bg-app-text text-white text-xs flex items-center justify-center font-bold flex-shrink-0">
-                      {step.step}
+        <div className="card flex min-h-0 flex-col overflow-hidden !p-3">
+          <div className="flex min-h-0 flex-1 gap-3">
+            {result.photoUrl ? (
+              <img
+                src={assetUrl(result.photoUrl)}
+                alt="Анализ"
+                className="h-full w-[38%] max-w-[7.5rem] flex-shrink-0 rounded-2xl object-cover"
+              />
+            ) : null}
+            <div className="flex min-w-0 flex-1 flex-col justify-center">
+              <p className="label-sm mb-2">По параметрам</p>
+              <div className="analysis-result-scores">
+                {Object.entries(scores).map(([key, value]) => (
+                  <div key={key} className="flex items-center justify-between gap-2">
+                    <span className="truncate text-[13px] text-app-muted">
+                      {SCORE_LABELS[key]}
                     </span>
-                    <div>
-                      <p className="font-semibold text-[15px]">{step.action}</p>
-                      <p className="text-[13px] text-app-muted mt-2">{step.timeline}</p>
-                      <p className="text-[13px] text-brand-greenDark font-medium mt-1">{step.progress_metric}</p>
-                    </div>
+                    <span className="text-[13px] font-bold text-brand-greenDark">
+                      {value as number}
+                    </span>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </section>
-        )}
+          </div>
 
-        {result.skincare_routine?.length > 0 && (
-          <section>
-            <h2 className="text-[17px] font-bold mb-3 px-1">Уход за кожей</h2>
-            <div className="card !p-0 overflow-hidden">
-              {result.skincare_routine.map((item, i) => (
-                <div key={i} className="px-5 py-4 border-b border-app-border last:border-0">
-                  <p className="font-semibold text-[15px]">{item.step}</p>
-                  <p className="text-[14px] text-app-muted mt-1">{item.product_type}</p>
-                  <p className="text-[13px] text-app-faint mt-1">{item.tip}</p>
-                </div>
-              ))}
+          <div className="mt-3 flex gap-2 border-t border-app-border pt-3">
+            <div className="flex-1 rounded-xl bg-app-canvas px-3 py-2">
+              <p className="text-[11px] text-app-muted">Тип кожи</p>
+              <p className="text-[13px] font-semibold leading-tight">
+                {SKIN_TYPE_LABELS[result.skin_type]}
+              </p>
             </div>
-          </section>
-        )}
+            <div className="flex-1 rounded-xl bg-app-canvas px-3 py-2">
+              <p className="text-[11px] text-app-muted">Отёчность</p>
+              <p className="text-[13px] font-semibold leading-tight">
+                {PUFFINESS_LABELS[result.puffiness]}
+              </p>
+            </div>
+          </div>
 
-        <div className="btn-row pb-4">
-          <button type="button" onClick={() => navigate('/progress')} className="btn-light">
-            История
-          </button>
-          <button type="button" onClick={() => navigate('/analysis')} className="btn-dark">
-            Новый анализ
-          </button>
+          {topTip && (
+            <p className="mt-2 line-clamp-2 text-[12px] leading-snug text-app-muted">
+              {topTip}
+            </p>
+          )}
         </div>
+
+        <footer className="min-h-0 shrink-0 space-y-2 overflow-hidden pb-1">
+          <button
+            type="button"
+            onClick={() => navigate('/progress')}
+            className="btn-accent"
+          >
+            Смотреть прогресс
+          </button>
+          <div className="btn-row">
+            <button type="button" onClick={() => navigate('/')} className="btn-light">
+              Главная
+            </button>
+            <button type="button" onClick={() => navigate('/analysis')} className="btn-dark">
+              Новый анализ
+            </button>
+          </div>
+        </footer>
       </div>
     </div>
   );
+
+  return createPortal(screen, document.body);
 }

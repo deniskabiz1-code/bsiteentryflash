@@ -18,8 +18,9 @@ function AppRoutes() {
   const { overlayActive } = useOverlay();
   const location = useLocation();
   const hideNavForFirstAnalysis =
-    location.pathname.startsWith('/analysis')
-    && (user?.faceAnalysisCount ?? 0) === 0;
+    (location.pathname.startsWith('/analysis')
+      && (user?.faceAnalysisCount ?? 0) === 0)
+    || location.pathname.startsWith('/analysis/result');
 
   if (loading) return <LoadingScreen />;
 
