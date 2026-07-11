@@ -3,8 +3,8 @@ services:
     name: primeform-api
     runtime: node
     rootDir: backend
-    buildCommand: npm install && npm run build && npx prisma db push
-    startCommand: npm start
+    buildCommand: npm install && npm run build
+    startCommand: npx prisma db push && npm start
     envVars:
       - key: NODE_ENV
         value: production
