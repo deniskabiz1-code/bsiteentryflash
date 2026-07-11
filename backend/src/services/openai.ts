@@ -1,11 +1,20 @@
 import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
+import {
+  DEMO_FACE_RESULT,
+  DEMO_HAIRSTYLE_RESULT,
+  demoDelay,
+} from '../data/demoAnalysis';
 
 let openai: OpenAI | null = null;
 
+export function isOpenAiConfigured(): boolean {
+  return Boolean(process.env.OPENAI_API_KEY?.trim());
+}
+
 function getOpenAI(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY не настроен на сервере');
   }
@@ -100,10 +109,20 @@ async function callVision(
 }
 
 export async function analyzeFace(photoPath: string) {
+  if (!isOpenAiConfigured()) {
+    console.log('[demo] Face analysis — OPENAI_API_KEY not set, returning demo data');
+    await demoDelay();
+    return { ...DEMO_FACE_RESULT };
+  }
   return callVision(FACE_ANALYSIS_PROMPT, [photoPath]);
 }
 
 export async function analyzeHairstyle(frontPath: string, sidePath: string) {
+  if (!isOpenAiConfigured()) {
+    console.log('[demo] Hairstyle analysis — OPENAI_API_KEY not set, returning demo data');
+    await demoDelay();
+    return { ...DEMO_HAIRSTYLE_RESULT };
+  }
   return callVision(HAIRSTYLE_ANALYSIS_PROMPT, [frontPath, sidePath]);
 }
 

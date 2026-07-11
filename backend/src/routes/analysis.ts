@@ -4,7 +4,12 @@ import path from 'path';
 import fs from 'fs';
 import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegramAuth';
 import { findOrCreateUser, isSubscriptionActive } from '../services/telegram';
-import { analyzeFace, analyzeHairstyle, generateHairstylePreview } from '../services/openai';
+import {
+  analyzeFace,
+  analyzeHairstyle,
+  generateHairstylePreview,
+  isOpenAiConfigured,
+} from '../services/openai';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 
@@ -105,7 +110,14 @@ router.post(
         });
       }
 
-      res.json({ analysis: { id: analysis.id, ...result, photoUrl: analysis.photoUrl } });
+      res.json({
+        analysis: {
+          id: analysis.id,
+          ...result,
+          photoUrl: analysis.photoUrl,
+          demo: !isOpenAiConfigured(),
+        },
+      });
     } catch (err) {
       console.error('Face analysis error:', err);
       if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
@@ -153,7 +165,14 @@ router.post(
         },
       });
 
-      res.json({ analysis: { id: analysis.id, ...result, photoUrl: analysis.photoUrl } });
+      res.json({
+        analysis: {
+          id: analysis.id,
+          ...result,
+          photoUrl: analysis.photoUrl,
+          demo: !isOpenAiConfigured(),
+        },
+      });
     } catch (err) {
       console.error('Hairstyle analysis error:', err);
       res.status(500).json({ error: 'Ошибка анализа причёски' });

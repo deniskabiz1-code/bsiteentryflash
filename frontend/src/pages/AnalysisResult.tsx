@@ -25,8 +25,9 @@ export default function AnalysisResult() {
     );
   }
 
-  const result = analysis as FaceAnalysisResult & { overall_score?: number };
+  const result = analysis as FaceAnalysisResult & { overall_score?: number; demo?: boolean };
   const overall = result.overall_score || 0;
+  const isDemo = Boolean(result.demo);
   const scores = result.scores || {};
   const scoreValues = Object.values(scores) as number[];
 
@@ -36,8 +37,11 @@ export default function AnalysisResult() {
         <section className="text-center pt-2">
           <p className="label-sm mb-3">Общий балл</p>
           <p className="heading-xl">{overall}<span className="text-[20px] text-app-muted font-semibold">/100</span></p>
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
             <span className="pill-green">Анализ завершён</span>
+            {isDemo && (
+              <span className="pill-gray">Демо · OpenAI не подключён</span>
+            )}
           </div>
         </section>
 
