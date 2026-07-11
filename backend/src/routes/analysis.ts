@@ -8,7 +8,6 @@ import {
   analyzeFace,
   analyzeHairstyle,
   generateHairstylePreview,
-  isOpenAiConfigured,
 } from '../services/openai';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
@@ -32,8 +31,15 @@ const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-    cb(null, allowed.includes(file.mimetype));
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    const okMime = allowed.includes(file.mimetype);
+    const okExt = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif'].includes(ext);
+    if (okMime || okExt || file.mimetype === 'application/octet-stream') {
+      cb(null, true);
+      return;
+    }
+    cb(new Error('Неподдерживаемый формат фото. Используйте JPEG, PNG или HEIC'));
   },
 });
 
@@ -90,7 +96,7 @@ router.post(
         return;
       }
 
-      const result = await analyzeFace(req.file.path);
+      const { data: result, demo } = await analyzeFace(req.file.path);
       const overallScore = (result.overall_score as number) || 0;
 
       const analysis = await prisma.analysis.create({
@@ -115,13 +121,15 @@ router.post(
           id: analysis.id,
           ...result,
           photoUrl: analysis.photoUrl,
-          demo: !isOpenAiConfigured(),
+          demo,
         },
       });
     } catch (err) {
       console.error('Face analysis error:', err);
       if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-      res.status(500).json({ error: 'Ошибка анализа лица' });
+      const message = err instanceof Error ? err.message : 'Ошибка анализа лица';
+      const status = message.includes('Неподдерживаемый формат') ? 400 : 500;
+      res.status(status).json({ error: message.includes('Неподдерживаемый') ? message : 'Ошибка анализа лица' });
     }
   }
 );
@@ -153,7 +161,7 @@ router.post(
         return;
       }
 
-      const result = await analyzeHairstyle(front.path, side.path);
+      const { data: result, demo } = await analyzeHairstyle(front.path, side.path);
 
       const analysis = await prisma.analysis.create({
         data: {
@@ -170,7 +178,7 @@ router.post(
           id: analysis.id,
           ...result,
           photoUrl: analysis.photoUrl,
-          demo: !isOpenAiConfigured(),
+          demo,
         },
       });
     } catch (err) {

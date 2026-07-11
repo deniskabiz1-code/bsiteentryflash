@@ -49,6 +49,18 @@ app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/referral', referralRoutes);
 app.use('/api/user', userRoutes);
 
+app.use((err: Error, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err.message?.includes('Неподдерживаемый формат')) {
+    res.status(400).json({ error: err.message });
+    return;
+  }
+  if (err.name === 'MulterError') {
+    res.status(400).json({ error: 'Ошибка загрузки фото' });
+    return;
+  }
+  next(err);
+});
+
 app.listen(PORT, () => {
   console.log(`Primeform backend running on port ${PORT}`);
 });

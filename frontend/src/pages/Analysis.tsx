@@ -19,7 +19,7 @@ const TIPS = [
 export default function Analysis() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useApp();
+  const { user, refreshUser } = useApp();
   const { haptic } = useTelegram();
 
   const [photo, setPhoto] = useState<File | null>(null);
@@ -46,10 +46,24 @@ export default function Analysis() {
     try {
       const data = await analyzeFace(photo);
       haptic('success');
+      await refreshUser();
       navigate('/analysis/result', { state: { analysis: data.analysis } });
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setError(msg || 'Ошибка анализа');
+      const ax = err as {
+        response?: { data?: { error?: string }; status?: number };
+        code?: string;
+        message?: string;
+      };
+      const msg = ax.response?.data?.error;
+      if (ax.code === 'ECONNABORTED') {
+        setError('Сервер долго отвечает — подождите и повторите');
+      } else if (!ax.response) {
+        setError('Нет связи с сервером');
+      } else if (ax.response.status === 403) {
+        setError(msg || 'Бесплатный анализ уже использован');
+      } else {
+        setError(msg || 'Ошибка анализа');
+      }
       haptic('error');
     } finally {
       setLoading(false);

@@ -13,6 +13,16 @@ export function isOpenAiConfigured(): boolean {
   return Boolean(process.env.OPENAI_API_KEY?.trim());
 }
 
+function shouldUseDemoAnalysis(): boolean {
+  if (process.env.USE_DEMO_ANALYSIS === 'true') return true;
+  return !isOpenAiConfigured();
+}
+
+export type AnalysisRunResult = {
+  data: Record<string, unknown>;
+  demo: boolean;
+};
+
 function getOpenAI(): OpenAI {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
@@ -108,22 +118,41 @@ async function callVision(
   return JSON.parse(content);
 }
 
-export async function analyzeFace(photoPath: string) {
-  if (!isOpenAiConfigured()) {
-    console.log('[demo] Face analysis — OPENAI_API_KEY not set, returning demo data');
+export async function analyzeFace(photoPath: string): Promise<AnalysisRunResult> {
+  if (shouldUseDemoAnalysis()) {
+    console.log('[demo] Face analysis — demo mode');
     await demoDelay();
-    return { ...DEMO_FACE_RESULT };
+    return { data: { ...DEMO_FACE_RESULT }, demo: true };
   }
-  return callVision(FACE_ANALYSIS_PROMPT, [photoPath]);
+
+  try {
+    const data = await callVision(FACE_ANALYSIS_PROMPT, [photoPath]);
+    return { data, demo: false };
+  } catch (err) {
+    console.error('[demo] OpenAI face analysis failed, using demo data:', err);
+    await demoDelay();
+    return { data: { ...DEMO_FACE_RESULT }, demo: true };
+  }
 }
 
-export async function analyzeHairstyle(frontPath: string, sidePath: string) {
-  if (!isOpenAiConfigured()) {
-    console.log('[demo] Hairstyle analysis — OPENAI_API_KEY not set, returning demo data');
+export async function analyzeHairstyle(
+  frontPath: string,
+  sidePath: string
+): Promise<AnalysisRunResult> {
+  if (shouldUseDemoAnalysis()) {
+    console.log('[demo] Hairstyle analysis — demo mode');
     await demoDelay();
-    return { ...DEMO_HAIRSTYLE_RESULT };
+    return { data: { ...DEMO_HAIRSTYLE_RESULT }, demo: true };
   }
-  return callVision(HAIRSTYLE_ANALYSIS_PROMPT, [frontPath, sidePath]);
+
+  try {
+    const data = await callVision(HAIRSTYLE_ANALYSIS_PROMPT, [frontPath, sidePath]);
+    return { data, demo: false };
+  } catch (err) {
+    console.error('[demo] OpenAI hairstyle analysis failed, using demo data:', err);
+    await demoDelay();
+    return { data: { ...DEMO_HAIRSTYLE_RESULT }, demo: true };
+  }
 }
 
 export async function generateHairstylePreview(
