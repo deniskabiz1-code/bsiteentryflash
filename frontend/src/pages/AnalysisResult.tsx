@@ -1,5 +1,4 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import MiniBarChart from '@/components/MiniBarChart';
 import {
   FaceAnalysisResult,
   SCORE_LABELS,
@@ -29,7 +28,6 @@ export default function AnalysisResult() {
   const overall = result.overall_score || 0;
   const isDemo = Boolean(result.demo);
   const scores = result.scores || {};
-  const scoreValues = Object.values(scores) as number[];
 
   return (
     <div className="page">
@@ -47,8 +45,7 @@ export default function AnalysisResult() {
 
         <section className="card-green">
           <p className="label-sm mb-3">По параметрам</p>
-          <MiniBarChart values={scoreValues.length ? scoreValues : [overall]} />
-          <div className="mt-4 space-y-0">
+          <div className="space-y-0">
             {Object.entries(scores).map(([key, value]) => (
               <div key={key} className="list-row">
                 <span className="text-[15px] text-app-text">{SCORE_LABELS[key]}</span>
