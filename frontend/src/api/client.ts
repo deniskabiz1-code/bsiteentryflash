@@ -1,5 +1,5 @@
 import axios from 'axios';
-import WebApp from '@twa-dev/sdk';
+import { getTgWebApp } from '@/lib/tgWebApp';
 import { mockApi } from './mock';
 
 const MOCK = import.meta.env.VITE_MOCK_MODE === 'true';
@@ -12,7 +12,7 @@ const api = axios.create({
 
 if (!MOCK) {
   api.interceptors.request.use((config) => {
-    const initData = WebApp.initData;
+    const initData = getTgWebApp()?.initData;
     if (initData) {
       config.headers['X-Telegram-Init-Data'] = initData;
     }

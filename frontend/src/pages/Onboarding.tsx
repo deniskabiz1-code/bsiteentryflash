@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import WebApp from '@twa-dev/sdk';
-import ProgressDots from '@/components/ProgressDots';
+import { getTgWebApp } from '@/lib/tgWebApp';
 import { completeOnboarding, checkChannel, getChannelInfo } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -61,12 +60,14 @@ export default function Onboarding() {
     const onActivated = () => {
       if (step === 0) checkSubscription();
     };
-    WebApp.onEvent('activated', onActivated);
-    return () => WebApp.offEvent('activated', onActivated);
+    const webApp = getTgWebApp();
+    if (!webApp) return;
+    webApp.onEvent('activated', onActivated);
+    return () => webApp.offEvent('activated', onActivated);
   }, [step, checkSubscription]);
 
   const openChannel = () => {
-    openTelegramLink(channelOpenUrl || `https://t.me/${channelUsername}`);
+    openTelegramLink(channelOpenUrl, channelUsername);
   };
 
   const toggleGoal = (goal: string) => {
@@ -108,8 +109,6 @@ export default function Onboarding() {
   return (
     <div className="page flex flex-col">
       <div className="page-inner flex-1 flex flex-col">
-        <ProgressDots total={3} current={step} />
-
         {step === 0 && (
           <div className="flex-1 flex flex-col items-center justify-center text-center px-2 pb-32">
             <div className="w-28 h-28 rounded-full bg-app-surface shadow-float flex items-center justify-center text-5xl font-bold mb-8">
