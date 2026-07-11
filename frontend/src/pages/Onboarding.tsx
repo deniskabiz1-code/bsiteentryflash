@@ -5,6 +5,7 @@ import { completeOnboarding, checkChannel, getChannelInfo } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { User } from '@/types';
 import { useTelegram } from '@/hooks/useTelegram';
+import { useTelegramPhoto } from '@/hooks/useTelegramPhoto';
 import AgeSlider from '@/components/AgeSlider';
 import GoalSelector from '@/components/GoalSelector';
 import UserAvatar from '@/components/UserAvatar';
@@ -28,7 +29,7 @@ export default function Onboarding() {
   const [channelUsername, setChannelUsername] = useState('primeform_channel');
 
   const telegramUsername = tgUser?.username || null;
-  const photoUrl = tgUser?.photo_url || null;
+  const photoUrl = useTelegramPhoto();
 
   useEffect(() => {
     if (tgUser?.first_name && !name) {
@@ -141,16 +142,17 @@ export default function Onboarding() {
         )}
 
         {step === 1 && (
-          <div className="flex w-full flex-col items-center pt-10 text-center">
+          <div className="flex min-h-[calc(100dvh-10rem)] w-full flex-col items-center justify-center px-2 py-6 text-center">
             <div className="flex w-full max-w-sm flex-col items-center">
+              <div className="mb-6 flex flex-col items-center">
+                <UserAvatar photoUrl={photoUrl} fallbackLetter={fallbackLetter} size="md" className="mb-3" />
+                {telegramUsername && (
+                  <span className="pill-gray">@{telegramUsername}</span>
+                )}
+              </div>
+
               <h1 className="text-[20px] font-bold tracking-tight mb-1">Настройка профиля</h1>
-              <p className="text-[13px] text-app-muted mb-8">Можно изменить в любой момент</p>
-
-              <UserAvatar photoUrl={photoUrl} fallbackLetter={fallbackLetter} size="md" className="mb-3" />
-
-              {telegramUsername && (
-                <span className="pill-gray mb-6">@{telegramUsername}</span>
-              )}
+              <p className="text-[13px] text-app-muted mb-6">Можно изменить в любой момент</p>
 
               <div className="w-full space-y-4 text-left">
                 <input

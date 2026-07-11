@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const SIZES = {
   sm: 'h-16 w-16 text-3xl',
@@ -22,6 +22,10 @@ export default function UserAvatar({
   const [imgFailed, setImgFailed] = useState(false);
   const letter = fallbackLetter.charAt(0).toUpperCase() || 'P';
   const showPhoto = photoUrl && !imgFailed;
+
+  useEffect(() => {
+    setImgFailed(false);
+  }, [photoUrl]);
 
   return (
     <div

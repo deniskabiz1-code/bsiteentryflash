@@ -170,3 +170,41 @@ export function isSubscriptionActive(subscriptionEnd: Date | null): boolean {
   if (!subscriptionEnd) return false;
   return subscriptionEnd > new Date();
 }
+
+export async function getUserProfilePhotoFilePath(telegramId: number): Promise<string | null> {
+  const botToken = process.env.BOT_TOKEN;
+  if (!botToken) return null;
+
+  try {
+    const photosRes = await fetch(
+      `${BOT_API}${botToken}/getUserProfilePhotos?user_id=${telegramId}&limit=1`
+    );
+    const photosData = (await photosRes.json()) as {
+      ok: boolean;
+      result?: { photos?: { file_id: string }[][] };
+    };
+
+    if (!photosData.ok || !photosData.result?.photos?.length) {
+      return null;
+    }
+
+    const sizes = photosData.result.photos[0];
+    const fileId = sizes[sizes.length - 1]?.file_id;
+    if (!fileId) return null;
+
+    const fileRes = await fetch(`${BOT_API}${botToken}/getFile?file_id=${encodeURIComponent(fileId)}`);
+    const fileData = (await fileRes.json()) as {
+      ok: boolean;
+      result?: { file_path: string };
+    };
+
+    if (!fileData.ok || !fileData.result?.file_path) {
+      return null;
+    }
+
+    return fileData.result.file_path;
+  } catch (err) {
+    console.error('getUserProfilePhotoFilePath error:', err);
+    return null;
+  }
+}

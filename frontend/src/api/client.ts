@@ -20,6 +20,20 @@ if (!MOCK) {
   });
 }
 
+export async function fetchProfilePhoto(): Promise<Blob | null> {
+  if (MOCK) return null;
+  try {
+    const { data } = await api.get('/auth/profile-photo', {
+      responseType: 'blob',
+      timeout: 15000,
+    });
+    if (data instanceof Blob && data.size > 0) return data;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchMe() {
   if (MOCK) return mockApi.fetchMe();
   const { data } = await api.post('/auth/me', undefined, { timeout: 35000 });

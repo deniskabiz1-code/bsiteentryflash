@@ -5,6 +5,7 @@ import {
   checkChannelSubscription,
   isSubscriptionActive,
   getChannelOpenUrl,
+  getUserProfilePhotoFilePath,
 } from '../services/telegram';
 import { prisma } from '../utils/prisma';
 
@@ -40,6 +41,37 @@ router.post('/me', validateTelegramAuth, async (req: AuthRequest, res: Response)
   } catch (err) {
     console.error('Auth error:', err);
     res.status(500).json({ error: 'Ошибка авторизации' });
+  }
+});
+
+router.get('/profile-photo', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const botToken = process.env.BOT_TOKEN;
+    if (!botToken) {
+      res.status(404).end();
+      return;
+    }
+
+    const filePath = await getUserProfilePhotoFilePath(req.telegramUser!.id);
+    if (!filePath) {
+      res.status(404).end();
+      return;
+    }
+
+    const fileRes = await fetch(`https://api.telegram.org/file/bot${botToken}/${filePath}`);
+    if (!fileRes.ok) {
+      res.status(404).end();
+      return;
+    }
+
+    const contentType = fileRes.headers.get('content-type') || 'image/jpeg';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    const buffer = Buffer.from(await fileRes.arrayBuffer());
+    res.send(buffer);
+  } catch (err) {
+    console.error('Profile photo error:', err);
+    res.status(500).end();
   }
 });
 

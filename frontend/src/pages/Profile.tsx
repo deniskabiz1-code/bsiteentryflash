@@ -10,6 +10,7 @@ import {
 } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
+import { useTelegramPhoto } from '@/hooks/useTelegramPhoto';
 import AgeSlider from '@/components/AgeSlider';
 import GoalSelector from '@/components/GoalSelector';
 import UserAvatar from '@/components/UserAvatar';
@@ -18,7 +19,8 @@ import { assetUrl } from '@/utils/assets';
 
 export default function Profile() {
   const { user, refreshUser } = useApp();
-  const { user: tgUser, openLink, haptic } = useTelegram();
+  const { openLink, haptic } = useTelegram();
+  const photoUrl = useTelegramPhoto();
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
@@ -121,7 +123,7 @@ export default function Profile() {
     );
   };
 
-  const fallbackLetter = user?.name || tgUser?.first_name || 'P';
+  const fallbackLetter = user?.name || 'P';
 
   return (
     <div className="page">
@@ -130,7 +132,7 @@ export default function Profile() {
 
         <section className="text-center pt-2">
           <UserAvatar
-            photoUrl={tgUser?.photo_url}
+            photoUrl={photoUrl}
             fallbackLetter={fallbackLetter}
             size="md"
             className="mx-auto mb-4"
