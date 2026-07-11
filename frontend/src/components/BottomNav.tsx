@@ -13,7 +13,7 @@ export default function BottomNav() {
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-2 bg-gradient-to-t from-app-canvas via-app-canvas to-transparent">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 px-4 pb-6 pt-2 bg-gradient-to-t from-app-canvas via-app-canvas to-transparent">
       <div className="max-w-md mx-auto bg-app-surface rounded-full shadow-float px-2 py-2 flex items-center justify-around">
         {tabs.map(({ path, icon: Icon, label }) => {
           const active =

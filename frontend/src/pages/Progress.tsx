@@ -164,7 +164,7 @@ export default function Progress() {
       </div>
 
       {deleteId !== null && (
-        <div className="fixed inset-0 bg-black/40 flex items-end justify-center z-50 p-5">
+        <div className="fixed inset-0 z-[60] bg-black/40 flex items-end justify-center p-5 pb-28">
           <div className="bg-app-surface rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-float">
             <p className="font-bold text-center text-[17px]">Удалить этот чек-ин?</p>
             <div className="btn-row">
