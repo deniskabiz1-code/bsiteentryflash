@@ -1,0 +1,110 @@
+import { Router, Response } from 'express';
+import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegramAuth';
+import { findOrCreateUser, isSubscriptionActive } from '../services/telegram';
+import { prisma } from '../utils/prisma';
+
+const router = Router();
+
+router.put('/profile', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, age, goals } = req.body;
+    const user = await findOrCreateUser(req.telegramUser!);
+
+    const data: Record<string, unknown> = {};
+    if (name) data.name = name.trim();
+    if (age) {
+      const ageNum = parseInt(age, 10);
+      if (ageNum >= 14 && ageNum <= 60) data.age = ageNum;
+    }
+    if (Array.isArray(goals) && goals.length > 0) data.goals = goals;
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data,
+    });
+
+    res.json({ user: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'Ошибка обновления' });
+  }
+});
+
+router.put('/reminders', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { enabled, time } = req.body;
+    const user = await findOrCreateUser(req.telegramUser!);
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        reminderEnabled: !!enabled,
+        reminderTime: time || null,
+      },
+    });
+
+    res.json({
+      reminderEnabled: updated.reminderEnabled,
+      reminderTime: updated.reminderTime,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Ошибка' });
+  }
+});
+
+router.get('/skincare', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await findOrCreateUser(req.telegramUser!);
+
+    if (!isSubscriptionActive(user.subscriptionEnd)) {
+      res.status(403).json({ error: 'Доступно по подписке' });
+      return;
+    }
+
+    const lastFace = await prisma.analysis.findFirst({
+      where: { userId: user.id, type: 'face' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!lastFace) {
+      res.json({ routine: null });
+      return;
+    }
+
+    const result = lastFace.resultJson as Record<string, unknown>;
+    res.json({ routine: result.skincare_routine || [] });
+  } catch (err) {
+    res.status(500).json({ error: 'Ошибка' });
+  }
+});
+
+router.get('/last-checkin', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await findOrCreateUser(req.telegramUser!);
+    const last = await prisma.analysis.findFirst({
+      where: { userId: user.id, type: 'face' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json({ checkin: last });
+  } catch (err) {
+    res.status(500).json({ error: 'Ошибка' });
+  }
+});
+
+router.delete('/account', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { confirm } = req.body;
+    if (confirm !== 'DELETE') {
+      res.status(400).json({ error: 'Подтвердите удаление' });
+      return;
+    }
+
+    const user = await findOrCreateUser(req.telegramUser!);
+    await prisma.user.delete({ where: { id: user.id } });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Ошибка удаления' });
+  }
+});
+
+export default router;

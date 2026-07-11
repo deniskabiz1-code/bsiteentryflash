@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id              Int       @id @default(autoincrement())
+  telegramId      BigInt    @unique
+  username        String?
+  name            String?
+  age             Int?
+  goals           String[]  @default([])
+  referralCode    String    @unique
+  referralCredits Int       @default(0)
+  referredBy      Int?
+  subscriptionEnd DateTime?
+  reminderEnabled Boolean   @default(false)
+  reminderTime    String?   // "HH:mm" format
+  onboarded       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  analyses        Analysis[]
+  tasks           TaskCompletion[]
+  referralProofs  ReferralProof[]
+}
+
+model Analysis {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         String   // "face" | "hairstyle"
+  photoUrl     String
+  sidePhotoUrl String?
+  resultJson   Json
+  overallScore Int?
+  createdAt    DateTime @default(now())
+}
+
+model TaskCompletion {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskKey   String
+  date      DateTime @db.Date
+
+  @@unique([userId, taskKey, date])
+}
+
+model ReferralProof {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  status    String   @default("pending") // pending | approved | rejected
+  createdAt DateTime @default(now())
+}

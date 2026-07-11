@@ -1,0 +1,81 @@
+/*
+  SF Pro — system font on iOS/macOS via -apple-system.
+  Self-hosted files in public/fonts/
+*/
+
+@font-face {
+  font-family: 'SF Pro Text';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local('SF Pro Text'),
+    local('SFProText-Regular'),
+    url('/fonts/SFProText-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'SF Pro Text';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src:
+    local('SF Pro Text Medium'),
+    local('SFProText-Medium'),
+    url('/fonts/SFProText-Medium.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'SF Pro Text';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src:
+    local('SF Pro Text Semibold'),
+    local('SFProText-Semibold'),
+    url('/fonts/SFProText-Semibold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'SF Pro Text';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local('SF Pro Text Bold'),
+    local('SFProText-Bold'),
+    url('/fonts/SFProText-Bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local('SF Pro Display'),
+    local('SFProDisplay-Regular'),
+    url('/fonts/SF-Pro-Display-Regular.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src:
+    local('SF Pro Display Semibold'),
+    local('SFProDisplay-Semibold'),
+    url('/fonts/SF-Pro-Display-Semibold.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'SF Pro Display';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src:
+    local('SF Pro Display Bold'),
+    local('SFProDisplay-Bold'),
+    url('/fonts/SF-Pro-Display-Bold.otf') format('opentype');
+}
