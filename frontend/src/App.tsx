@@ -17,9 +17,7 @@ function AppRoutes() {
   const { user, loading } = useApp();
   const { overlayActive } = useOverlay();
   const location = useLocation();
-  const hideNavForFirstAnalysis =
-    location.pathname.startsWith('/analysis')
-    && (user?.faceAnalysisCount ?? 0) === 0;
+  const hideNavOnAnalysisUpload = location.pathname === '/analysis';
 
   if (loading) return <LoadingScreen />;
 
@@ -54,7 +52,7 @@ function AppRoutes() {
         <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {!overlayActive && !hideNavForFirstAnalysis && <BottomNav />}
+      {!overlayActive && !hideNavOnAnalysisUpload && <BottomNav />}
     </>
   );
 }

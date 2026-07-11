@@ -9,18 +9,12 @@ import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useFirstAnalysisViewportLock } from '@/hooks/useFirstAnalysisViewportLock';
 
-const TIPS = [
-  'Смотрите прямо в камеру с нейтральным выражением',
-  'Обеспечьте хорошее освещение (лучше дневной свет)',
-  'Уберите очки и головные уборы',
-  'Держите камеру на уровне глаз',
-];
-
 export default function Analysis() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, refreshUser } = useApp();
   const { haptic } = useTelegram();
+  const viewportRef = useFirstAnalysisViewportLock(true);
 
   const [photo, setPhoto] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -31,7 +25,6 @@ export default function Analysis() {
     || (location.state as { welcome?: boolean } | null)?.welcome
   );
   const isFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
-  const viewportRef = useFirstAnalysisViewportLock(isFirstAnalysis);
 
   const canAnalyze =
     user?.subscriptionActive ||
@@ -74,112 +67,99 @@ export default function Analysis() {
     }
   };
 
-  if (isFirstAnalysis) {
-    const displayName = user?.name?.trim();
-    const shortName = displayName && displayName.length > 18
-      ? `${displayName.slice(0, 16)}…`
-      : displayName;
-    const greeting = justOnboarded && shortName
-      ? `Привет, ${shortName}!`
-      : 'Ваш первый анализ';
+  const displayName = user?.name?.trim();
+  const shortName = displayName && displayName.length > 18
+    ? `${displayName.slice(0, 16)}…`
+    : displayName;
+  const greeting = justOnboarded && shortName
+    ? `Привет, ${shortName}!`
+    : 'Ваш первый анализ';
 
-    const screen = (
-      <div ref={viewportRef} className="bg-app-canvas">
-        <div className="page-inner first-analysis-grid h-full px-5 py-3">
-          <header className="min-h-0 shrink-0 space-y-2 overflow-hidden">
-            <span className="pill-green inline-flex">
-              <Sparkles size={14} />
-              1 анализ бесплатно
-            </span>
-            <h1 className="text-[22px] font-bold leading-snug tracking-tight break-words">
-              {greeting}
-            </h1>
-            <p className="text-[14px] leading-relaxed text-app-muted">
-              Сделайте селфи — AI бесплатно оценит внешность.
-            </p>
-          </header>
+  const analyzeLabel = loading
+    ? 'Анализируем...'
+    : photo
+      ? isFirstAnalysis
+        ? 'Начать бесплатный анализ'
+        : 'Начать анализ'
+      : 'Сначала сделайте селфи';
 
-          <div className="card flex min-h-0 h-full flex-col overflow-hidden !p-4">
-            <PhotoUpload
-              onPhotoSelect={setPhoto}
-              label="Сделать селфи"
-              compact
-              fill
-            />
-          </div>
+  const screen = (
+    <div ref={viewportRef} className="bg-app-canvas">
+      <div className="page-inner first-analysis-grid h-full px-5 py-3">
+        <header className="min-h-0 shrink-0 space-y-1.5 overflow-hidden">
+          {isFirstAnalysis ? (
+            <>
+              <span className="pill-green inline-flex">
+                <Sparkles size={14} />
+                1 анализ бесплатно
+              </span>
+              <h1 className="text-[22px] font-bold leading-snug tracking-tight break-words">
+                {greeting}
+              </h1>
+              <p className="text-[14px] leading-snug text-app-muted">
+                Сделайте селфи — AI бесплатно оценит внешность.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="label-sm">AI-анализ</p>
+              <h1 className="text-[22px] font-bold leading-snug tracking-tight">
+                Анализ лица
+              </h1>
+              <p className="text-[14px] leading-snug text-app-muted">
+                Загрузите селфи для оценки
+              </p>
+            </>
+          )}
+        </header>
 
-          <footer className="min-h-0 shrink-0 space-y-2 overflow-hidden pb-1">
-            {error && (
-              <p className="text-sm font-medium text-red-500">{error}</p>
-            )}
-            <button
-              type="button"
-              onClick={handleAnalyze}
-              disabled={!photo || loading || !canAnalyze}
-              className="btn-accent"
-            >
-              {loading
-                ? 'Анализируем...'
-                : photo
-                  ? 'Начать бесплатный анализ'
-                  : 'Сначала сделайте селфи'}
-            </button>
-          </footer>
+        <div className="card flex min-h-0 h-full flex-col overflow-hidden !p-4">
+          <PhotoUpload
+            onPhotoSelect={setPhoto}
+            label="Сделать селфи"
+            compact
+            fill
+          />
         </div>
-      </div>
-    );
 
-    return createPortal(screen, document.body);
-  }
-
-  return (
-    <div className="page">
-      <div className="page-inner space-y-6">
-        <section className="text-center pt-2">
-          <p className="label-sm mb-2">AI-анализ</p>
-          <h1 className="heading-md">Анализ лица</h1>
-          <p className="text-[15px] text-app-muted mt-2">Загрузите селфи для оценки</p>
-        </section>
-
-        {!canAnalyze && (
-          <div className="card border border-red-200 bg-red-50">
-            <p className="text-[14px] text-red-700">
-              Бесплатный анализ использован. Оформите подписку или получите реферальные кредиты.
+        <footer className="min-h-0 shrink-0 space-y-2 overflow-hidden pb-1">
+          {!canAnalyze && !isFirstAnalysis && (
+            <p className="text-center text-[13px] leading-snug text-red-600">
+              Бесплатный анализ использован.{' '}
+              <button
+                type="button"
+                onClick={() => navigate('/profile')}
+                className="font-semibold underline"
+              >
+                Оформить подписку
+              </button>
             </p>
-            <button
-              type="button"
-              onClick={() => navigate('/profile')}
-              className="mt-3 text-[14px] font-semibold text-app-text underline"
-            >
-              Перейти в профиль
-            </button>
-          </div>
-        )}
-
-        <PhotoUpload onPhotoSelect={setPhoto} tips={TIPS} label="Сделать селфи" />
-
-        {error && <p className="text-red-500 text-sm text-center font-medium">{error}</p>}
-
-        <button
-          type="button"
-          onClick={handleAnalyze}
-          disabled={!photo || loading || !canAnalyze}
-          className="btn-dark"
-        >
-          {loading ? 'Анализируем...' : 'Начать анализ'}
-        </button>
-
-        {user?.subscriptionActive && (
+          )}
+          {error && (
+            <p className="text-center text-sm font-medium text-red-500">{error}</p>
+          )}
           <button
             type="button"
-            onClick={() => navigate('/analysis/hairstyle')}
-            className="btn-light flex items-center justify-center gap-2"
+            onClick={handleAnalyze}
+            disabled={!photo || loading || !canAnalyze}
+            className={isFirstAnalysis ? 'btn-accent' : 'btn-dark'}
           >
-            <Scissors size={18} />
-            Анализ причёски
+            {analyzeLabel}
           </button>
-        )}
+          {user?.subscriptionActive && !isFirstAnalysis && (
+            <button
+              type="button"
+              onClick={() => navigate('/analysis/hairstyle')}
+              className="flex w-full items-center justify-center gap-2 py-2 text-[14px] font-semibold text-app-muted"
+            >
+              <Scissors size={16} />
+              Анализ причёски
+            </button>
+          )}
+        </footer>
       </div>
     </div>
   );
+
+  return createPortal(screen, document.body);
 }
