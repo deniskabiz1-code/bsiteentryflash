@@ -157,7 +157,7 @@ export async function getLastCheckin() {
 
 export async function deleteAccount() {
   if (MOCK) return mockApi.deleteAccount();
-  const { data } = await api.delete('/user/account', { data: { confirm: 'DELETE' } });
+  const { data } = await api.post('/user/account/delete', { confirm: 'DELETE' });
   return data;
 }
 

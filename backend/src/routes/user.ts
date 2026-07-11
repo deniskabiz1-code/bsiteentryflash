@@ -91,9 +91,9 @@ router.get('/last-checkin', validateTelegramAuth, async (req: AuthRequest, res: 
   }
 });
 
-router.delete('/account', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
+async function deleteUserAccount(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const { confirm } = req.body;
+    const confirm = req.body?.confirm;
     if (confirm !== 'DELETE') {
       res.status(400).json({ error: 'Подтвердите удаление' });
       return;
@@ -103,8 +103,12 @@ router.delete('/account', validateTelegramAuth, async (req: AuthRequest, res: Re
     await prisma.user.delete({ where: { id: user.id } });
     res.json({ success: true });
   } catch (err) {
+    console.error('Delete account error:', err);
     res.status(500).json({ error: 'Ошибка удаления' });
   }
-});
+}
+
+router.post('/account/delete', validateTelegramAuth, deleteUserAccount);
+router.delete('/account', validateTelegramAuth, deleteUserAccount);
 
 export default router;

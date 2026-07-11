@@ -28,6 +28,8 @@ export default function Profile() {
   const [reminderTime, setReminderTime] = useState(user?.reminderTime || '09:00');
   const [showDelete, setShowDelete] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [referralTab, setReferralTab] = useState('Ссылка');
   const [loading, setLoading] = useState(false);
 
@@ -94,11 +96,19 @@ export default function Profile() {
   };
 
   const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError('');
     try {
       await deleteAccount();
+      setShowDelete(false);
+      setShowDeleteConfirm(false);
+      await refreshUser();
       haptic('success');
     } catch {
+      setDeleteError('Не удалось удалить аккаунт. Попробуйте снова.');
       haptic('error');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -271,7 +281,15 @@ export default function Profile() {
         </button>
       </div>
 
-      <Modal open={showDelete} onClose={() => { setShowDelete(false); setShowDeleteConfirm(false); }}>
+      <Modal
+        open={showDelete}
+        onClose={() => {
+          if (deleting) return;
+          setShowDelete(false);
+          setShowDeleteConfirm(false);
+          setDeleteError('');
+        }}
+      >
         <div className="space-y-4">
           {!showDeleteConfirm ? (
             <>
@@ -285,9 +303,24 @@ export default function Profile() {
           ) : (
             <>
               <p className="font-bold text-center text-red-500 text-[17px]">Вы уверены?</p>
+              {deleteError && <p className="text-red-500 text-sm text-center">{deleteError}</p>}
               <div className="btn-row">
-                <button type="button" onClick={() => { setShowDelete(false); setShowDeleteConfirm(false); }} className="btn-light flex-1">Отмена</button>
-                <button type="button" onClick={handleDeleteAccount} className="flex-1 py-4 rounded-full bg-red-600 text-white font-semibold">Да, удалить</button>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => { setShowDelete(false); setShowDeleteConfirm(false); setDeleteError(''); }}
+                  className="btn-light flex-1"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={handleDeleteAccount}
+                  className="flex-1 py-4 rounded-full bg-red-600 text-white font-semibold disabled:opacity-50"
+                >
+                  {deleting ? 'Удаляем...' : 'Да, удалить'}
+                </button>
               </div>
             </>
           )}
