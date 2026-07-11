@@ -15,6 +15,17 @@ html = html.replace(
   (_, attr, url) => `${attr}="${url}?v=${shortId}"`
 );
 
+const cacheBust = [
+  '<script>',
+  `(function(){var b='${shortId}',k='pf_v';`,
+  'try{',
+  'var u=new URL(location.href);',
+  'if(u.searchParams.get(k)!==b){u.searchParams.set(k,b);location.replace(u.toString());return;}',
+  '}catch(e){}',
+  '})();',
+  '</script>',
+].join('');
+
 const inject = [
   '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />',
   `<meta name="build" content="${buildId}" />`,
@@ -28,6 +39,7 @@ const inject = [
   '</script>',
 ].join('');
 
+html = html.replace('<head>', `<head>${cacheBust}`);
 html = html.replace('</head>', `${inject}</head>`);
 
 fs.writeFileSync(indexPath, html);

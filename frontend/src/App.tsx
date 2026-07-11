@@ -33,10 +33,19 @@ function AppRoutes() {
     );
   }
 
+  const needsFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
+
   return (
     <>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/"
+          element={
+            needsFirstAnalysis
+              ? <Navigate to="/analysis" replace state={{ firstAnalysis: true, welcome: true }} />
+              : <Home />
+          }
+        />
         <Route path="/analysis" element={<Analysis />} />
         <Route path="/analysis/result" element={<AnalysisResult />} />
         <Route path="/analysis/hairstyle" element={<HairstyleAnalysis />} />

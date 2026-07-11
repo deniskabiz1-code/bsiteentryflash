@@ -42,7 +42,7 @@ export default function PhotoUpload({
 
   if (localPreview) {
     return (
-      <div className={`relative overflow-hidden rounded-3xl shadow-card ${compact ? (fill ? 'min-h-0 flex-1' : 'h-56') : ''}`}>
+      <div className={`relative overflow-hidden rounded-3xl shadow-card ${compact ? (fill ? 'first-analysis-photo-fill' : 'h-56') : ''}`}>
         <img
           src={localPreview}
           alt="Preview"
@@ -60,7 +60,7 @@ export default function PhotoUpload({
   }
 
   return (
-    <div className={`w-full ${compact ? (fill ? 'flex min-h-0 flex-1 flex-col gap-3' : 'space-y-3') : 'space-y-4'}`}>
+    <div className={`w-full ${compact ? (fill ? 'first-analysis-photo-fill flex flex-col gap-3' : 'space-y-3') : 'space-y-4'}`}>
       {tips && (
         <div className="card !p-4 space-y-2">
           <p className="text-[13px] font-semibold text-app-muted">Советы для лучшего результата</p>
@@ -89,7 +89,7 @@ export default function PhotoUpload({
         onClick={() => inputRef.current?.click()}
         className={`flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed
           border-app-border bg-app-canvas transition-colors active:bg-app-track
-          ${compact ? (fill ? 'min-h-40 flex-1 py-5' : 'h-36 py-3') : 'aspect-[3/4] gap-4 shadow-card'}`}
+          ${compact ? (fill ? 'min-h-0 flex-1 py-6' : 'h-36 py-3') : 'aspect-[3/4] gap-4 shadow-card'}`}
       >
         <div className={`flex items-center justify-center rounded-full bg-brand-green ${compact ? (fill ? 'h-16 w-16' : 'h-14 w-14') : 'h-20 w-20 shadow-pill'}`}>
           <Camera size={compact ? (fill ? 30 : 26) : 32} className="text-white" strokeWidth={1.5} />
