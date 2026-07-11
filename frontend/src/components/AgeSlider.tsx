@@ -2,15 +2,16 @@ interface AgeSliderProps {
   value: number;
   min?: number;
   max?: number;
+  compact?: boolean;
   onChange: (value: number) => void;
 }
 
-export default function AgeSlider({ value, min = 14, max = 60, onChange }: AgeSliderProps) {
+export default function AgeSlider({ value, min = 14, max = 60, compact, onChange }: AgeSliderProps) {
   return (
     <div className="w-full text-left">
-      <div className="flex items-center justify-between mb-3">
+      <div className={`flex items-center justify-between ${compact ? 'mb-2' : 'mb-3'}`}>
         <span className="text-[15px] font-semibold text-app-text">Возраст</span>
-        <span className="text-[28px] font-bold leading-none tabular-nums">{value}</span>
+        <span className={`font-bold leading-none tabular-nums ${compact ? 'text-[22px]' : 'text-[28px]'}`}>{value}</span>
       </div>
       <input
         type="range"

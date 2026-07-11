@@ -120,10 +120,11 @@ export default function Onboarding() {
     : (tgUser?.first_name?.charAt(0).toUpperCase() || 'P');
 
   return (
-    <div className="page flex flex-col">
-      <div className="page-inner flex-1 flex flex-col">
+    <div className="flex h-dvh min-h-dvh flex-col overflow-hidden bg-app-canvas">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <div className="page-inner pb-36">
         {step === 0 && (
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-2 pb-32">
+          <div className="flex min-h-[calc(100dvh-9rem)] flex-col items-center justify-center text-center px-2">
             <div className="w-28 h-28 rounded-full bg-app-surface shadow-float flex items-center justify-center text-5xl font-bold mb-8">
               {initial}
             </div>
@@ -140,37 +141,38 @@ export default function Onboarding() {
         )}
 
         {step === 1 && (
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-2 pb-32 w-full">
-            <div className="w-full max-w-sm mx-auto flex flex-col items-center">
-              <div className="w-28 h-28 rounded-full bg-app-surface shadow-float flex items-center justify-center text-5xl font-bold mb-4">
+          <div className="flex w-full flex-col items-center pt-3 text-center">
+            <div className="flex w-full max-w-sm flex-col items-center">
+              <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-app-surface text-3xl font-bold shadow-float">
                 {initial}
               </div>
 
               {telegramUsername && (
-                <span className="pill-gray mb-6">@{telegramUsername}</span>
+                <span className="pill-gray mb-3">@{telegramUsername}</span>
               )}
 
-              <h1 className="heading-md mb-2">Настройка профиля</h1>
-              <p className="text-[15px] text-app-muted mb-8">Можно изменить в любой момент</p>
+              <h1 className="text-[20px] font-bold tracking-tight mb-1">Настройка профиля</h1>
+              <p className="text-[13px] text-app-muted mb-5">Можно изменить в любой момент</p>
 
-              <div className="w-full space-y-6 text-left">
+              <div className="w-full space-y-4 text-left">
                 <input
-                  className="input-field text-center"
+                  className="input-field text-center !py-3"
                   placeholder="Как вас зовут?"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
 
-                <AgeSlider value={age} onChange={setAge} />
+                <AgeSlider value={age} onChange={setAge} compact />
 
-                <GoalSelector selected={goals} onToggle={toggleGoal} />
+                <GoalSelector selected={goals} onToggle={toggleGoal} compact />
               </div>
 
-              {error && <p className="text-red-500 text-sm mt-6 text-center">{error}</p>}
+              {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
               {hint && <p className="text-amber-600 text-xs mt-2 text-center">{hint}</p>}
             </div>
           </div>
         )}
+        </div>
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-app-canvas via-app-canvas to-transparent">
