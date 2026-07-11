@@ -44,7 +44,7 @@ export async function completeOnboarding(payload: {
   goals: string[];
 }) {
   if (MOCK) return mockApi.completeOnboarding(payload);
-  const { data } = await api.post('/onboarding/complete', payload);
+  const { data } = await api.post('/onboarding/complete', payload, { timeout: 30000 });
   return data;
 }
 

@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegramAuth';
-import { findOrCreateUser, checkChannelSubscription } from '../services/telegram';
+import { findOrCreateUser, isSubscriptionActive } from '../services/telegram';
 import { prisma } from '../utils/prisma';
 
 const router = Router();
@@ -33,16 +33,7 @@ router.post('/complete', validateTelegramAuth, async (req: AuthRequest, res: Res
       return;
     }
 
-    const channelCheck = await checkChannelSubscription(req.telegramUser!.id);
-    if (!channelCheck.subscribed) {
-      res.status(403).json({
-        error: channelCheck.error || 'Подпишитесь на канал, чтобы продолжить',
-        hint: channelCheck.hint,
-      });
-      return;
-    }
-
-    const user = await findOrCreateUser(req.telegramUser!);
+    await findOrCreateUser(req.telegramUser!);
 
     const updated = await prisma.user.update({
       where: { telegramId: BigInt(req.telegramUser!.id) },
@@ -57,10 +48,19 @@ router.post('/complete', validateTelegramAuth, async (req: AuthRequest, res: Res
     res.json({
       user: {
         id: updated.id,
+        telegramId: updated.telegramId.toString(),
+        username: updated.username,
         name: updated.name,
         age: updated.age,
         goals: updated.goals,
+        referralCode: updated.referralCode,
+        referralCredits: updated.referralCredits,
+        subscriptionActive: isSubscriptionActive(updated.subscriptionEnd),
+        subscriptionEnd: updated.subscriptionEnd,
+        reminderEnabled: updated.reminderEnabled,
+        reminderTime: updated.reminderTime,
         onboarded: updated.onboarded,
+        faceAnalysisCount: 0,
       },
     });
   } catch (err) {

@@ -8,6 +8,7 @@ interface AppContextType {
   loading: boolean;
   error: string | null;
   refreshUser: () => Promise<void>;
+  applyUser: (user: User) => void;
 }
 
 const AppContext = createContext<AppContextType>({
@@ -16,6 +17,7 @@ const AppContext = createContext<AppContextType>({
   loading: true,
   error: null,
   refreshUser: async () => {},
+  applyUser: () => {},
 });
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -38,12 +40,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const applyUser = useCallback((nextUser: User) => {
+    setUser(nextUser);
+    setLoading(false);
+    setError(null);
+  }, []);
+
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);
 
   return (
-    <AppContext.Provider value={{ user, channelSubscribed, loading, error, refreshUser }}>
+    <AppContext.Provider value={{ user, channelSubscribed, loading, error, refreshUser, applyUser }}>
       {children}
     </AppContext.Provider>
   );

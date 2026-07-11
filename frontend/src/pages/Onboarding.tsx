@@ -1,15 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getTgWebApp } from '@/lib/tgWebApp';
 import { completeOnboarding, checkChannel, getChannelInfo } from '@/api/client';
 import { useApp } from '@/context/AppContext';
+import { User } from '@/types';
 import { useTelegram } from '@/hooks/useTelegram';
 import AgeSlider from '@/components/AgeSlider';
 import GoalSelector from '@/components/GoalSelector';
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { refreshUser } = useApp();
+  const { applyUser } = useApp();
+  const submittingRef = useRef(false);
   const { user: tgUser, openTelegramLink, haptic } = useTelegram();
 
   const [step, setStep] = useState(0);
@@ -85,6 +87,7 @@ export default function Onboarding() {
   };
 
   const handleSubmit = async () => {
+    if (loading || submittingRef.current) return;
     if (!name.trim()) { setError('Укажите имя'); return; }
     if (age < 14 || age > 60) {
       setError('Возраст от 14 до 60');
@@ -92,14 +95,15 @@ export default function Onboarding() {
     }
     if (goals.length === 0) { setError('Выберите хотя бы одну цель'); return; }
 
+    submittingRef.current = true;
     setLoading(true);
     setError('');
     setHint('');
     try {
-      await completeOnboarding({ name: name.trim(), age, goals });
-      await refreshUser();
+      const data = await completeOnboarding({ name: name.trim(), age, goals });
+      applyUser(data.user as User);
       haptic('success');
-      navigate('/');
+      navigate('/', { replace: true });
     } catch (err: unknown) {
       const res = (err as { response?: { data?: { error?: string; hint?: string } } })?.response?.data;
       setError(res?.error || 'Ошибка сохранения');
@@ -107,6 +111,7 @@ export default function Onboarding() {
       haptic('error');
     } finally {
       setLoading(false);
+      submittingRef.current = false;
     }
   };
 
