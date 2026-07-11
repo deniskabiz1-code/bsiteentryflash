@@ -1,0 +1,44 @@
+name: Deploy Backend to Render
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'backend/**'
+      - 'render.yaml'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+jobs:
+  trigger-render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        if: ${{ secrets.RENDER_DEPLOY_HOOK != '' }}
+        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+
+      - name: Skip (no deploy hook configured)
+        if: ${{ secrets.RENDER_DEPLOY_HOOK == '' }}
+        run: |
+          echo "RENDER_DEPLOY_HOOK secret not set."
+          echo "Render will still auto-deploy if the service is connected to this GitHub repo."
+
+      - name: Wait for API health
+        if: ${{ secrets.RENDER_DEPLOY_HOOK != '' }}
+        run: |
+          API_URL="${{ secrets.VITE_API_URL }}"
+          if [ -z "$API_URL" ]; then
+            echo "VITE_API_URL not set — skipping health check"
+            exit 0
+          fi
+          BASE="${API_URL%/api}"
+          for i in $(seq 1 30); do
+            if curl -fsS "$BASE/api/health" >/dev/null; then
+              echo "API healthy after attempt $i"
+              exit 0
+            fi
+            echo "Waiting for Render deploy... ($i/30)"
+            sleep 10
+          done
+          echo "Health check timed out — deploy may still be in progress"
+          exit 1

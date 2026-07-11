@@ -40,6 +40,8 @@ jobs:
 
       - name: Prepare GitHub Pages output
         run: |
+          BUILD_ID="${{ github.sha }}"
+          sed -i "s|</head>|<meta name=\"build\" content=\"$BUILD_ID\" /></head>|" dist/index.html
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
 
@@ -58,3 +60,17 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify live site
+        run: |
+          PAGE_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+          for i in $(seq 1 12); do
+            HTML=$(curl -fsS "$PAGE_URL" || true)
+            if echo "$HTML" | grep -q '${{ github.sha }}'; then
+              echo "Live site updated: $PAGE_URL"
+              exit 0
+            fi
+            echo "Waiting for GitHub Pages CDN... ($i/12)"
+            sleep 10
+          done
+          echo "Site deployed but CDN may still be caching — hard-close Telegram to refresh"
