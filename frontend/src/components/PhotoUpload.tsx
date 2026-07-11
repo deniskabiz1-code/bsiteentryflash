@@ -40,7 +40,7 @@ export default function PhotoUpload({
 
   if (localPreview) {
     return (
-      <div className={`relative overflow-hidden rounded-3xl shadow-card ${compact ? 'h-52' : ''}`}>
+      <div className={`relative overflow-hidden rounded-3xl shadow-card ${compact ? 'h-56' : ''}`}>
         <img
           src={localPreview}
           alt="Preview"
@@ -58,7 +58,7 @@ export default function PhotoUpload({
   }
 
   return (
-    <div className={compact ? 'space-y-2' : 'space-y-4'}>
+    <div className={`w-full ${compact ? 'space-y-3' : 'space-y-4'}`}>
       {tips && (
         <div className="card !p-4 space-y-2">
           <p className="text-[13px] font-semibold text-app-muted">Советы для лучшего результата</p>
@@ -87,15 +87,13 @@ export default function PhotoUpload({
         onClick={() => inputRef.current?.click()}
         className={`flex w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed
           border-brand-green/25 bg-brand-greenTint shadow-card transition-colors active:bg-brand-greenLight/40
-          ${compact ? 'h-36' : 'aspect-[3/4] gap-4'}`}
+          ${compact ? 'h-52' : 'aspect-[3/4] gap-4'}`}
       >
-        <div className={`flex items-center justify-center rounded-full bg-brand-green shadow-pill ${compact ? 'h-14 w-14' : 'h-20 w-20'}`}>
-          <Camera size={compact ? 24 : 32} className="text-white" strokeWidth={1.5} />
+        <div className={`flex items-center justify-center rounded-full bg-brand-green shadow-pill ${compact ? 'h-16 w-16' : 'h-20 w-20'}`}>
+          <Camera size={compact ? 28 : 32} className="text-white" strokeWidth={1.5} />
         </div>
-        <span className={`font-medium text-app-text ${compact ? 'text-[14px]' : 'text-[15px]'}`}>{label}</span>
-        {!compact && (
-          <span className="text-[13px] text-brand-greenDark">Нажмите, чтобы сделать селфи</span>
-        )}
+        <span className={`font-semibold text-app-text ${compact ? 'text-[15px]' : 'text-[15px]'}`}>{label}</span>
+        <span className="text-[13px] text-brand-greenDark">Нажмите, чтобы открыть камеру</span>
       </button>
 
       {compact ? (
