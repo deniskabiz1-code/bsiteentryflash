@@ -6,8 +6,8 @@ const MAX_WAIT_MS = Number(process.env.DEPLOY_MAX_WAIT_MS || 8 * 60 * 1000);
 const POLL_MS = 5000;
 
 const workflows = [
-  { file: 'deploy-frontend.yml', label: 'Frontend (GitHub Pages)' },
-  { file: 'deploy-backend.yml', label: 'Backend (Render)' },
+  { file: 'deploy-frontend.yml', label: 'Frontend (GitHub Pages)', required: true },
+  { file: 'deploy-backend.yml', label: 'Backend (Render)', required: false },
 ];
 
 async function fetchJson(url) {
@@ -35,8 +35,9 @@ function formatRun(run) {
   return `${run.head_sha?.slice(0, 7)} — ${run.status}/${run.conclusion || 'pending'} — ${run.html_url}`;
 }
 
-async function waitForWorkflow(workflowFile, label, expectedSha) {
+async function waitForWorkflow(workflowFile, label, expectedSha, required = true) {
   const started = Date.now();
+  let missingRunPolls = 0;
 
   while (Date.now() - started < MAX_WAIT_MS) {
     const run = await getLatestRun(workflowFile);
@@ -47,6 +48,11 @@ async function waitForWorkflow(workflowFile, label, expectedSha) {
     }
 
     if (expectedSha && !run.head_sha?.startsWith(expectedSha)) {
+      missingRunPolls += 1;
+      if (!required && missingRunPolls >= 6) {
+        console.log(`[${label}] skipped — no run for this commit (path filter)`);
+        return true;
+      }
       console.log(`[${label}] latest run is ${run.head_sha?.slice(0, 7)}, waiting for ${expectedSha.slice(0, 7)}...`);
       await sleep(POLL_MS);
       continue;
@@ -89,8 +95,9 @@ async function main() {
       console.log(`[${wf.label}] waiting for new run...`);
     }
 
-    const ok = await waitForWorkflow(wf.file, wf.label, expectedSha || undefined);
-    if (!ok) allOk = false;
+    const ok = await waitForWorkflow(wf.file, wf.label, expectedSha || undefined, wf.required);
+    if (!ok && wf.required) allOk = false;
+    if (!ok && !wf.required) console.log(`[${wf.label}] optional workflow failed — continuing`);
   }
 
   if (!allOk) process.exit(1);
