@@ -1,5 +1,4 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import PageHeader from '@/components/PageHeader';
 import MiniBarChart from '@/components/MiniBarChart';
 import {
   FaceAnalysisResult,
@@ -34,8 +33,6 @@ export default function AnalysisResult() {
   return (
     <div className="page">
       <div className="page-inner space-y-6">
-        <PageHeader />
-
         <section className="text-center pt-2">
           <p className="label-sm mb-3">Общий балл</p>
           <p className="heading-xl">{overall}<span className="text-[20px] text-app-muted font-semibold">/100</span></p>

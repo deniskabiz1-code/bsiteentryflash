@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Bell, Share2, Copy, Trash2, Upload } from 'lucide-react';
-import PageHeader from '@/components/PageHeader';
 import Modal from '@/components/Modal';
 import SegmentedControl from '@/components/SegmentedControl';
 import {
@@ -128,8 +127,6 @@ export default function Profile() {
   return (
     <div className="page">
       <div className="page-inner space-y-6">
-        <PageHeader />
-
         <section className="text-center pt-2">
           <UserAvatar
             photoUrl={photoUrl}

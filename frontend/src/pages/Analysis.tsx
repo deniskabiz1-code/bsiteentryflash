@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Scissors } from 'lucide-react';
-import PageHeader from '@/components/PageHeader';
+
 import PhotoUpload from '@/components/PhotoUpload';
 import { analyzeFace } from '@/api/client';
 import { useApp } from '@/context/AppContext';
@@ -49,8 +49,6 @@ export default function Analysis() {
   return (
     <div className="page">
       <div className="page-inner space-y-6">
-        <PageHeader />
-
         <section className="text-center pt-2">
           <p className="label-sm mb-2">AI-анализ</p>
           <h1 className="heading-md">Анализ лица</h1>

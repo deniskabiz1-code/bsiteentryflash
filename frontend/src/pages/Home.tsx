@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
-import PageHeader from '@/components/PageHeader';
 import MiniBarChart from '@/components/MiniBarChart';
 import SegmentedControl from '@/components/SegmentedControl';
 import { getDailyTasks, toggleTask, getAnalysisHistory } from '@/api/client';
@@ -91,8 +90,6 @@ export default function Home() {
   return (
     <div className="page">
       <div className="page-inner space-y-6">
-        <PageHeader />
-
         <section className="text-center pt-2 pb-1">
           <p className="label-sm mb-3">Твой балл</p>
           <p className="heading-xl">{score ?? '—'}<span className="text-[20px] text-app-muted font-semibold">/100</span></p>

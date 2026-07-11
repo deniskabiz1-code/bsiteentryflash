@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, Trash2 } from 'lucide-react';
-import PageHeader from '@/components/PageHeader';
+
 import Modal from '@/components/Modal';
 import MiniBarChart from '@/components/MiniBarChart';
 import SegmentedControl from '@/components/SegmentedControl';
@@ -63,8 +63,6 @@ export default function Progress() {
   return (
     <div className="page">
       <div className="page-inner space-y-6">
-        <PageHeader />
-
         <section className="text-center pt-2">
           <p className="label-sm mb-3">Текущий балл</p>
           <p className="heading-xl">{latest?.overallScore ?? '—'}<span className="text-[20px] text-app-muted font-semibold">/100</span></p>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import PageHeader from '@/components/PageHeader';
+
 import ProgressDots from '@/components/ProgressDots';
 import PhotoUpload from '@/components/PhotoUpload';
 import { analyzeHairstyle } from '@/api/client';
@@ -40,7 +40,6 @@ export default function HairstyleAnalysis() {
     return (
       <div className="page">
         <div className="page-inner space-y-6">
-          <PageHeader />
           <section className="text-center pt-2">
             <p className="label-sm mb-2">Форма лица</p>
             <h1 className="heading-md">{FACE_SHAPE_LABELS[result.face_shape] || result.face_shape}</h1>
@@ -96,7 +95,6 @@ export default function HairstyleAnalysis() {
   return (
     <div className="page flex flex-col">
       <div className="page-inner flex-1 space-y-6">
-        <PageHeader />
         <ProgressDots total={2} current={step} />
 
         <section className="text-center">
