@@ -1,15 +1,7 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { getTgWebApp, openTmeLink } from '@/lib/tgWebApp';
 
 export function useTelegram() {
-  useEffect(() => {
-    const webApp = getTgWebApp();
-    if (!webApp) return;
-    webApp.ready();
-    webApp.expand();
-    webApp.setHeaderColor('#F5F5F7');
-    webApp.setBackgroundColor('#F5F5F7');
-  }, []);
 
   const openLink = useCallback((url: string) => {
     getTgWebApp()?.openLink(url);

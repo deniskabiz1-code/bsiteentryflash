@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 const SIZES = {
+  xs: 'h-10 w-10 text-sm',
   sm: 'h-16 w-16 text-3xl',
   md: 'h-20 w-20 text-4xl',
   lg: 'h-28 w-28 text-5xl',

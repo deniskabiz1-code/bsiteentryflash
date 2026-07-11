@@ -11,20 +11,16 @@ export function useTelegramPhoto() {
     let cancelled = false;
 
     const load = async () => {
-      if (tgPhoto) {
-        setPhotoUrl(tgPhoto);
-        return;
-      }
-
       const blob = await fetchProfilePhoto();
       if (cancelled) return;
 
       if (blob && blob.size > 0) {
         objectUrl = URL.createObjectURL(blob);
         setPhotoUrl(objectUrl);
-      } else {
-        setPhotoUrl(null);
+        return;
       }
+
+      setPhotoUrl(tgPhoto);
     };
 
     load();

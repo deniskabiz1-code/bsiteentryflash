@@ -1,5 +1,8 @@
 import { HelpCircle } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
+import { useTelegram } from '@/hooks/useTelegram';
+import { useTelegramPhoto } from '@/hooks/useTelegramPhoto';
+import UserAvatar from '@/components/UserAvatar';
 
 interface PageHeaderProps {
   onHelp?: () => void;
@@ -7,11 +10,17 @@ interface PageHeaderProps {
 
 export default function PageHeader({ onHelp }: PageHeaderProps) {
   const { user } = useApp();
-  const initial = (user?.name || 'P').charAt(0).toUpperCase();
+  const { user: tgUser } = useTelegram();
+  const photoUrl = useTelegramPhoto();
+
+  const fallbackLetter =
+    user?.name?.charAt(0) ||
+    tgUser?.first_name?.charAt(0) ||
+    'P';
 
   return (
     <div className="flex items-center justify-between py-2">
-      <div className="icon-btn">{initial}</div>
+      <UserAvatar photoUrl={photoUrl} fallbackLetter={fallbackLetter} size="xs" />
       <button
         type="button"
         onClick={onHelp}

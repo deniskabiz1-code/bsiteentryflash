@@ -1,8 +1,18 @@
+type SafeAreaInset = {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+};
+
 type TgWebApp = {
   ready: () => void;
   expand: () => void;
   setHeaderColor: (color: string) => void;
   setBackgroundColor: (color: string) => void;
+  platform?: string;
+  safeAreaInset?: SafeAreaInset;
+  contentSafeAreaInset?: SafeAreaInset;
   openTelegramLink: (url: string) => void;
   openLink: (url: string) => void;
   close: () => void;
@@ -57,6 +67,74 @@ declare global {
 
 export function getTgWebApp(): TgWebApp | undefined {
   return window.Telegram?.WebApp;
+}
+
+const EMPTY_INSET: SafeAreaInset = { top: 0, bottom: 0, left: 0, right: 0 };
+const TG_HEADER_FALLBACK_PX = 56;
+
+function resolveContentTopInset(webApp: TgWebApp): number {
+  const safe = webApp.safeAreaInset ?? EMPTY_INSET;
+  const content = webApp.contentSafeAreaInset ?? EMPTY_INSET;
+
+  if (content.top > 0) return content.top;
+
+  // Older Telegram clients may not report contentSafeAreaInset — leave room for "Закрыть".
+  if (webApp.platform) {
+    return Math.max(safe.top + 46, TG_HEADER_FALLBACK_PX);
+  }
+
+  return safe.top;
+}
+
+export function syncTelegramSafeAreaInsets(): void {
+  const webApp = getTgWebApp();
+  const root = document.documentElement;
+
+  if (!webApp) {
+    root.style.setProperty('--tg-content-safe-area-inset-top', '0px');
+    root.style.setProperty('--tg-content-safe-area-inset-bottom', '0px');
+    root.style.setProperty('--tg-content-safe-area-inset-left', '0px');
+    root.style.setProperty('--tg-content-safe-area-inset-right', '0px');
+    return;
+  }
+
+  const safe = webApp.safeAreaInset ?? EMPTY_INSET;
+  const content = webApp.contentSafeAreaInset ?? EMPTY_INSET;
+  const contentTop = resolveContentTopInset(webApp);
+
+  root.style.setProperty('--tg-safe-area-inset-top', `${safe.top}px`);
+  root.style.setProperty('--tg-safe-area-inset-bottom', `${safe.bottom}px`);
+  root.style.setProperty('--tg-safe-area-inset-left', `${safe.left}px`);
+  root.style.setProperty('--tg-safe-area-inset-right', `${safe.right}px`);
+  root.style.setProperty('--tg-content-safe-area-inset-top', `${contentTop}px`);
+  root.style.setProperty('--tg-content-safe-area-inset-bottom', `${content.bottom}px`);
+  root.style.setProperty('--tg-content-safe-area-inset-left', `${content.left}px`);
+  root.style.setProperty('--tg-content-safe-area-inset-right', `${content.right}px`);
+}
+
+let safeAreaListenersBound = false;
+
+function bindSafeAreaListeners(): void {
+  if (safeAreaListenersBound) return;
+  const webApp = getTgWebApp();
+  if (!webApp) return;
+
+  const sync = () => syncTelegramSafeAreaInsets();
+  webApp.onEvent('safeAreaChanged', sync);
+  webApp.onEvent('contentSafeAreaChanged', sync);
+  safeAreaListenersBound = true;
+}
+
+export function initTelegramWebApp(): void {
+  const webApp = getTgWebApp();
+  if (!webApp) return;
+
+  webApp.ready();
+  webApp.expand();
+  webApp.setHeaderColor('#F5F5F7');
+  webApp.setBackgroundColor('#F5F5F7');
+  syncTelegramSafeAreaInsets();
+  bindSafeAreaListeners();
 }
 
 export function normalizeTmeUrl(url: string, usernameFallback?: string): string {

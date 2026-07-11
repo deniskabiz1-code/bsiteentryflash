@@ -22,6 +22,10 @@ body {
 #root {
   min-height: 100vh;
   min-height: 100dvh;
+  padding-top: var(--tg-content-safe-area-inset-top, 0px);
+  padding-right: var(--tg-content-safe-area-inset-right, 0px);
+  padding-left: var(--tg-content-safe-area-inset-left, 0px);
+  box-sizing: border-box;
 }
 
 @layer components {

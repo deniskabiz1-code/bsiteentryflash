@@ -16,7 +16,7 @@ export default function AnalysisResult() {
   if (!analysis) {
     return (
       <div className="page">
-        <div className="page-inner text-center pt-20">
+        <div className="page-inner text-center pt-8">
           <p className="text-app-muted">Результаты не найдены</p>
           <button type="button" onClick={() => navigate('/analysis')} className="btn-dark mt-6">
             Новый анализ

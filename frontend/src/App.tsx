@@ -4,6 +4,7 @@ import { OverlayProvider, useOverlay } from '@/context/OverlayContext';
 import LoadingScreen from '@/components/LoadingScreen';
 import BottomNav from '@/components/BottomNav';
 import MockBanner from '@/components/MockBanner';
+import TelegramBootstrap from '@/components/TelegramBootstrap';
 import Onboarding from '@/pages/Onboarding';
 import Home from '@/pages/Home';
 import Analysis from '@/pages/Analysis';
@@ -49,6 +50,7 @@ export default function App() {
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <AppProvider>
         <OverlayProvider>
+          <TelegramBootstrap />
           <MockBanner />
           <div className={import.meta.env.VITE_MOCK_MODE === 'true' ? 'pt-6' : ''}>
             <AppRoutes />
