@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from '@/context/AppContext';
+import { OverlayProvider, useOverlay } from '@/context/OverlayContext';
 import LoadingScreen from '@/components/LoadingScreen';
 import BottomNav from '@/components/BottomNav';
 import MockBanner from '@/components/MockBanner';
@@ -13,6 +14,7 @@ import Profile from '@/pages/Profile';
 
 function AppRoutes() {
   const { user, loading } = useApp();
+  const { overlayActive } = useOverlay();
 
   if (loading) return <LoadingScreen />;
 
@@ -37,7 +39,7 @@ function AppRoutes() {
         <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <BottomNav />
+      {!overlayActive && <BottomNav />}
     </>
   );
 }
@@ -46,10 +48,12 @@ export default function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <AppProvider>
-        <MockBanner />
-        <div className={import.meta.env.VITE_MOCK_MODE === 'true' ? 'pt-6' : ''}>
-          <AppRoutes />
-        </div>
+        <OverlayProvider>
+          <MockBanner />
+          <div className={import.meta.env.VITE_MOCK_MODE === 'true' ? 'pt-6' : ''}>
+            <AppRoutes />
+          </div>
+        </OverlayProvider>
       </AppProvider>
     </BrowserRouter>
   );

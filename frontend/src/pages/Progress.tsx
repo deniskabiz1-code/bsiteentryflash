@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, Trash2 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
+import Modal from '@/components/Modal';
 import MiniBarChart from '@/components/MiniBarChart';
 import SegmentedControl from '@/components/SegmentedControl';
 import { getAnalysisHistory, deleteAnalysis } from '@/api/client';
@@ -163,25 +164,23 @@ export default function Progress() {
         )}
       </div>
 
-      {deleteId !== null && (
-        <div className="fixed inset-0 z-[60] bg-black/40 flex items-end justify-center p-5 pb-28">
-          <div className="bg-app-surface rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-float">
-            <p className="font-bold text-center text-[17px]">Удалить этот чек-ин?</p>
-            <div className="btn-row">
-              <button type="button" onClick={() => setDeleteId(null)} className="btn-light flex-1">
-                Отмена
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(deleteId)}
-                className="flex-1 py-4 rounded-full bg-red-500 text-white font-semibold"
-              >
-                Удалить
-              </button>
-            </div>
+      <Modal open={deleteId !== null} onClose={() => setDeleteId(null)}>
+        <div className="space-y-4">
+          <p className="font-bold text-center text-[17px]">Удалить этот чек-ин?</p>
+          <div className="btn-row">
+            <button type="button" onClick={() => setDeleteId(null)} className="btn-light flex-1">
+              Отмена
+            </button>
+            <button
+              type="button"
+              onClick={() => deleteId !== null && handleDelete(deleteId)}
+              className="flex-1 py-4 rounded-full bg-red-500 text-white font-semibold"
+            >
+              Удалить
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

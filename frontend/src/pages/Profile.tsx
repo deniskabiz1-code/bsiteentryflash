@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Bell, Share2, Copy, Trash2, Upload } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
+import Modal from '@/components/Modal';
 import SegmentedControl from '@/components/SegmentedControl';
 import {
   createPayment, getReferralInfo, submitReferralProof,
@@ -270,30 +271,28 @@ export default function Profile() {
         </button>
       </div>
 
-      {showDelete && (
-        <div className="fixed inset-0 z-[60] bg-black/40 flex items-end justify-center p-5 pb-28">
-          <div className="bg-app-surface rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-float">
-            {!showDeleteConfirm ? (
-              <>
-                <p className="font-bold text-center text-[17px]">Удалить аккаунт?</p>
-                <p className="text-[14px] text-app-muted text-center">Все данные будут удалены безвозвратно</p>
-                <div className="btn-row">
-                  <button type="button" onClick={() => setShowDelete(false)} className="btn-light flex-1">Отмена</button>
-                  <button type="button" onClick={() => setShowDeleteConfirm(true)} className="flex-1 py-4 rounded-full bg-red-500 text-white font-semibold">Удалить</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="font-bold text-center text-red-500 text-[17px]">Вы уверены?</p>
-                <div className="btn-row">
-                  <button type="button" onClick={() => { setShowDelete(false); setShowDeleteConfirm(false); }} className="btn-light flex-1">Отмена</button>
-                  <button type="button" onClick={handleDeleteAccount} className="flex-1 py-4 rounded-full bg-red-600 text-white font-semibold">Да, удалить</button>
-                </div>
-              </>
-            )}
-          </div>
+      <Modal open={showDelete} onClose={() => { setShowDelete(false); setShowDeleteConfirm(false); }}>
+        <div className="space-y-4">
+          {!showDeleteConfirm ? (
+            <>
+              <p className="font-bold text-center text-[17px]">Удалить аккаунт?</p>
+              <p className="text-[14px] text-app-muted text-center">Все данные будут удалены безвозвратно</p>
+              <div className="btn-row">
+                <button type="button" onClick={() => setShowDelete(false)} className="btn-light flex-1">Отмена</button>
+                <button type="button" onClick={() => setShowDeleteConfirm(true)} className="flex-1 py-4 rounded-full bg-red-500 text-white font-semibold">Удалить</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="font-bold text-center text-red-500 text-[17px]">Вы уверены?</p>
+              <div className="btn-row">
+                <button type="button" onClick={() => { setShowDelete(false); setShowDeleteConfirm(false); }} className="btn-light flex-1">Отмена</button>
+                <button type="button" onClick={handleDeleteAccount} className="flex-1 py-4 rounded-full bg-red-600 text-white font-semibold">Да, удалить</button>
+              </div>
+            </>
+          )}
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
