@@ -16,6 +16,7 @@ html = html.replace(
 );
 
 const inject = [
+  '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />',
   `<meta name="build" content="${buildId}" />`,
   '<script>',
   `window.__PF_BUILD__='${buildId}';`,

@@ -71,9 +71,9 @@ export function getTgWebApp(): TgWebApp | undefined {
 
 const EMPTY_INSET: SafeAreaInset = { top: 0, bottom: 0, left: 0, right: 0 };
 /** Telegram "Закрыть" header row below the status bar. */
-const TG_HEADER_BAR_PX = 52;
+const TG_HEADER_BAR_PX = 56;
 /** Minimum top offset on phones (status bar + header). */
-const TG_MIN_CONTENT_TOP_PX = 96;
+const TG_MIN_CONTENT_TOP_PX = 120;
 
 function resolveContentTopInset(webApp: TgWebApp): number {
   const safe = webApp.safeAreaInset ?? EMPTY_INSET;

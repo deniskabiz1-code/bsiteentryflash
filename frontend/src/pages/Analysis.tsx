@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Scissors, Sparkles } from 'lucide-react';
 
@@ -35,18 +35,6 @@ export default function Analysis() {
     isFirstAnalysis ||
     (user?.referralCredits ?? 0) > 0;
 
-  useEffect(() => {
-    if (!isFirstAnalysis) return;
-    const prevBody = document.body.style.overflow;
-    const prevHtml = document.documentElement.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prevBody;
-      document.documentElement.style.overflow = prevHtml;
-    };
-  }, [isFirstAnalysis]);
-
   const handleAnalyze = async () => {
     if (!photo) { setError('Загрузите фото'); return; }
 
@@ -66,38 +54,37 @@ export default function Analysis() {
   };
 
   if (isFirstAnalysis) {
-    const greeting = justOnboarded && user?.name
-      ? `Привет, ${user.name}!`
+    const displayName = user?.name?.trim();
+    const shortName = displayName && displayName.length > 18
+      ? `${displayName.slice(0, 16)}…`
+      : displayName;
+    const greeting = justOnboarded && shortName
+      ? `Привет, ${shortName}!`
       : 'Ваш первый анализ';
 
     return (
-      <div
-        className="overflow-hidden overscroll-none bg-app-canvas"
-        style={{ height: 'calc(100dvh - var(--tg-content-safe-area-inset-top, 0px))' }}
-      >
-        <div className="page-inner flex h-full flex-col gap-4 pb-6 pt-3">
-          <header className="shrink-0 space-y-2 text-center">
-            <div className="flex justify-center">
-              <span className="pill-green">
+      <div className="bg-app-canvas">
+        <div className="page-inner tg-page-top pb-4">
+          <div className="card space-y-4">
+            <div className="space-y-1.5">
+              <span className="pill-green inline-flex">
                 <Sparkles size={14} />
                 1 анализ бесплатно
               </span>
+              <h1 className="text-[20px] font-bold leading-snug tracking-tight break-words">
+                {greeting}
+              </h1>
+              <p className="text-[13px] leading-relaxed text-app-muted">
+                Сделайте селфи — AI бесплатно оценит внешность.
+              </p>
             </div>
-            <h1 className="heading-md break-words px-2">{greeting}</h1>
-            <p className="px-4 text-[14px] leading-relaxed text-app-muted">
-              Сделайте селфи — AI бесплатно оценит внешность и откроет ваш план.
-            </p>
-          </header>
 
-          <div className="shrink-0">
             <PhotoUpload onPhotoSelect={setPhoto} label="Сделать селфи" compact />
-          </div>
 
-          {error && (
-            <p className="shrink-0 text-center text-sm font-medium text-red-500">{error}</p>
-          )}
+            {error && (
+              <p className="text-sm font-medium text-red-500">{error}</p>
+            )}
 
-          <div className="shrink-0 pt-1">
             <button
               type="button"
               onClick={handleAnalyze}

@@ -85,15 +85,20 @@ export default function PhotoUpload({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className={`flex w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed
-          border-brand-green/25 bg-brand-greenTint shadow-card transition-colors active:bg-brand-greenLight/40
-          ${compact ? 'h-52' : 'aspect-[3/4] gap-4'}`}
+        className={`flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed
+          border-app-border bg-app-canvas transition-colors active:bg-app-track
+          ${compact ? 'h-36 py-3' : 'aspect-[3/4] gap-4 shadow-card'}`}
       >
-        <div className={`flex items-center justify-center rounded-full bg-brand-green shadow-pill ${compact ? 'h-16 w-16' : 'h-20 w-20'}`}>
-          <Camera size={compact ? 28 : 32} className="text-white" strokeWidth={1.5} />
+        <div className={`flex items-center justify-center rounded-full bg-brand-green ${compact ? 'h-14 w-14' : 'h-20 w-20 shadow-pill'}`}>
+          <Camera size={compact ? 26 : 32} className="text-white" strokeWidth={1.5} />
         </div>
-        <span className={`font-semibold text-app-text ${compact ? 'text-[15px]' : 'text-[15px]'}`}>{label}</span>
-        <span className="text-[13px] text-brand-greenDark">Нажмите, чтобы открыть камеру</span>
+        <span className="text-[15px] font-medium text-app-text">{label}</span>
+        {compact && (
+          <span className="text-[12px] text-app-muted">Нажмите, чтобы открыть камеру</span>
+        )}
+        {!compact && (
+          <span className="text-[13px] text-brand-greenDark">Нажмите, чтобы сделать селфи</span>
+        )}
       </button>
 
       {compact ? (

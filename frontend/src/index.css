@@ -27,11 +27,15 @@ body {
 
 html[data-tg] #root {
   padding-top: max(
-    var(--tg-content-safe-area-inset-top, 96px),
-    calc(env(safe-area-inset-top, 0px) + 52px)
+    var(--tg-content-safe-area-inset-top, 120px),
+    calc(env(safe-area-inset-top, 0px) + 56px)
   );
   padding-right: var(--tg-content-safe-area-inset-right, 0px);
   padding-left: var(--tg-content-safe-area-inset-left, 0px);
+}
+
+html[data-tg] .tg-page-top {
+  padding-top: 0.5rem;
 }
 
 @layer components {

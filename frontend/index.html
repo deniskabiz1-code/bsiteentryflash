@@ -10,12 +10,19 @@
         var wa = window.Telegram && window.Telegram.WebApp;
         if (!wa) return;
         document.documentElement.dataset.tg = '1';
-        var safe = (wa.safeAreaInset && wa.safeAreaInset.top) || 0;
-        var content = (wa.contentSafeAreaInset && wa.contentSafeAreaInset.top) || 0;
-        var top = Math.max(content, safe + 52, 96);
+        var safe = wa.safeAreaInset || {};
+        var content = wa.contentSafeAreaInset || {};
+        var top = Math.max(content.top || 0, (safe.top || 0) + 56, 120);
         document.documentElement.style.setProperty('--tg-content-safe-area-inset-top', top + 'px');
+        document.documentElement.style.setProperty('--tg-content-safe-area-inset-bottom', (content.bottom || 0) + 'px');
+        document.documentElement.style.setProperty('--tg-content-safe-area-inset-left', (content.left || 0) + 'px');
+        document.documentElement.style.setProperty('--tg-content-safe-area-inset-right', (content.right || 0) + 'px');
         wa.ready();
         wa.expand();
+        try {
+          wa.setHeaderColor('#F5F5F7');
+          wa.setBackgroundColor('#F5F5F7');
+        } catch (e) {}
       })();
     </script>
   </head>
