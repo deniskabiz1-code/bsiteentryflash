@@ -37,10 +37,13 @@ export default function Analysis() {
 
   useEffect(() => {
     if (!isFirstAnalysis) return;
-    const prev = document.body.style.overflow;
+    const prevBody = document.body.style.overflow;
+    const prevHtml = document.documentElement.style.overflow;
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prevBody;
+      document.documentElement.style.overflow = prevHtml;
     };
   }, [isFirstAnalysis]);
 
@@ -64,26 +67,24 @@ export default function Analysis() {
 
   if (isFirstAnalysis) {
     return (
-      <div className="flex h-dvh max-h-dvh flex-col overflow-hidden overscroll-none bg-app-canvas">
-        <div className="page-inner flex min-h-0 flex-1 flex-col gap-3 pb-28 pt-1">
-          <section className="card-green shrink-0 space-y-2 py-4 text-center">
-            <div className="flex justify-center">
-              <span className="pill-green">
-                <Sparkles size={14} />
-                1 анализ бесплатно
-              </span>
-            </div>
-            <h1 className="heading-md">
+      <div className="fixed inset-0 z-30 flex flex-col overflow-hidden overscroll-none bg-app-canvas">
+        <div className="page-inner flex h-full min-h-0 flex-col gap-2 px-5 pb-5 pt-1">
+          <section className="card-green shrink-0 space-y-1.5 py-3 text-center">
+            <span className="pill-green">
+              <Sparkles size={14} />
+              1 анализ бесплатно
+            </span>
+            <h1 className="text-[20px] font-bold tracking-tight">
               {justOnboarded && user?.name
                 ? `Привет, ${user.name}!`
                 : 'Ваш первый анализ'}
             </h1>
-            <p className="mx-auto max-w-sm text-[14px] leading-snug text-app-muted">
-              Сделайте селфи — AI бесплатно оценит внешность и откроет ваш план.
+            <p className="text-[13px] leading-snug text-app-muted">
+              Сделайте селфи — AI бесплатно оценит внешность.
             </p>
           </section>
 
-          <div className="flex min-h-0 flex-1 flex-col justify-center">
+          <div className="flex min-h-0 flex-1 items-center">
             <PhotoUpload onPhotoSelect={setPhoto} label="Сделать селфи" compact />
           </div>
 

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from '@/context/AppContext';
 import { OverlayProvider, useOverlay } from '@/context/OverlayContext';
 import LoadingScreen from '@/components/LoadingScreen';
@@ -16,6 +16,10 @@ import Profile from '@/pages/Profile';
 function AppRoutes() {
   const { user, loading } = useApp();
   const { overlayActive } = useOverlay();
+  const location = useLocation();
+  const hideNavForFirstAnalysis =
+    location.pathname.startsWith('/analysis')
+    && (user?.faceAnalysisCount ?? 0) === 0;
 
   if (loading) return <LoadingScreen />;
 
@@ -40,7 +44,7 @@ function AppRoutes() {
         <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {!overlayActive && <BottomNav />}
+      {!overlayActive && !hideNavForFirstAnalysis && <BottomNav />}
     </>
   );
 }

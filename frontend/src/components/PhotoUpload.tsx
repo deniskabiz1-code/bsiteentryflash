@@ -87,10 +87,10 @@ export default function PhotoUpload({
         onClick={() => inputRef.current?.click()}
         className={`flex w-full flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed
           border-brand-green/25 bg-brand-greenTint shadow-card transition-colors active:bg-brand-greenLight/40
-          ${compact ? 'h-44' : 'aspect-[3/4] gap-4'}`}
+          ${compact ? 'h-36' : 'aspect-[3/4] gap-4'}`}
       >
-        <div className={`flex items-center justify-center rounded-full bg-brand-green shadow-pill ${compact ? 'h-16 w-16' : 'h-20 w-20'}`}>
-          <Camera size={compact ? 28 : 32} className="text-white" strokeWidth={1.5} />
+        <div className={`flex items-center justify-center rounded-full bg-brand-green shadow-pill ${compact ? 'h-14 w-14' : 'h-20 w-20'}`}>
+          <Camera size={compact ? 24 : 32} className="text-white" strokeWidth={1.5} />
         </div>
         <span className={`font-medium text-app-text ${compact ? 'text-[14px]' : 'text-[15px]'}`}>{label}</span>
         {!compact && (
