@@ -38,18 +38,11 @@ html[data-tg] .tg-page-top {
   padding-top: 0.5rem;
 }
 
-.first-analysis-grid,
-.analysis-result-grid {
+.first-analysis-grid {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 0.75rem;
   overflow: hidden;
-}
-
-.analysis-result-scores {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.375rem 0.75rem;
 }
 
 .first-analysis-photo-fill {
