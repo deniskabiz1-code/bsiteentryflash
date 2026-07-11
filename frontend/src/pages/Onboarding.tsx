@@ -106,7 +106,7 @@ export default function Onboarding() {
       const data = await completeOnboarding({ name: name.trim(), age, goals });
       applyUser(data.user as User);
       haptic('success');
-      navigate('/', { replace: true });
+      navigate('/', { replace: true, state: { welcome: true } });
     } catch (err: unknown) {
       const res = (err as { response?: { data?: { error?: string; hint?: string } } })?.response?.data;
       setError(res?.error || 'Ошибка сохранения');

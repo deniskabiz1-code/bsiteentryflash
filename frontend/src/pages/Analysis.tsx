@@ -50,6 +50,11 @@ export default function Analysis() {
     <div className="page">
       <div className="page-inner space-y-6">
         <section className="text-center pt-2">
+          {(user?.faceAnalysisCount ?? 0) === 0 && (
+            <div className="mb-4 flex justify-center">
+              <span className="pill-green">Бесплатный первый анализ</span>
+            </div>
+          )}
           <p className="label-sm mb-2">AI-анализ</p>
           <h1 className="heading-md">Анализ лица</h1>
           <p className="text-[15px] text-app-muted mt-2">Загрузите селфи для оценки</p>
