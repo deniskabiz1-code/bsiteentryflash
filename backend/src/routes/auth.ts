@@ -13,8 +13,6 @@ const router = Router();
 router.post('/me', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
   try {
     const user = await findOrCreateUser(req.telegramUser!);
-    const channelCheck = await checkChannelSubscription(req.telegramUser!.id);
-    const subscribed = channelCheck.subscribed;
 
     const faceAnalysisCount = await prisma.analysis.count({
       where: { userId: user.id, type: 'face' },
@@ -37,7 +35,7 @@ router.post('/me', validateTelegramAuth, async (req: AuthRequest, res: Response)
         onboarded: user.onboarded,
         faceAnalysisCount,
       },
-      channelSubscribed: subscribed,
+      channelSubscribed: true,
     });
   } catch (err) {
     console.error('Auth error:', err);

@@ -22,7 +22,7 @@ if (!MOCK) {
 
 export async function fetchMe() {
   if (MOCK) return mockApi.fetchMe();
-  const { data } = await api.post('/auth/me');
+  const { data } = await api.post('/auth/me', undefined, { timeout: 35000 });
   return data;
 }
 

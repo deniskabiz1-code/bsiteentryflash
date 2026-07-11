@@ -7,7 +7,15 @@ type TgWebApp = {
   openLink: (url: string) => void;
   close: () => void;
   initData: string;
-  initDataUnsafe: { user?: { id: number; username?: string; first_name?: string } };
+  initDataUnsafe: {
+    user?: {
+      id: number;
+      username?: string;
+      first_name?: string;
+      last_name?: string;
+      photo_url?: string;
+    };
+  };
   onEvent: (event: string, handler: () => void) => void;
   offEvent: (event: string, handler: () => void) => void;
   HapticFeedback: {

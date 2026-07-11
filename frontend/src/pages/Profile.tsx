@@ -12,12 +12,13 @@ import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import AgeSlider from '@/components/AgeSlider';
 import GoalSelector from '@/components/GoalSelector';
+import UserAvatar from '@/components/UserAvatar';
 import { GOAL_LABELS } from '@/types';
 import { assetUrl } from '@/utils/assets';
 
 export default function Profile() {
   const { user, refreshUser } = useApp();
-  const { openLink, haptic } = useTelegram();
+  const { user: tgUser, openLink, haptic } = useTelegram();
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
@@ -120,7 +121,7 @@ export default function Profile() {
     );
   };
 
-  const initial = (user?.name || 'P').charAt(0).toUpperCase();
+  const fallbackLetter = user?.name || tgUser?.first_name || 'P';
 
   return (
     <div className="page">
@@ -128,9 +129,12 @@ export default function Profile() {
         <PageHeader />
 
         <section className="text-center pt-2">
-          <div className="w-24 h-24 mx-auto rounded-full bg-app-surface shadow-float flex items-center justify-center text-4xl font-bold mb-4">
-            {initial}
-          </div>
+          <UserAvatar
+            photoUrl={tgUser?.photo_url}
+            fallbackLetter={fallbackLetter}
+            size="md"
+            className="mx-auto mb-4"
+          />
           <span className="pill-gray">@{user?.username || 'user'}</span>
           <h1 className="heading-md mt-4">{user?.name || 'Профиль'}</h1>
           <p className="text-[15px] text-app-muted mt-1">Настройки и подписка</p>

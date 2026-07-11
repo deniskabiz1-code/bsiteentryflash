@@ -7,6 +7,7 @@ import { User } from '@/types';
 import { useTelegram } from '@/hooks/useTelegram';
 import AgeSlider from '@/components/AgeSlider';
 import GoalSelector from '@/components/GoalSelector';
+import UserAvatar from '@/components/UserAvatar';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ export default function Onboarding() {
   const [channelUsername, setChannelUsername] = useState('primeform_channel');
 
   const telegramUsername = tgUser?.username || null;
+  const photoUrl = tgUser?.photo_url || null;
 
   useEffect(() => {
     if (tgUser?.first_name && !name) {
@@ -115,9 +117,9 @@ export default function Onboarding() {
     }
   };
 
-  const initial = name.trim()
-    ? name.trim().charAt(0).toUpperCase()
-    : (tgUser?.first_name?.charAt(0).toUpperCase() || 'P');
+  const fallbackLetter = name.trim()
+    ? name.trim().charAt(0)
+    : (tgUser?.first_name?.charAt(0) || 'P');
 
   return (
     <div className="flex h-dvh min-h-dvh flex-col overflow-hidden bg-app-canvas">
@@ -125,9 +127,7 @@ export default function Onboarding() {
         <div className="page-inner pb-36">
         {step === 0 && (
           <div className="flex min-h-[calc(100dvh-9rem)] flex-col items-center justify-center text-center px-2">
-            <div className="w-28 h-28 rounded-full bg-app-surface shadow-float flex items-center justify-center text-5xl font-bold mb-8">
-              {initial}
-            </div>
+            <UserAvatar photoUrl={photoUrl} fallbackLetter={fallbackLetter} size="lg" className="mb-8" />
             <h1 className="heading-md mb-3">Добро пожаловать в Primeform</h1>
             <p className="text-[15px] text-app-muted leading-relaxed max-w-xs mb-2">
               AI-ассистент для улучшения внешности
@@ -141,18 +141,16 @@ export default function Onboarding() {
         )}
 
         {step === 1 && (
-          <div className="flex w-full flex-col items-center pt-3 text-center">
+          <div className="flex w-full flex-col items-center pt-10 text-center">
             <div className="flex w-full max-w-sm flex-col items-center">
-              <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-app-surface text-3xl font-bold shadow-float">
-                {initial}
-              </div>
+              <h1 className="text-[20px] font-bold tracking-tight mb-1">Настройка профиля</h1>
+              <p className="text-[13px] text-app-muted mb-8">Можно изменить в любой момент</p>
+
+              <UserAvatar photoUrl={photoUrl} fallbackLetter={fallbackLetter} size="md" className="mb-3" />
 
               {telegramUsername && (
-                <span className="pill-gray mb-3">@{telegramUsername}</span>
+                <span className="pill-gray mb-6">@{telegramUsername}</span>
               )}
-
-              <h1 className="text-[20px] font-bold tracking-tight mb-1">Настройка профиля</h1>
-              <p className="text-[13px] text-app-muted mb-5">Можно изменить в любой момент</p>
 
               <div className="w-full space-y-4 text-left">
                 <input
