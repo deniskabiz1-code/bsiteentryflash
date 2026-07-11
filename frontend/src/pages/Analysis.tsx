@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Scissors } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Scissors, Sparkles } from 'lucide-react';
 
 import PhotoUpload from '@/components/PhotoUpload';
 import { analyzeFace } from '@/api/client';
@@ -16,6 +16,7 @@ const TIPS = [
 
 export default function Analysis() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useApp();
   const { haptic } = useTelegram();
 
@@ -23,9 +24,15 @@ export default function Analysis() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const justOnboarded = Boolean(
+    (location.state as { welcome?: boolean; firstAnalysis?: boolean } | null)?.firstAnalysis
+    || (location.state as { welcome?: boolean } | null)?.welcome
+  );
+  const isFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
+
   const canAnalyze =
     user?.subscriptionActive ||
-    (user?.faceAnalysisCount ?? 0) === 0 ||
+    isFirstAnalysis ||
     (user?.referralCredits ?? 0) > 0;
 
   const handleAnalyze = async () => {
@@ -49,16 +56,33 @@ export default function Analysis() {
   return (
     <div className="page">
       <div className="page-inner space-y-6">
-        <section className="text-center pt-2">
-          {(user?.faceAnalysisCount ?? 0) === 0 && (
-            <div className="mb-4 flex justify-center">
-              <span className="pill-green">Бесплатный первый анализ</span>
+        {isFirstAnalysis ? (
+          <section className="card-accent space-y-4 py-6 text-center">
+            <div className="flex justify-center">
+              <span className="pill-accent">
+                <Sparkles size={14} />
+                1 анализ бесплатно
+              </span>
             </div>
-          )}
-          <p className="label-sm mb-2">AI-анализ</p>
-          <h1 className="heading-md">Анализ лица</h1>
-          <p className="text-[15px] text-app-muted mt-2">Загрузите селфи для оценки</p>
-        </section>
+            <div>
+              <h1 className="heading-lg">
+                {justOnboarded && user?.name
+                  ? `Привет, ${user.name}!`
+                  : 'Ваш первый анализ'}
+              </h1>
+              <p className="mx-auto mt-3 max-w-sm text-[15px] leading-relaxed text-app-muted">
+                Сделайте селфи — AI бесплатно оценит внешность и откроет персональный план.
+              </p>
+            </div>
+            <p className="text-[13px] text-app-faint">~1 минута · без подписки</p>
+          </section>
+        ) : (
+          <section className="text-center pt-2">
+            <p className="label-sm mb-2">AI-анализ</p>
+            <h1 className="heading-md">Анализ лица</h1>
+            <p className="text-[15px] text-app-muted mt-2">Загрузите селфи для оценки</p>
+          </section>
+        )}
 
         {!canAnalyze && (
           <div className="card border border-red-200 bg-red-50">
@@ -75,7 +99,18 @@ export default function Analysis() {
           </div>
         )}
 
-        <PhotoUpload onPhotoSelect={setPhoto} tips={TIPS} label="Сделать селфи" />
+        <PhotoUpload onPhotoSelect={setPhoto} tips={isFirstAnalysis ? undefined : TIPS} label="Сделать селфи" />
+
+        {isFirstAnalysis && (
+          <div className="card !p-4 space-y-2">
+            <p className="text-[13px] font-semibold text-accent-violet">Советы для лучшего результата</p>
+            <ul className="space-y-1.5 text-[14px] text-app-muted">
+              {TIPS.map((tip, i) => (
+                <li key={i}>• {tip}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {error && <p className="text-red-500 text-sm text-center font-medium">{error}</p>}
 
@@ -83,9 +118,13 @@ export default function Analysis() {
           type="button"
           onClick={handleAnalyze}
           disabled={!photo || loading || !canAnalyze}
-          className="btn-dark"
+          className={isFirstAnalysis ? 'btn-accent' : 'btn-dark'}
         >
-          {loading ? 'Анализируем...' : 'Начать анализ'}
+          {loading
+            ? 'Анализируем...'
+            : isFirstAnalysis
+              ? 'Начать бесплатный анализ'
+              : 'Начать анализ'}
         </button>
 
         {user?.subscriptionActive && (

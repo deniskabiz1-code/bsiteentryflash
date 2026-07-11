@@ -57,11 +57,19 @@ html[data-tg] #root {
   }
 
   .card-green {
-    background-color: #F3FBF5;
+    background: linear-gradient(145deg, #F3FBF5 0%, #E8FAF0 100%);
     border-radius: 1.5rem;
     padding: 1.25rem;
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
-    border: 1px solid rgba(52, 199, 89, 0.1);
+    box-shadow: 0 2px 16px rgba(52, 199, 89, 0.08);
+    border: 1px solid rgba(52, 199, 89, 0.15);
+  }
+
+  .card-accent {
+    background: linear-gradient(145deg, #FFF0EC 0%, #F0ECFF 55%, #E8F2FF 100%);
+    border-radius: 1.5rem;
+    padding: 1.25rem;
+    box-shadow: 0 4px 24px rgba(255, 107, 74, 0.12);
+    border: 1px solid rgba(255, 107, 74, 0.18);
   }
 
   .btn-dark {
@@ -97,6 +105,28 @@ html[data-tg] #root {
 
   .btn-light:active {
     transform: scale(0.98);
+  }
+
+  .btn-accent {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #FF6B4A 0%, #FF8F6B 50%, #7C5CFC 100%);
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 15px;
+    box-shadow: 0 4px 20px rgba(255, 107, 74, 0.35);
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+
+  .btn-accent:active {
+    transform: scale(0.98);
+  }
+
+  .btn-accent:disabled {
+    opacity: 0.45;
+    transform: none;
+    box-shadow: none;
   }
 
   .btn-row {
@@ -173,6 +203,19 @@ html[data-tg] #root {
     color: #248A3D;
     font-size: 13px;
     font-weight: 600;
+  }
+
+  .pill-accent {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #FFF0EC, #F0ECFF);
+    color: #E85A3A;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid rgba(255, 107, 74, 0.2);
   }
 
   .pill-gray {
@@ -252,7 +295,7 @@ html[data-tg] #root {
     width: 28px;
     height: 28px;
     border-radius: 9999px;
-    background: #1C1C1E;
+    background: linear-gradient(135deg, #FF6B4A, #7C5CFC);
     border: 3px solid #FFFFFF;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     cursor: pointer;
@@ -262,7 +305,7 @@ html[data-tg] #root {
     width: 28px;
     height: 28px;
     border-radius: 9999px;
-    background: #1C1C1E;
+    background: linear-gradient(135deg, #FF6B4A, #7C5CFC);
     border: 3px solid #FFFFFF;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     cursor: pointer;

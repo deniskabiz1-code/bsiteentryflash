@@ -106,7 +106,7 @@ export default function Onboarding() {
       const data = await completeOnboarding({ name: name.trim(), age, goals });
       applyUser(data.user as User);
       haptic('success');
-      navigate('/', { replace: true, state: { welcome: true } });
+      navigate('/analysis', { replace: true, state: { welcome: true, firstAnalysis: true } });
     } catch (err: unknown) {
       const res = (err as { response?: { data?: { error?: string; hint?: string } } })?.response?.data;
       setError(res?.error || 'Ошибка сохранения');
@@ -172,7 +172,7 @@ export default function Onboarding() {
         <div className="max-w-md mx-auto space-y-3">
           {step === 0 && (
             <>
-              <button type="button" onClick={openChannel} className="btn-dark">
+              <button type="button" onClick={openChannel} className="btn-accent">
                 Подписаться на @{channelUsername}
               </button>
               <button type="button" onClick={checkSubscription} disabled={checking} className="btn-light">
@@ -181,8 +181,8 @@ export default function Onboarding() {
             </>
           )}
           {step === 1 && (
-            <button type="button" onClick={handleSubmit} disabled={loading} className="btn-dark">
-              {loading ? 'Сохраняем...' : 'Продолжить'}
+            <button type="button" onClick={handleSubmit} disabled={loading} className="btn-accent">
+              {loading ? 'Сохраняем...' : 'Продолжить к анализу'}
             </button>
           )}
         </div>

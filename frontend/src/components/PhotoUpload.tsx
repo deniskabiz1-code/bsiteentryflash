@@ -71,13 +71,15 @@ export default function PhotoUpload({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="w-full aspect-[3/4] rounded-3xl bg-app-surface border-2 border-dashed border-app-border
-                   flex flex-col items-center justify-center gap-4 active:bg-app-track transition-colors shadow-card"
+        className="w-full aspect-[3/4] rounded-3xl bg-gradient-to-br from-accent-coralLight via-white to-accent-violetLight
+                   border-2 border-dashed border-accent-coral/40 flex flex-col items-center justify-center gap-4
+                   active:scale-[0.99] transition-all shadow-card"
       >
-        <div className="w-20 h-20 rounded-full bg-app-track flex items-center justify-center">
-          <Camera size={32} className="text-app-muted" strokeWidth={1.5} />
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-accent-coral to-accent-violet shadow-float">
+          <Camera size={32} className="text-white" strokeWidth={1.5} />
         </div>
-        <span className="text-app-muted text-[15px] font-medium">{label}</span>
+        <span className="text-[15px] font-semibold text-app-text">{label}</span>
+        <span className="text-[13px] text-accent-coralDark">Нажмите, чтобы сделать селфи</span>
       </button>
 
       <button

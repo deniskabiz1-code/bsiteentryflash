@@ -28,8 +28,8 @@ export default function BottomNav() {
                 active ? 'bg-app-surface shadow-pill scale-105' : 'text-app-muted'
               }`}
             >
-              <Icon size={20} strokeWidth={active ? 2.5 : 2} className={active ? 'text-app-text' : ''} />
-              <span className={`text-[10px] font-semibold ${active ? 'text-app-text' : 'text-app-muted'}`}>
+              <Icon size={20} strokeWidth={active ? 2.5 : 2} className={active ? 'text-accent-coral' : ''} />
+              <span className={`text-[10px] font-semibold ${active ? 'text-accent-coralDark' : 'text-app-muted'}`}>
                 {label}
               </span>
             </button>

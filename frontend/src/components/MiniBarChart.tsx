@@ -14,8 +14,8 @@ export default function MiniBarChart({ values, max = 100 }: MiniBarChartProps) {
             <div
               className={`w-full rounded-full transition-all ${
                 faded
-                  ? 'bg-brand-green/20'
-                  : 'bg-gradient-to-t from-brand-green to-brand-green/60'
+                  ? 'bg-accent-teal/20'
+                  : 'bg-gradient-to-t from-accent-teal via-brand-green to-accent-coral'
               }`}
               style={{ height: `${height}%` }}
             />

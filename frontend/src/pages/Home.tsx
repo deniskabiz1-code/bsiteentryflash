@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Camera, ChevronDown, ChevronUp, Sparkles, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 import MiniBarChart from '@/components/MiniBarChart';
 import SegmentedControl from '@/components/SegmentedControl';
 import { getDailyTasks, toggleTask, getAnalysisHistory } from '@/api/client';
@@ -11,9 +11,7 @@ import { TaskGroup } from '@/types';
 export default function Home() {
   const { user } = useApp();
   const navigate = useNavigate();
-  const location = useLocation();
   const { haptic } = useTelegram();
-  const justOnboarded = Boolean((location.state as { welcome?: boolean } | null)?.welcome);
 
   const [streak, setStreak] = useState(0);
   const [dailyTip, setDailyTip] = useState('');
@@ -82,63 +80,6 @@ export default function Home() {
   const totalCount = tasks.reduce((acc, g) => acc + g.tasks.length, 0);
   const needsFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
 
-  const startFirstAnalysis = () => {
-    haptic('medium');
-    navigate('/analysis');
-  };
-
-  if (needsFirstAnalysis) {
-    return (
-      <div className="page">
-        <div className="page-inner flex min-h-[calc(100dvh-8rem)] flex-col justify-center space-y-6 py-4">
-          <section className="card-green space-y-6 px-2 py-8 text-center shadow-float">
-            <div className="flex justify-center">
-              <span className="pill-green text-[14px] px-4 py-2">
-                <Sparkles size={16} />
-                1 анализ бесплатно
-              </span>
-            </div>
-
-            <div>
-              <h1 className="heading-lg">
-                {justOnboarded && user?.name
-                  ? `Привет, ${user.name}!`
-                  : user?.name
-                    ? `${user.name}, начнём?`
-                    : 'Ваш первый шаг'}
-              </h1>
-              <p className="mx-auto mt-4 max-w-sm text-[16px] leading-relaxed text-app-muted">
-                Загрузите селфи — AI бесплатно оценит внешность и откроет ваш персональный план.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={startFirstAnalysis}
-              className="btn-dark mx-auto flex w-full max-w-sm items-center justify-center gap-2 !py-4 text-[16px]"
-            >
-              <Camera size={20} />
-              Сделать первый анализ бесплатно
-            </button>
-
-            <p className="text-[13px] text-app-faint">Занимает около 1 минуты · без подписки</p>
-          </section>
-
-          {contentLoading ? (
-            <div className="flex justify-center py-4">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-app-text border-t-transparent" />
-            </div>
-          ) : dailyTip ? (
-            <section className="card">
-              <p className="label-sm mb-2">Совет дня</p>
-              <p className="text-[15px] leading-relaxed text-app-text">{dailyTip}</p>
-            </section>
-          ) : null}
-        </div>
-      </div>
-    );
-  }
-
   if (contentLoading) {
     return (
       <div className="page flex justify-center items-center">
@@ -150,10 +91,21 @@ export default function Home() {
   return (
     <div className="page">
       <div className="page-inner space-y-6">
+        {needsFirstAnalysis && (
+          <button
+            type="button"
+            onClick={() => navigate('/analysis', { state: { firstAnalysis: true } })}
+            className="card-accent w-full py-4 text-center"
+          >
+            <p className="text-[15px] font-semibold text-accent-coralDark">Сделайте первый анализ бесплатно</p>
+            <p className="mt-1 text-[13px] text-app-muted">Загрузите селфи и получите балл</p>
+          </button>
+        )}
+
         <section className="text-center pt-2 pb-1">
           <p className="label-sm mb-3">Твой балл</p>
           <p className="heading-xl">
-            {score}
+            {score ?? '—'}
             <span className="text-[20px] font-semibold text-app-muted">/100</span>
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
@@ -169,7 +121,7 @@ export default function Home() {
         </section>
 
         <div className="btn-row">
-          <button type="button" onClick={() => navigate('/analysis')} className="btn-dark">
+          <button type="button" onClick={() => navigate('/analysis')} className="btn-accent">
             Новый анализ
           </button>
           <button type="button" onClick={() => navigate('/progress')} className="btn-light">
@@ -178,19 +130,30 @@ export default function Home() {
         </div>
 
         <section className="card-green">
-          <p className="label-sm mb-1">Твой рост</p>
-          <p className="mb-4 text-[28px] font-bold tracking-tight">
-            {score}
-            <span className="text-lg font-semibold text-app-muted"> баллов</span>
-          </p>
-          <MiniBarChart values={chartValues} />
-          <div className="mt-4">
-            <SegmentedControl
-              options={['День', 'Неделя', 'Месяц', 'Год']}
-              value={period}
-              onChange={setPeriod}
-            />
-          </div>
+          {needsFirstAnalysis ? (
+            <>
+              <p className="label-sm mb-2">Твой рост</p>
+              <p className="text-[15px] leading-relaxed text-app-muted">
+                График прогресса появится после первого анализа
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="label-sm mb-1">Твой рост</p>
+              <p className="mb-4 text-[28px] font-bold tracking-tight">
+                {score}
+                <span className="text-lg font-semibold text-app-muted"> баллов</span>
+              </p>
+              <MiniBarChart values={chartValues} />
+              <div className="mt-4">
+                <SegmentedControl
+                  options={['День', 'Неделя', 'Месяц', 'Год']}
+                  value={period}
+                  onChange={setPeriod}
+                />
+              </div>
+            </>
+          )}
         </section>
 
         <section className="card">
