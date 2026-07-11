@@ -6,6 +6,12 @@ import PhotoUpload from '@/components/PhotoUpload';
 import { analyzeFace } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
+import {
+  bindViewportResizeListeners,
+  setVerticalSwipeLock,
+  syncTelegramSafeAreaInsets,
+  syncViewportMetrics,
+} from '@/lib/tgWebApp';
 
 const TIPS = [
   'Смотрите прямо в камеру с нейтральным выражением',
@@ -37,9 +43,45 @@ export default function Analysis() {
 
   useEffect(() => {
     if (!isFirstAnalysis) return;
-    document.documentElement.classList.add('pf-first-analysis');
+
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    const prevBodyPosition = body.style.position;
+
+    html.classList.add('pf-first-analysis');
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.width = '100%';
+
+    const syncLayout = () => {
+      syncTelegramSafeAreaInsets();
+      syncViewportMetrics();
+    };
+
+    syncLayout();
+    setVerticalSwipeLock(true);
+
+    const unbindViewport = bindViewportResizeListeners(syncLayout);
+    const raf = window.requestAnimationFrame(syncLayout);
+
+    const blockOverscroll = (event: TouchEvent) => {
+      if (event.cancelable) event.preventDefault();
+    };
+    document.addEventListener('touchmove', blockOverscroll, { passive: false });
+
     return () => {
-      document.documentElement.classList.remove('pf-first-analysis');
+      window.cancelAnimationFrame(raf);
+      unbindViewport();
+      document.removeEventListener('touchmove', blockOverscroll);
+      setVerticalSwipeLock(false);
+      html.classList.remove('pf-first-analysis');
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+      body.style.position = prevBodyPosition;
+      body.style.width = '';
     };
   }, [isFirstAnalysis]);
 

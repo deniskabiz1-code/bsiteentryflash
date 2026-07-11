@@ -10,6 +10,11 @@ type TgWebApp = {
   expand: () => void;
   setHeaderColor: (color: string) => void;
   setBackgroundColor: (color: string) => void;
+  disableVerticalSwipes?: () => void;
+  enableVerticalSwipes?: () => void;
+  viewportHeight?: number;
+  viewportStableHeight?: number;
+  isExpanded?: boolean;
   platform?: string;
   safeAreaInset?: SafeAreaInset;
   contentSafeAreaInset?: SafeAreaInset;
@@ -111,6 +116,33 @@ export function syncTelegramSafeAreaInsets(): void {
   root.style.setProperty('--tg-content-safe-area-inset-bottom', `${content.bottom}px`);
   root.style.setProperty('--tg-content-safe-area-inset-left', `${content.left}px`);
   root.style.setProperty('--tg-content-safe-area-inset-right', `${content.right}px`);
+  syncViewportMetrics();
+}
+
+function readViewportHeight(webApp?: TgWebApp): number {
+  if (webApp?.viewportHeight && webApp.viewportHeight > 0) {
+    return webApp.viewportHeight;
+  }
+  if (window.visualViewport?.height && window.visualViewport.height > 0) {
+    return window.visualViewport.height;
+  }
+  return window.innerHeight;
+}
+
+/** Pixel height for fixed first-analysis panel (updates when TG sheet is dragged). */
+export function syncViewportMetrics(): void {
+  const webApp = getTgWebApp();
+  const root = document.documentElement;
+  const viewportHeight = readViewportHeight(webApp);
+
+  root.style.setProperty('--pf-viewport-height', `${viewportHeight}px`);
+
+  const content = webApp?.contentSafeAreaInset ?? EMPTY_INSET;
+  const topInset = webApp ? resolveContentTopInset(webApp) : 0;
+  const bottomInset = content.bottom || 0;
+  const contentHeight = Math.max(viewportHeight - topInset - bottomInset, 280);
+
+  root.style.setProperty('--pf-content-height', `${contentHeight}px`);
 }
 
 let safeAreaListenersBound = false;
@@ -120,10 +152,62 @@ function bindSafeAreaListeners(): void {
   const webApp = getTgWebApp();
   if (!webApp) return;
 
-  const sync = () => syncTelegramSafeAreaInsets();
+  const sync = () => {
+    syncTelegramSafeAreaInsets();
+    if (!webApp.isExpanded) {
+      try {
+        webApp.expand();
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+
   webApp.onEvent('safeAreaChanged', sync);
   webApp.onEvent('contentSafeAreaChanged', sync);
+  webApp.onEvent('viewportChanged', sync);
   safeAreaListenersBound = true;
+}
+
+export function setVerticalSwipeLock(locked: boolean): void {
+  const webApp = getTgWebApp();
+  if (!webApp) return;
+
+  try {
+    if (locked) {
+      webApp.disableVerticalSwipes?.();
+    } else {
+      webApp.enableVerticalSwipes?.();
+    }
+  } catch {
+    /* older Telegram clients */
+  }
+}
+
+export function bindViewportResizeListeners(onChange: () => void): () => void {
+  const webApp = getTgWebApp();
+  const handler = () => onChange();
+
+  window.addEventListener('resize', handler);
+  window.visualViewport?.addEventListener('resize', handler);
+  window.visualViewport?.addEventListener('scroll', handler);
+
+  if (webApp) {
+    webApp.onEvent('viewportChanged', handler);
+    webApp.onEvent('safeAreaChanged', handler);
+    webApp.onEvent('contentSafeAreaChanged', handler);
+  }
+
+  return () => {
+    window.removeEventListener('resize', handler);
+    window.visualViewport?.removeEventListener('resize', handler);
+    window.visualViewport?.removeEventListener('scroll', handler);
+    if (webApp) {
+      webApp.offEvent('viewportChanged', handler);
+      webApp.offEvent('safeAreaChanged', handler);
+      webApp.offEvent('contentSafeAreaChanged', handler);
+    }
+  };
 }
 
 export function initTelegramWebApp(): void {
