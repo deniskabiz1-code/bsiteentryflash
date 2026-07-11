@@ -60,7 +60,7 @@ export default function PhotoUpload({
   }
 
   return (
-    <div className={`w-full ${compact ? (fill ? 'first-analysis-photo-fill flex flex-col gap-3' : 'space-y-3') : 'space-y-4'}`}>
+    <div className={`w-full ${compact ? (fill ? 'first-analysis-photo-fill h-full gap-3' : 'space-y-3') : 'space-y-4'}`}>
       {tips && (
         <div className="card !p-4 space-y-2">
           <p className="text-[13px] font-semibold text-app-muted">Советы для лучшего результата</p>

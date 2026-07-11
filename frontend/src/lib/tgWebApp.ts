@@ -129,20 +129,38 @@ function readViewportHeight(webApp?: TgWebApp): number {
   return window.innerHeight;
 }
 
+export type FirstAnalysisFrame = {
+  top: number;
+  left: number;
+  right: number;
+  height: number;
+  viewportHeight: number;
+};
+
+export function readFirstAnalysisFrame(): FirstAnalysisFrame {
+  const webApp = getTgWebApp();
+  const viewportHeight = readViewportHeight(webApp);
+  const content = webApp?.contentSafeAreaInset ?? EMPTY_INSET;
+  const safe = webApp?.safeAreaInset ?? EMPTY_INSET;
+
+  const top = webApp
+    ? Math.max(content.top, safe.top + TG_HEADER_BAR_PX, TG_MIN_CONTENT_TOP_PX)
+    : 0;
+  const left = content.left || 0;
+  const right = content.right || 0;
+  const bottom = content.bottom || 0;
+  const height = Math.max(viewportHeight - top - bottom, 220);
+
+  return { top, left, right, height, viewportHeight };
+}
+
 /** Pixel height for fixed first-analysis panel (updates when TG sheet is dragged). */
 export function syncViewportMetrics(): void {
-  const webApp = getTgWebApp();
+  const frame = readFirstAnalysisFrame();
   const root = document.documentElement;
-  const viewportHeight = readViewportHeight(webApp);
 
-  root.style.setProperty('--pf-viewport-height', `${viewportHeight}px`);
-
-  const content = webApp?.contentSafeAreaInset ?? EMPTY_INSET;
-  const topInset = webApp ? resolveContentTopInset(webApp) : 0;
-  const bottomInset = content.bottom || 0;
-  const contentHeight = Math.max(viewportHeight - topInset - bottomInset, 280);
-
-  root.style.setProperty('--pf-content-height', `${contentHeight}px`);
+  root.style.setProperty('--pf-viewport-height', `${frame.viewportHeight}px`);
+  root.style.setProperty('--pf-content-height', `${frame.height}px`);
 }
 
 let safeAreaListenersBound = false;

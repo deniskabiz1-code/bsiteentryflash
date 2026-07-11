@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Scissors, Sparkles } from 'lucide-react';
 
@@ -6,12 +7,7 @@ import PhotoUpload from '@/components/PhotoUpload';
 import { analyzeFace } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
-import {
-  bindViewportResizeListeners,
-  setVerticalSwipeLock,
-  syncTelegramSafeAreaInsets,
-  syncViewportMetrics,
-} from '@/lib/tgWebApp';
+import { useFirstAnalysisViewportLock } from '@/hooks/useFirstAnalysisViewportLock';
 
 const TIPS = [
   'Смотрите прямо в камеру с нейтральным выражением',
@@ -35,55 +31,12 @@ export default function Analysis() {
     || (location.state as { welcome?: boolean } | null)?.welcome
   );
   const isFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
+  const viewportRef = useFirstAnalysisViewportLock(isFirstAnalysis);
 
   const canAnalyze =
     user?.subscriptionActive ||
     isFirstAnalysis ||
     (user?.referralCredits ?? 0) > 0;
-
-  useEffect(() => {
-    if (!isFirstAnalysis) return;
-
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtmlOverflow = html.style.overflow;
-    const prevBodyOverflow = body.style.overflow;
-    const prevBodyPosition = body.style.position;
-
-    html.classList.add('pf-first-analysis');
-    html.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
-    body.style.position = 'fixed';
-    body.style.width = '100%';
-
-    const syncLayout = () => {
-      syncTelegramSafeAreaInsets();
-      syncViewportMetrics();
-    };
-
-    syncLayout();
-    setVerticalSwipeLock(true);
-
-    const unbindViewport = bindViewportResizeListeners(syncLayout);
-    const raf = window.requestAnimationFrame(syncLayout);
-
-    const blockOverscroll = (event: TouchEvent) => {
-      if (event.cancelable) event.preventDefault();
-    };
-    document.addEventListener('touchmove', blockOverscroll, { passive: false });
-
-    return () => {
-      window.cancelAnimationFrame(raf);
-      unbindViewport();
-      document.removeEventListener('touchmove', blockOverscroll);
-      setVerticalSwipeLock(false);
-      html.classList.remove('pf-first-analysis');
-      html.style.overflow = prevHtmlOverflow;
-      body.style.overflow = prevBodyOverflow;
-      body.style.position = prevBodyPosition;
-      body.style.width = '';
-    };
-  }, [isFirstAnalysis]);
 
   const handleAnalyze = async () => {
     if (!photo) { setError('Загрузите фото'); return; }
@@ -112,39 +65,40 @@ export default function Analysis() {
       ? `Привет, ${shortName}!`
       : 'Ваш первый анализ';
 
-    return (
-      <div className="first-analysis-viewport bg-app-canvas">
-        <div className="page-inner flex min-h-0 flex-1 flex-col py-3 pb-4">
-          <div className="card flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
-            <div className="shrink-0 space-y-2">
-              <span className="pill-green inline-flex">
-                <Sparkles size={14} />
-                1 анализ бесплатно
-              </span>
-              <h1 className="text-[22px] font-bold leading-snug tracking-tight break-words">
-                {greeting}
-              </h1>
-              <p className="text-[14px] leading-relaxed text-app-muted">
-                Сделайте селфи — AI бесплатно оценит внешность.
-              </p>
-            </div>
+    const screen = (
+      <div ref={viewportRef} className="bg-app-canvas">
+        <div className="page-inner first-analysis-grid h-full px-5 py-3">
+          <header className="min-h-0 shrink-0 space-y-2 overflow-hidden">
+            <span className="pill-green inline-flex">
+              <Sparkles size={14} />
+              1 анализ бесплатно
+            </span>
+            <h1 className="text-[22px] font-bold leading-snug tracking-tight break-words">
+              {greeting}
+            </h1>
+            <p className="text-[14px] leading-relaxed text-app-muted">
+              Сделайте селфи — AI бесплатно оценит внешность.
+            </p>
+          </header>
 
+          <div className="card flex min-h-0 h-full flex-col overflow-hidden !p-4">
             <PhotoUpload
               onPhotoSelect={setPhoto}
               label="Сделать селфи"
               compact
               fill
             />
+          </div>
 
+          <footer className="min-h-0 shrink-0 space-y-2 overflow-hidden pb-1">
             {error && (
-              <p className="shrink-0 text-sm font-medium text-red-500">{error}</p>
+              <p className="text-sm font-medium text-red-500">{error}</p>
             )}
-
             <button
               type="button"
               onClick={handleAnalyze}
               disabled={!photo || loading || !canAnalyze}
-              className="btn-accent shrink-0"
+              className="btn-accent"
             >
               {loading
                 ? 'Анализируем...'
@@ -152,10 +106,12 @@ export default function Analysis() {
                   ? 'Начать бесплатный анализ'
                   : 'Сначала сделайте селфи'}
             </button>
-          </div>
+          </footer>
         </div>
       </div>
     );
+
+    return createPortal(screen, document.body);
   }
 
   return (

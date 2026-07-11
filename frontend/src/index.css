@@ -38,42 +38,19 @@ html[data-tg] .tg-page-top {
   padding-top: 0.5rem;
 }
 
-.first-analysis-viewport {
-  position: fixed;
-  top: var(--tg-content-safe-area-inset-top, 0px);
-  right: var(--tg-content-safe-area-inset-right, 0px);
-  left: var(--tg-content-safe-area-inset-left, 0px);
-  height: var(--pf-content-height, calc(100dvh - var(--tg-content-safe-area-inset-top, 0px)));
-  max-height: var(--pf-content-height, calc(100dvh - var(--tg-content-safe-area-inset-top, 0px)));
-  display: flex;
-  flex-direction: column;
+.first-analysis-grid {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
   overflow: hidden;
-  overscroll-behavior: none;
-  touch-action: manipulation;
-  z-index: 1;
-}
-
-html.pf-first-analysis,
-html.pf-first-analysis body {
-  position: fixed;
-  width: 100%;
-  height: var(--pf-viewport-height, 100dvh);
-  max-height: var(--pf-viewport-height, 100dvh);
-  overflow: hidden;
-  overscroll-behavior: none;
-  touch-action: manipulation;
-}
-
-html.pf-first-analysis #root {
-  height: var(--pf-viewport-height, 100dvh);
-  max-height: var(--pf-viewport-height, 100dvh);
-  overflow: hidden;
-  padding: 0 !important;
 }
 
 .first-analysis-photo-fill {
-  flex: 1 1 0%;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
   min-height: 0;
+  max-height: 100%;
   overflow: hidden;
 }
 
