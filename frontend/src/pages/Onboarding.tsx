@@ -8,7 +8,6 @@ import { useTelegram } from '@/hooks/useTelegram';
 import { GOAL_LABELS } from '@/types';
 
 const GOALS = ['skin', 'face', 'style'] as const;
-const GOAL_COLORS = ['#3B82F6', '#F97316', '#8B5CF6'];
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -24,13 +23,13 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [hint, setHint] = useState('');
-  const [channelLink, setChannelLink] = useState('https://t.me/primeform_channel');
+  const [channelOpenUrl, setChannelOpenUrl] = useState('https://t.me/primeform_channel');
   const [channelUsername, setChannelUsername] = useState('primeform_channel');
 
   useEffect(() => {
     getChannelInfo()
       .then((info) => {
-        setChannelLink(info.link);
+        setChannelOpenUrl(info.link);
         setChannelUsername(info.username);
       })
       .catch(() => {});
@@ -67,7 +66,7 @@ export default function Onboarding() {
   }, [step, checkSubscription]);
 
   const openChannel = () => {
-    openTelegramLink(channelLink);
+    openTelegramLink(channelOpenUrl || `https://t.me/${channelUsername}`);
   };
 
   const toggleGoal = (goal: string) => {
@@ -130,25 +129,6 @@ export default function Onboarding() {
 
         {step === 1 && (
           <div className="flex-1 flex flex-col items-center pt-6 pb-32">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              {GOALS.map((goal, i) => {
-                const selected = goals.includes(goal);
-                return (
-                  <button
-                    key={goal}
-                    type="button"
-                    onClick={() => toggleGoal(goal)}
-                    className={`rounded-full flex items-center justify-center font-bold text-white transition-all ${
-                      selected ? 'w-20 h-20 text-2xl shadow-float scale-110' : 'w-14 h-14 text-lg opacity-80'
-                    }`}
-                    style={{ backgroundColor: GOAL_COLORS[i] }}
-                  >
-                    {GOAL_LABELS[goal].charAt(0)}
-                  </button>
-                );
-              })}
-            </div>
-
             <div className="w-28 h-28 rounded-full bg-app-surface shadow-float flex items-center justify-center text-5xl font-bold mb-4">
               {initial}
             </div>

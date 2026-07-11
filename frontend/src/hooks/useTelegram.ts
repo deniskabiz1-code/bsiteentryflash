@@ -14,10 +14,27 @@ export function useTelegram() {
   }, []);
 
   const openTelegramLink = useCallback((url: string) => {
-    if (url.includes('t.me/') && WebApp.openTelegramLink) {
-      WebApp.openTelegramLink(url);
-    } else {
-      WebApp.openLink(url);
+    let normalized = url.trim();
+    if (normalized.startsWith('http://')) {
+      normalized = normalized.replace('http://', 'https://');
+    } else if (normalized.startsWith('t.me/')) {
+      normalized = `https://${normalized}`;
+    } else if (normalized.startsWith('@')) {
+      normalized = `https://t.me/${normalized.slice(1)}`;
+    } else if (!normalized.startsWith('https://')) {
+      normalized = `https://t.me/${normalized.replace(/^@/, '')}`;
+    }
+    normalized = normalized.replace('https://telegram.me/', 'https://t.me/');
+
+    try {
+      WebApp.openTelegramLink(normalized);
+    } catch (err) {
+      console.error('openTelegramLink failed:', err);
+      const tgWebApp = (window as Window & { Telegram?: { WebApp?: { openTelegramLink?: (u: string) => void } } })
+        .Telegram?.WebApp;
+      if (tgWebApp?.openTelegramLink) {
+        tgWebApp.openTelegramLink(normalized);
+      }
     }
   }, []);
 

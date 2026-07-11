@@ -10,8 +10,19 @@ export interface ChannelCheckResult {
 }
 
 export function getChannelLink(): string {
-  if (process.env.CHANNEL_INVITE_LINK) {
-    return process.env.CHANNEL_INVITE_LINK;
+  return getChannelOpenUrl();
+}
+
+/** URL safe for Telegram WebApp.openTelegramLink (must be https://t.me/...) */
+export function getChannelOpenUrl(): string {
+  const invite = process.env.CHANNEL_INVITE_LINK?.trim();
+  if (invite) {
+    if (invite.startsWith('https://t.me/') || invite.startsWith('http://t.me/')) {
+      return invite.replace('http://', 'https://');
+    }
+    if (invite.startsWith('t.me/')) {
+      return `https://${invite}`;
+    }
   }
   const username = normalizeUsername(process.env.CHANNEL_USERNAME || 'primeform_channel');
   return `https://t.me/${username}`;
@@ -120,33 +131,39 @@ function generateReferralCode(): string {
 export async function findOrCreateUser(telegramUser: TelegramUser) {
   const telegramId = BigInt(telegramUser.id);
 
-  let user = await prisma.user.findUnique({ where: { telegramId } });
-
-  if (!user) {
-    let referralCode = generateReferralCode();
-    let attempts = 0;
-    while (attempts < 10) {
-      const existing = await prisma.user.findUnique({ where: { referralCode } });
-      if (!existing) break;
-      referralCode = generateReferralCode();
-      attempts++;
+  const existing = await prisma.user.findUnique({ where: { telegramId } });
+  if (existing) {
+    if (telegramUser.username && existing.username !== telegramUser.username) {
+      return prisma.user.update({
+        where: { id: existing.id },
+        data: { username: telegramUser.username },
+      });
     }
-
-    user = await prisma.user.create({
-      data: {
-        telegramId,
-        username: telegramUser.username || null,
-        referralCode,
-      },
-    });
-  } else if (telegramUser.username && user.username !== telegramUser.username) {
-    user = await prisma.user.update({
-      where: { id: user.id },
-      data: { username: telegramUser.username },
-    });
+    return existing;
   }
 
-  return user;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const referralCode = generateReferralCode();
+    try {
+      return await prisma.user.create({
+        data: {
+          telegramId,
+          username: telegramUser.username || null,
+          referralCode,
+        },
+      });
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (code === 'P2002') {
+        const raced = await prisma.user.findUnique({ where: { telegramId } });
+        if (raced) return raced;
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw new Error('Failed to create user');
 }
 
 export function isSubscriptionActive(subscriptionEnd: Date | null): boolean {

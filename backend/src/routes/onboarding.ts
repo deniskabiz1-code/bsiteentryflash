@@ -16,7 +16,7 @@ router.post('/complete', validateTelegramAuth, async (req: AuthRequest, res: Res
       return;
     }
 
-    const ageNum = parseInt(age, 10);
+    const ageNum = typeof age === 'number' ? age : parseInt(String(age), 10);
     if (isNaN(ageNum) || ageNum < 14 || ageNum > 60) {
       res.status(400).json({ error: 'Возраст должен быть от 14 до 60' });
       return;
@@ -45,7 +45,7 @@ router.post('/complete', validateTelegramAuth, async (req: AuthRequest, res: Res
     const user = await findOrCreateUser(req.telegramUser!);
 
     const updated = await prisma.user.update({
-      where: { id: user.id },
+      where: { telegramId: BigInt(req.telegramUser!.id) },
       data: {
         name: name.trim(),
         age: ageNum,
@@ -65,6 +65,21 @@ router.post('/complete', validateTelegramAuth, async (req: AuthRequest, res: Res
     });
   } catch (err) {
     console.error('Onboarding error:', err);
+    const prismaCode = (err as { code?: string }).code;
+    if (prismaCode === 'P2025') {
+      res.status(500).json({
+        error: 'Профиль не найден',
+        hint: 'Перезапустите приложение и попробуйте снова',
+      });
+      return;
+    }
+    if (prismaCode === 'P2021') {
+      res.status(500).json({
+        error: 'База данных не настроена',
+        hint: 'На сервере не выполнен prisma db push',
+      });
+      return;
+    }
     res.status(500).json({ error: 'Ошибка сохранения профиля' });
   }
 });

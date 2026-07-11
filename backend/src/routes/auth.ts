@@ -4,7 +4,7 @@ import {
   findOrCreateUser,
   checkChannelSubscription,
   isSubscriptionActive,
-  getChannelLink,
+  getChannelOpenUrl,
 } from '../services/telegram';
 import { prisma } from '../utils/prisma';
 
@@ -53,7 +53,7 @@ router.get('/channel-check', validateTelegramAuth, async (req: AuthRequest, res:
 router.get('/channel-info', (_req, res: Response) => {
   const username = (process.env.CHANNEL_USERNAME || 'primeform_channel').replace(/^@/, '');
   res.json({
-    link: getChannelLink(),
+    link: getChannelOpenUrl(),
     username,
   });
 });
