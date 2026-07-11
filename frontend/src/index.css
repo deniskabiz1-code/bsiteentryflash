@@ -38,6 +38,12 @@ html[data-tg] .tg-page-top {
   padding-top: 0.5rem;
 }
 
+.first-analysis-viewport {
+  height: calc(100dvh - var(--tg-content-safe-area-inset-top, 0px));
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 @layer components {
   .page {
     min-height: 100vh;

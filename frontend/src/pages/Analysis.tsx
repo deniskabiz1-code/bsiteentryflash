@@ -63,33 +63,38 @@ export default function Analysis() {
       : 'Ваш первый анализ';
 
     return (
-      <div className="bg-app-canvas">
-        <div className="page-inner tg-page-top pb-4">
-          <div className="card space-y-4">
-            <div className="space-y-1.5">
+      <div className="first-analysis-viewport flex flex-col bg-app-canvas">
+        <div className="page-inner tg-page-top flex min-h-0 flex-1 flex-col pb-4">
+          <div className="card flex min-h-0 flex-1 flex-col gap-5">
+            <div className="shrink-0 space-y-2">
               <span className="pill-green inline-flex">
                 <Sparkles size={14} />
                 1 анализ бесплатно
               </span>
-              <h1 className="text-[20px] font-bold leading-snug tracking-tight break-words">
+              <h1 className="text-[22px] font-bold leading-snug tracking-tight break-words">
                 {greeting}
               </h1>
-              <p className="text-[13px] leading-relaxed text-app-muted">
+              <p className="text-[14px] leading-relaxed text-app-muted">
                 Сделайте селфи — AI бесплатно оценит внешность.
               </p>
             </div>
 
-            <PhotoUpload onPhotoSelect={setPhoto} label="Сделать селфи" compact />
+            <PhotoUpload
+              onPhotoSelect={setPhoto}
+              label="Сделать селфи"
+              compact
+              fill
+            />
 
             {error && (
-              <p className="text-sm font-medium text-red-500">{error}</p>
+              <p className="shrink-0 text-sm font-medium text-red-500">{error}</p>
             )}
 
             <button
               type="button"
               onClick={handleAnalyze}
               disabled={!photo || loading || !canAnalyze}
-              className="btn-accent"
+              className="btn-accent shrink-0"
             >
               {loading
                 ? 'Анализируем...'
