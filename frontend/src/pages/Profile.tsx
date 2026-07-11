@@ -10,6 +10,8 @@ import {
 } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
+import AgeSlider from '@/components/AgeSlider';
+import GoalSelector from '@/components/GoalSelector';
 import { GOAL_LABELS } from '@/types';
 import { assetUrl } from '@/utils/assets';
 
@@ -225,21 +227,13 @@ export default function Profile() {
             </button>
           </div>
           {editing ? (
-            <div className="space-y-3">
+            <div className="space-y-5">
               <input className="input-field" value={name} onChange={(e) => setName(e.target.value)} placeholder="Имя" />
-              <input className="input-field" type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="Возраст" />
-              {Object.entries(GOAL_LABELS).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => toggleGoal(key)}
-                  className={`w-full py-3.5 px-4 rounded-2xl text-left text-[15px] font-semibold border ${
-                    goals.includes(key) ? 'border-app-text bg-app-text text-white' : 'border-app-border bg-app-surface'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+              <AgeSlider
+                value={parseInt(age, 10) || 25}
+                onChange={(v) => setAge(String(v))}
+              />
+              <GoalSelector selected={goals} onToggle={toggleGoal} />
             </div>
           ) : (
             <div className="space-y-0">

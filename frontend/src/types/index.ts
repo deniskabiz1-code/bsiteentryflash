@@ -75,6 +75,24 @@ export const GOAL_LABELS: Record<string, string> = {
   style: 'Стиль',
 };
 
+export const GOAL_OPTIONS = [
+  {
+    key: 'skin',
+    title: 'Кожа',
+    description: 'Прыщи, тон, уход и здоровый вид кожи',
+  },
+  {
+    key: 'face',
+    title: 'Лицо',
+    description: 'Челюсть, симметрия и пропорции черт',
+  },
+  {
+    key: 'style',
+    title: 'Стиль',
+    description: 'Причёска, борода и общий образ',
+  },
+] as const;
+
 export const SKIN_TYPE_LABELS: Record<string, string> = {
   dry: 'Сухая',
   oily: 'Жирная',

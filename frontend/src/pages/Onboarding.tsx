@@ -4,26 +4,33 @@ import { getTgWebApp } from '@/lib/tgWebApp';
 import { completeOnboarding, checkChannel, getChannelInfo } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
-import { GOAL_LABELS } from '@/types';
-
-const GOALS = ['skin', 'face', 'style'] as const;
+import AgeSlider from '@/components/AgeSlider';
+import GoalSelector from '@/components/GoalSelector';
 
 export default function Onboarding() {
   const navigate = useNavigate();
   const { refreshUser } = useApp();
-  const { openTelegramLink, haptic } = useTelegram();
+  const { user: tgUser, openTelegramLink, haptic } = useTelegram();
 
   const [step, setStep] = useState(0);
   const [subscribed, setSubscribed] = useState(false);
   const [checking, setChecking] = useState(false);
   const [name, setName] = useState('');
-  const [age, setAge] = useState('');
+  const [age, setAge] = useState(25);
   const [goals, setGoals] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [hint, setHint] = useState('');
   const [channelOpenUrl, setChannelOpenUrl] = useState('https://t.me/primeform_channel');
   const [channelUsername, setChannelUsername] = useState('primeform_channel');
+
+  const telegramUsername = tgUser?.username || null;
+
+  useEffect(() => {
+    if (tgUser?.first_name && !name) {
+      setName(tgUser.first_name);
+    }
+  }, [tgUser, name]);
 
   useEffect(() => {
     getChannelInfo()
@@ -79,8 +86,7 @@ export default function Onboarding() {
 
   const handleSubmit = async () => {
     if (!name.trim()) { setError('Укажите имя'); return; }
-    const ageNum = parseInt(age, 10);
-    if (isNaN(ageNum) || ageNum < 14 || ageNum > 60) {
+    if (age < 14 || age > 60) {
       setError('Возраст от 14 до 60');
       return;
     }
@@ -90,7 +96,7 @@ export default function Onboarding() {
     setError('');
     setHint('');
     try {
-      await completeOnboarding({ name: name.trim(), age: ageNum, goals });
+      await completeOnboarding({ name: name.trim(), age, goals });
       await refreshUser();
       haptic('success');
       navigate('/');
@@ -104,7 +110,9 @@ export default function Onboarding() {
     }
   };
 
-  const initial = name.trim() ? name.trim().charAt(0).toUpperCase() : 'P';
+  const initial = name.trim()
+    ? name.trim().charAt(0).toUpperCase()
+    : (tgUser?.first_name?.charAt(0).toUpperCase() || 'P');
 
   return (
     <div className="page flex flex-col">
@@ -127,52 +135,35 @@ export default function Onboarding() {
         )}
 
         {step === 1 && (
-          <div className="flex-1 flex flex-col items-center pt-6 pb-32">
-            <div className="w-28 h-28 rounded-full bg-app-surface shadow-float flex items-center justify-center text-5xl font-bold mb-4">
-              {initial}
-            </div>
-
-            {name && <span className="pill-gray mb-8">@{name.toLowerCase().replace(/\s/g, '')}</span>}
-
-            <h1 className="heading-md text-center mb-2">Настройка профиля</h1>
-            <p className="text-[15px] text-app-muted text-center mb-8">Можно изменить в любой момент</p>
-
-            <div className="w-full space-y-4">
-              <input
-                className="input-field"
-                placeholder="Как вас зовут?"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <input
-                className="input-field"
-                type="number"
-                min={14}
-                max={60}
-                placeholder="Возраст (14–60)"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-              />
-
-              <div className="space-y-2">
-                {GOALS.map((goal) => (
-                  <button
-                    key={goal}
-                    type="button"
-                    onClick={() => toggleGoal(goal)}
-                    className={`w-full py-4 px-5 rounded-2xl text-left text-[15px] font-semibold border transition-all ${
-                      goals.includes(goal)
-                        ? 'border-app-text bg-app-text text-white'
-                        : 'border-app-border bg-app-surface text-app-text'
-                    }`}
-                  >
-                    {GOAL_LABELS[goal]}
-                  </button>
-                ))}
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-2 pb-32 w-full">
+            <div className="w-full max-w-sm mx-auto flex flex-col items-center">
+              <div className="w-28 h-28 rounded-full bg-app-surface shadow-float flex items-center justify-center text-5xl font-bold mb-4">
+                {initial}
               </div>
-            </div>
 
-            {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
+              {telegramUsername && (
+                <span className="pill-gray mb-6">@{telegramUsername}</span>
+              )}
+
+              <h1 className="heading-md mb-2">Настройка профиля</h1>
+              <p className="text-[15px] text-app-muted mb-8">Можно изменить в любой момент</p>
+
+              <div className="w-full space-y-6 text-left">
+                <input
+                  className="input-field text-center"
+                  placeholder="Как вас зовут?"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+
+                <AgeSlider value={age} onChange={setAge} />
+
+                <GoalSelector selected={goals} onToggle={toggleGoal} />
+              </div>
+
+              {error && <p className="text-red-500 text-sm mt-6 text-center">{error}</p>}
+              {hint && <p className="text-amber-600 text-xs mt-2 text-center">{hint}</p>}
+            </div>
           </div>
         )}
       </div>
