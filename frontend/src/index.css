@@ -39,14 +39,36 @@ html[data-tg] .tg-page-top {
 }
 
 .first-analysis-viewport {
-  height: calc(100dvh - var(--tg-content-safe-area-inset-top, 0px));
+  position: fixed;
+  top: var(--tg-content-safe-area-inset-top, 0px);
+  right: var(--tg-content-safe-area-inset-right, 0px);
+  bottom: 0;
+  left: var(--tg-content-safe-area-inset-left, 0px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  overscroll-behavior: none;
+  z-index: 1;
+}
+
+html.pf-first-analysis,
+html.pf-first-analysis body {
+  height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
 }
 
+html.pf-first-analysis #root {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  padding: 0 !important;
+}
+
 .first-analysis-photo-fill {
   flex: 1 1 0%;
-  min-height: 44dvh;
+  min-height: 0;
+  overflow: hidden;
 }
 
 @layer components {

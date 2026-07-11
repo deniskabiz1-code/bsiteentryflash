@@ -107,7 +107,7 @@ export default function PhotoUpload({
         <button
           type="button"
           onClick={openGallery}
-          className="w-full text-center text-[13px] font-medium text-brand-greenDark"
+          className={`w-full text-center text-[13px] font-medium text-brand-greenDark ${fill ? 'shrink-0' : ''}`}
         >
           Выбрать из галереи
         </button>

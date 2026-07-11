@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Scissors, Sparkles } from 'lucide-react';
 
@@ -35,6 +35,14 @@ export default function Analysis() {
     isFirstAnalysis ||
     (user?.referralCredits ?? 0) > 0;
 
+  useEffect(() => {
+    if (!isFirstAnalysis) return;
+    document.documentElement.classList.add('pf-first-analysis');
+    return () => {
+      document.documentElement.classList.remove('pf-first-analysis');
+    };
+  }, [isFirstAnalysis]);
+
   const handleAnalyze = async () => {
     if (!photo) { setError('Загрузите фото'); return; }
 
@@ -63,9 +71,9 @@ export default function Analysis() {
       : 'Ваш первый анализ';
 
     return (
-      <div className="first-analysis-viewport flex flex-col bg-app-canvas">
-        <div className="page-inner tg-page-top flex min-h-0 flex-1 flex-col pb-4">
-          <div className="card flex min-h-0 flex-1 flex-col gap-5">
+      <div className="first-analysis-viewport bg-app-canvas">
+        <div className="page-inner flex min-h-0 flex-1 flex-col py-3 pb-4">
+          <div className="card flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
             <div className="shrink-0 space-y-2">
               <span className="pill-green inline-flex">
                 <Sparkles size={14} />
