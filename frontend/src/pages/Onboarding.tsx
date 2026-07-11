@@ -144,13 +144,6 @@ export default function Onboarding() {
         {step === 1 && (
           <div className="flex min-h-[calc(100dvh-10rem)] w-full flex-col items-center justify-center px-2 py-6 text-center">
             <div className="flex w-full max-w-sm flex-col items-center">
-              <div className="mb-6 flex flex-col items-center">
-                <UserAvatar photoUrl={photoUrl} fallbackLetter={fallbackLetter} size="md" className="mb-3" />
-                {telegramUsername && (
-                  <span className="pill-gray">@{telegramUsername}</span>
-                )}
-              </div>
-
               <h1 className="text-[20px] font-bold tracking-tight mb-1">Настройка профиля</h1>
               <p className="text-[13px] text-app-muted mb-6">Можно изменить в любой момент</p>
 
