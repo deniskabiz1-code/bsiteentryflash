@@ -41,7 +41,8 @@ jobs:
       - name: Prepare GitHub Pages output
         run: |
           BUILD_ID="${{ github.sha }}"
-          sed -i "s|</head>|<meta name=\"build\" content=\"$BUILD_ID\" /></head>|" dist/index.html
+          RELOAD_SCRIPT="<script>window.__PF_BUILD__='$BUILD_ID';try{var p=localStorage.getItem('pf_build');if(p&&p!=='$BUILD_ID'){localStorage.setItem('pf_build','$BUILD_ID');location.reload()}else{localStorage.setItem('pf_build','$BUILD_ID')}}catch(e){}</script>"
+          sed -i "s|</head>|<meta name=\"build\" content=\"$BUILD_ID\" />$RELOAD_SCRIPT</head>|" dist/index.html
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
 

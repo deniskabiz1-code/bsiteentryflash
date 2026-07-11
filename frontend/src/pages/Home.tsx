@@ -20,7 +20,7 @@ export default function Home() {
   const [tasks, setTasks] = useState<TaskGroup[]>([]);
   const [neverDo, setNeverDo] = useState<string[]>([]);
   const [neverDoOpen, setNeverDoOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [contentLoading, setContentLoading] = useState(true);
   const [score, setScore] = useState<number | null>(null);
   const [chartValues, setChartValues] = useState<number[]>([52, 55, 58, 60, 63, 65, 68, 70, 71, 72]);
   const [period, setPeriod] = useState('Месяц');
@@ -50,7 +50,7 @@ export default function Home() {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      setContentLoading(false);
     }
   };
 
@@ -80,14 +80,66 @@ export default function Home() {
     0
   );
   const totalCount = tasks.reduce((acc, g) => acc + g.tasks.length, 0);
-  const needsFirstAnalysis = score === null;
+  const needsFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
 
   const startFirstAnalysis = () => {
     haptic('medium');
     navigate('/analysis');
   };
 
-  if (loading) {
+  if (needsFirstAnalysis) {
+    return (
+      <div className="page">
+        <div className="page-inner flex min-h-[calc(100dvh-8rem)] flex-col justify-center space-y-6 py-4">
+          <section className="card-green space-y-6 px-2 py-8 text-center shadow-float">
+            <div className="flex justify-center">
+              <span className="pill-green text-[14px] px-4 py-2">
+                <Sparkles size={16} />
+                1 анализ бесплатно
+              </span>
+            </div>
+
+            <div>
+              <h1 className="heading-lg">
+                {justOnboarded && user?.name
+                  ? `Привет, ${user.name}!`
+                  : user?.name
+                    ? `${user.name}, начнём?`
+                    : 'Ваш первый шаг'}
+              </h1>
+              <p className="mx-auto mt-4 max-w-sm text-[16px] leading-relaxed text-app-muted">
+                Загрузите селфи — AI бесплатно оценит внешность и откроет ваш персональный план.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={startFirstAnalysis}
+              className="btn-dark mx-auto flex w-full max-w-sm items-center justify-center gap-2 !py-4 text-[16px]"
+            >
+              <Camera size={20} />
+              Сделать первый анализ бесплатно
+            </button>
+
+            <p className="text-[13px] text-app-faint">Занимает около 1 минуты · без подписки</p>
+          </section>
+
+          {contentLoading ? (
+            <div className="flex justify-center py-4">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-app-text border-t-transparent" />
+            </div>
+          ) : dailyTip ? (
+            <section className="card">
+              <p className="label-sm mb-2">Совет дня</p>
+              <p className="text-[15px] leading-relaxed text-app-text">{dailyTip}</p>
+            </section>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
+  if (contentLoading) {
     return (
       <div className="page flex justify-center items-center">
         <div className="w-8 h-8 border-2 border-app-text border-t-transparent rounded-full animate-spin" />
@@ -98,106 +150,47 @@ export default function Home() {
   return (
     <div className="page">
       <div className="page-inner space-y-6">
-        {needsFirstAnalysis ? (
-          <section className="card-green space-y-5 pt-6 pb-6 text-center">
-            <div className="flex justify-center">
-              <span className="pill-green">
-                <Sparkles size={14} />
-                1 анализ бесплатно
-              </span>
-            </div>
+        <section className="text-center pt-2 pb-1">
+          <p className="label-sm mb-3">Твой балл</p>
+          <p className="heading-xl">
+            {score}
+            <span className="text-[20px] font-semibold text-app-muted">/100</span>
+          </p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <span className="pill-green">
+              <TrendingUp size={14} />
+              {weeklyDelta !== 0
+                ? `${weeklyDelta >= 0 ? '+' : ''}${weeklyDelta} за неделю`
+                : streak > 0
+                  ? `серия ${streak} дн.`
+                  : 'начни сегодня'}
+            </span>
+          </div>
+        </section>
 
-            <div>
-              <h1 className="heading-md">
-                {justOnboarded && user?.name
-                  ? `Привет, ${user.name}!`
-                  : user?.name
-                    ? `${user.name}, начнём?`
-                    : 'Сделайте первый анализ'}
-              </h1>
-              <p className="mx-auto mt-3 max-w-xs text-[15px] leading-relaxed text-app-muted">
-                {justOnboarded
-                  ? 'Профиль готов. Загрузите селфи — AI бесплатно оценит внешность и составит ваш план.'
-                  : 'Загрузите селфи — AI оценит внешность и составит персональный план улучшений.'}
-              </p>
-            </div>
+        <div className="btn-row">
+          <button type="button" onClick={() => navigate('/analysis')} className="btn-dark">
+            Новый анализ
+          </button>
+          <button type="button" onClick={() => navigate('/progress')} className="btn-light">
+            Прогресс
+          </button>
+        </div>
 
-            <div className="mx-auto max-w-xs space-y-3 text-left">
-              {[
-                { step: '1', text: 'Сделайте селфи при хорошем свете' },
-                { step: '2', text: 'Получите балл и рекомендации' },
-                { step: '3', text: 'Следуйте ежедневным задачам' },
-              ].map((item) => (
-                <div key={item.step} className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-app-text text-[13px] font-bold text-white">
-                    {item.step}
-                  </span>
-                  <span className="text-[14px] text-app-text">{item.text}</span>
-                </div>
-              ))}
-            </div>
-
-            <button type="button" onClick={startFirstAnalysis} className="btn-dark flex items-center justify-center gap-2">
-              <Camera size={18} />
-              Сделать первый анализ бесплатно
-            </button>
-          </section>
-        ) : (
-          <>
-            <section className="text-center pt-2 pb-1">
-              <p className="label-sm mb-3">Твой балл</p>
-              <p className="heading-xl">
-                {score}
-                <span className="text-[20px] font-semibold text-app-muted">/100</span>
-              </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <span className="pill-green">
-                  <TrendingUp size={14} />
-                  {weeklyDelta !== 0
-                    ? `${weeklyDelta >= 0 ? '+' : ''}${weeklyDelta} за неделю`
-                    : streak > 0
-                      ? `серия ${streak} дн.`
-                      : 'начни сегодня'}
-                </span>
-              </div>
-            </section>
-
-            <div className="btn-row">
-              <button type="button" onClick={() => navigate('/analysis')} className="btn-dark">
-                Новый анализ
-              </button>
-              <button type="button" onClick={() => navigate('/progress')} className="btn-light">
-                Прогресс
-              </button>
-            </div>
-          </>
-        )}
-
-        <section className={needsFirstAnalysis ? 'card text-center py-10' : 'card-green'}>
-          {needsFirstAnalysis ? (
-            <>
-              <p className="label-sm mb-2">Твой рост</p>
-              <p className="text-[15px] leading-relaxed text-app-muted">
-                График прогресса появится после первого анализа
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="label-sm mb-1">Твой рост</p>
-              <p className="mb-4 text-[28px] font-bold tracking-tight">
-                {score}
-                <span className="text-lg font-semibold text-app-muted"> баллов</span>
-              </p>
-              <MiniBarChart values={chartValues} />
-              <div className="mt-4">
-                <SegmentedControl
-                  options={['День', 'Неделя', 'Месяц', 'Год']}
-                  value={period}
-                  onChange={setPeriod}
-                />
-              </div>
-            </>
-          )}
+        <section className="card-green">
+          <p className="label-sm mb-1">Твой рост</p>
+          <p className="mb-4 text-[28px] font-bold tracking-tight">
+            {score}
+            <span className="text-lg font-semibold text-app-muted"> баллов</span>
+          </p>
+          <MiniBarChart values={chartValues} />
+          <div className="mt-4">
+            <SegmentedControl
+              options={['День', 'Неделя', 'Месяц', 'Год']}
+              value={period}
+              onChange={setPeriod}
+            />
+          </div>
         </section>
 
         <section className="card">
