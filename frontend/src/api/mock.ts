@@ -60,6 +60,13 @@ export const mockApi = {
     return { analyses };
   },
 
+  getAnalysis: async (id: number) => {
+    await delay(200);
+    const analysis = analyses.find((a) => a.id === id);
+    if (!analysis) throw new Error('Анализ не найден');
+    return { analysis };
+  },
+
   deleteAnalysis: async (id: number) => {
     await delay(300);
     analyses = analyses.filter((a) => a.id !== id);

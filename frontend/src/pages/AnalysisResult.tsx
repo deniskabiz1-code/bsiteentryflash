@@ -1,22 +1,57 @@
-import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  FaceAnalysisResult,
-  SCORE_LABELS,
-  SKIN_TYPE_LABELS,
-  PUFFINESS_LABELS,
-} from '@/types';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { SCORE_LABELS, SKIN_TYPE_LABELS, PUFFINESS_LABELS } from '@/types';
+import { getAnalysis } from '@/api/client';
+import { toAnalysisResultView, type AnalysisResultView } from '@/utils/analysisView';
+import { assetUrl } from '@/utils/assets';
 
 export default function AnalysisResult() {
+  const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const analysis = location.state?.analysis;
+  const stateAnalysis = location.state?.analysis as AnalysisResultView | undefined;
 
-  if (!analysis) {
+  const [result, setResult] = useState<AnalysisResultView | null>(
+    stateAnalysis ? toAnalysisResultView(stateAnalysis) : null,
+  );
+  const [loading, setLoading] = useState(Boolean(id && !stateAnalysis));
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!id || stateAnalysis) return;
+
+    const analysisId = parseInt(id, 10);
+    if (Number.isNaN(analysisId)) {
+      setError('Анализ не найден');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    getAnalysis(analysisId)
+      .then((data) => setResult(toAnalysisResultView(data.analysis)))
+      .catch(() => setError('Не удалось загрузить анализ'))
+      .finally(() => setLoading(false));
+  }, [id, stateAnalysis]);
+
+  if (loading) {
+    return (
+      <div className="page flex justify-center items-center">
+        <div className="w-8 h-8 border-2 border-app-text border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!result || error) {
     return (
       <div className="page">
         <div className="page-inner text-center pt-8">
-          <p className="text-app-muted">Результаты не найдены</p>
-          <button type="button" onClick={() => navigate('/analysis')} className="btn-dark mt-6">
+          <p className="text-app-muted">{error || 'Результаты не найдены'}</p>
+          <button type="button" onClick={() => navigate('/progress')} className="btn-light mt-4">
+            К истории
+          </button>
+          <button type="button" onClick={() => navigate('/analysis')} className="btn-dark mt-3">
             Новый анализ
           </button>
         </div>
@@ -24,17 +59,39 @@ export default function AnalysisResult() {
     );
   }
 
-  const result = analysis as FaceAnalysisResult & { overall_score?: number; demo?: boolean };
   const overall = result.overall_score || 0;
   const isDemo = Boolean(result.demo);
   const scores = result.scores || {};
+  const formattedDate = result.createdAt
+    ? new Date(result.createdAt).toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : null;
 
   return (
     <div className="page">
       <div className="page-inner space-y-6">
+        {result.photoUrl && (
+          <div className="flex justify-center pt-2">
+            <img
+              src={assetUrl(result.photoUrl)}
+              alt="Анализ"
+              className="h-40 w-40 rounded-3xl object-cover shadow-card"
+            />
+          </div>
+        )}
+
         <section className="text-center pt-2">
+          {formattedDate && (
+            <p className="label-sm mb-2">{formattedDate}</p>
+          )}
           <p className="label-sm mb-3">Общий балл</p>
-          <p className="heading-xl">{overall}<span className="text-[20px] text-app-muted font-semibold">/100</span></p>
+          <p className="heading-xl">
+            {overall}
+            <span className="text-[20px] text-app-muted font-semibold">/100</span>
+          </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <span className="pill-green">Анализ завершён</span>
             {isDemo && (
@@ -129,11 +186,11 @@ export default function AnalysisResult() {
         )}
 
         <div className="btn-row pb-4">
-          <button type="button" onClick={() => navigate('/analysis')} className="btn-light">
-            Повторить
+          <button type="button" onClick={() => navigate('/progress')} className="btn-light">
+            История
           </button>
-          <button type="button" onClick={() => navigate('/')} className="btn-dark">
-            На главную
+          <button type="button" onClick={() => navigate('/analysis')} className="btn-dark">
+            Новый анализ
           </button>
         </div>
       </div>

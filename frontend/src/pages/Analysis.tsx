@@ -47,7 +47,11 @@ export default function Analysis() {
       const data = await analyzeFace(photo);
       haptic('success');
       await refreshUser();
-      navigate('/analysis/result', { state: { analysis: data.analysis } });
+      const analysisId = data.analysis?.id;
+      navigate(
+        analysisId ? `/analysis/result/${analysisId}` : '/analysis/result',
+        { state: { analysis: data.analysis }, replace: true },
+      );
     } catch (err: unknown) {
       const ax = err as {
         response?: { data?: { error?: string }; status?: number };

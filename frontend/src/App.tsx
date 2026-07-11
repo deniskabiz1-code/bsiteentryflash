@@ -47,6 +47,7 @@ function AppRoutes() {
           }
         />
         <Route path="/analysis" element={<Analysis />} />
+        <Route path="/analysis/result/:id" element={<AnalysisResult />} />
         <Route path="/analysis/result" element={<AnalysisResult />} />
         <Route path="/analysis/hairstyle" element={<HairstyleAnalysis />} />
         <Route path="/progress" element={<Progress />} />

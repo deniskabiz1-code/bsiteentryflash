@@ -89,6 +89,12 @@ export async function getAnalysisHistory() {
   return data;
 }
 
+export async function getAnalysis(id: number) {
+  if (MOCK) return mockApi.getAnalysis(id);
+  const { data } = await api.get(`/analysis/${id}`);
+  return data;
+}
+
 export async function deleteAnalysis(id: number) {
   if (MOCK) return mockApi.deleteAnalysis(id);
   const { data } = await api.delete(`/analysis/${id}`);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Trash2 } from 'lucide-react';
+import { Camera, ChevronRight, Trash2 } from 'lucide-react';
 
 import Modal from '@/components/Modal';
 import MiniBarChart from '@/components/MiniBarChart';
@@ -36,6 +36,11 @@ export default function Progress() {
   const faceAnalyses = analyses;
   const chartValues = [...faceAnalyses].reverse().map((a) => a.overallScore || 0);
   while (chartValues.length < 10) chartValues.unshift(chartValues[0] || 50);
+
+  const openAnalysis = (analysis: Analysis) => {
+    haptic('light');
+    navigate(`/analysis/result/${analysis.id}`);
+  };
 
   const handleDelete = async (id: number) => {
     try {
@@ -132,21 +137,37 @@ export default function Progress() {
             <h2 className="text-[17px] font-bold mb-3 px-1">История</h2>
             <div className="card !p-0 overflow-hidden">
               {faceAnalyses.map((a) => (
-                <div key={a.id} className="flex items-center gap-3 px-5 py-4 border-b border-app-border last:border-0">
-                  <img src={assetUrl(a.photoUrl)} alt="" className="w-12 h-12 rounded-2xl object-cover flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-[15px]">{a.overallScore}/100</p>
-                    <p className="text-[13px] text-app-muted">
-                      {new Date(a.createdAt).toLocaleDateString('ru-RU', {
-                        day: 'numeric', month: 'long', year: 'numeric',
-                      })}
-                    </p>
-                  </div>
-                  <span className="text-[15px] font-bold text-brand-greenDark">{a.overallScore}</span>
+                <div
+                  key={a.id}
+                  className="flex items-center gap-3 border-b border-app-border last:border-0"
+                >
+                  <button
+                    type="button"
+                    onClick={() => openAnalysis(a)}
+                    className="flex min-w-0 flex-1 items-center gap-3 px-5 py-4 text-left active:bg-app-canvas"
+                  >
+                    <img
+                      src={assetUrl(a.photoUrl)}
+                      alt=""
+                      className="h-12 w-12 flex-shrink-0 rounded-2xl object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[15px] font-bold">{a.overallScore}/100</p>
+                      <p className="text-[13px] text-app-muted">
+                        {new Date(a.createdAt).toLocaleDateString('ru-RU', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                    <ChevronRight size={18} className="flex-shrink-0 text-app-muted" />
+                  </button>
                   <button
                     type="button"
                     onClick={() => setDeleteId(a.id)}
-                    className="p-2 text-app-muted"
+                    className="p-4 text-app-muted"
+                    aria-label="Удалить"
                   >
                     <Trash2 size={18} />
                   </button>
