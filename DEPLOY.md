@@ -16,8 +16,10 @@
 
 1. Go to [supabase.com](https://supabase.com) → New project
 2. **Project Settings → Database → Connection string**
-3. Copy the **URI** connection string (Direct, port **5432**) → `DATABASE_URL`
-4. Replace `[YOUR-PASSWORD]` with your DB password
+3. Copy **two** connection strings from Supabase:
+   - **Transaction pooler** (port **6543**, `?pgbouncer=true`) → `DATABASE_URL`
+   - **Direct** (port **5432**, Session mode) → `DIRECT_URL`
+4. Replace `[YOUR-PASSWORD]` with your DB password in both URLs
 
 ---
 
@@ -31,7 +33,8 @@
    ```
    FRONTEND_URL=https://YOURUSERNAME.github.io/YOUR-REPO-NAME
    APP_URL=https://YOURUSERNAME.github.io/YOUR-REPO-NAME
-   DATABASE_URL=postgresql://postgres:PASSWORD@db.xxx.supabase.co:5432/postgres
+   DATABASE_URL=postgresql://postgres.[ref]:PASSWORD@aws-0-[region].pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require
+   DIRECT_URL=postgresql://postgres:PASSWORD@db.xxx.supabase.co:5432/postgres?sslmode=require
    BOT_TOKEN=...from BotFather...
    ```
 5. Deploy → copy your Render URL, e.g. `https://primeform-api.onrender.com`

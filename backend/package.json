@@ -6,7 +6,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "start:prod": "prisma db push && node dist/index.js",
+    "start:prod": "node scripts/render-start.mjs",
     "postinstall": "prisma generate",
     "deploy:db": "prisma db push",
     "db:generate": "prisma generate",
@@ -20,6 +20,7 @@
     "express": "^4.21.2",
     "multer": "^1.4.5-lts.1",
     "openai": "^4.85.4",
+    "prisma": "^6.5.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
@@ -27,7 +28,6 @@
     "@types/express": "^5.0.0",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.13.10",
-    "prisma": "^6.5.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   }
