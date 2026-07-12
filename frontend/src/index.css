@@ -92,6 +92,38 @@ html.pf-analysis-upload #root {
   gap: 0.5rem;
 }
 
+html.pf-onboarding,
+html.pf-onboarding body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.pf-onboarding #root {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+.onboarding-page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.onboarding-grid {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.5rem;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 @layer components {
   .page {
     min-height: 100vh;

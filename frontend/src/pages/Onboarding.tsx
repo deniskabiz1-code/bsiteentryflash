@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTgWebApp } from '@/lib/tgWebApp';
+import { getTgWebApp, setVerticalSwipeLock } from '@/lib/tgWebApp';
 import { completeOnboarding, checkChannel, getChannelInfo } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { User } from '@/types';
@@ -28,8 +28,25 @@ export default function Onboarding() {
   const [channelOpenUrl, setChannelOpenUrl] = useState('https://t.me/primeform_channel');
   const [channelUsername, setChannelUsername] = useState('primeform_channel');
 
-  const telegramUsername = tgUser?.username || null;
   const photoUrl = useTelegramPhoto();
+
+  useEffect(() => {
+    document.documentElement.classList.add('pf-onboarding');
+    setVerticalSwipeLock(true);
+
+    const blockScroll = (event: Event) => {
+      if (event.cancelable) event.preventDefault();
+    };
+    document.addEventListener('touchmove', blockScroll, { passive: false });
+    document.addEventListener('wheel', blockScroll, { passive: false });
+
+    return () => {
+      document.documentElement.classList.remove('pf-onboarding');
+      setVerticalSwipeLock(false);
+      document.removeEventListener('touchmove', blockScroll);
+      document.removeEventListener('wheel', blockScroll);
+    };
+  }, []);
 
   useEffect(() => {
     if (tgUser?.first_name && !name) {
@@ -128,53 +145,51 @@ export default function Onboarding() {
     : (tgUser?.first_name?.charAt(0) || 'P');
 
   return (
-    <div className="flex h-dvh min-h-dvh flex-col overflow-hidden bg-app-canvas">
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-        <div className="page-inner pb-36">
+    <div className="onboarding-page bg-app-canvas">
+      <div className="page-inner flex min-h-0 flex-1 flex-col px-5 pb-[5.5rem] pt-2">
         {step === 0 && (
-          <div className="flex min-h-[calc(100dvh-9rem)] flex-col items-center justify-center text-center px-2">
-            <UserAvatar photoUrl={photoUrl} fallbackLetter={fallbackLetter} size="lg" className="mb-8" />
-            <h1 className="heading-md mb-3">Добро пожаловать в Primeform</h1>
-            <p className="text-[15px] text-app-muted leading-relaxed max-w-xs mb-2">
+          <div className="flex h-full min-h-0 flex-col items-center justify-center overflow-hidden text-center">
+            <UserAvatar photoUrl={photoUrl} fallbackLetter={fallbackLetter} size="lg" className="mb-5" />
+            <h1 className="heading-md mb-2">Добро пожаловать в Primeform</h1>
+            <p className="mb-2 max-w-xs text-[14px] leading-snug text-app-muted">
               AI-ассистент для улучшения внешности
             </p>
-            <p className="text-[14px] text-app-muted mb-4">
+            <p className="mb-3 text-[13px] text-app-muted">
               Подпишитесь на канал, чтобы начать
             </p>
-            {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
-            {hint && <p className="text-amber-600 text-xs mb-4 max-w-xs">{hint}</p>}
+            {error && <p className="mb-2 text-sm text-red-500">{error}</p>}
+            {hint && <p className="mb-3 max-w-xs text-xs text-amber-600">{hint}</p>}
           </div>
         )}
 
         {step === 1 && (
-          <div className="flex min-h-[calc(100dvh-10rem)] w-full flex-col items-center justify-center px-2 py-6 text-center">
-            <div className="flex w-full max-w-sm flex-col items-center">
-              <h1 className="text-[20px] font-bold tracking-tight mb-1">Настройка профиля</h1>
-              <p className="text-[13px] text-app-muted mb-6">Можно изменить в любой момент</p>
+          <div className="onboarding-grid">
+            <header className="shrink-0 text-center">
+              <h1 className="text-[20px] font-bold tracking-tight">Настройка профиля</h1>
+              <p className="mt-0.5 text-[12px] text-app-muted">Можно изменить в любой момент</p>
+            </header>
 
-              <div className="w-full space-y-4 text-left">
-                <input
-                  className="input-field text-center !py-3"
-                  placeholder="Как вас зовут?"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
+            <div className="flex min-h-0 flex-col justify-center gap-3 overflow-hidden">
+              <input
+                className="input-field !py-2.5 text-center"
+                placeholder="Как вас зовут?"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
 
-                <AgeSlider value={age} onChange={setAge} compact />
+              <AgeSlider value={age} onChange={setAge} compact />
 
-                <GoalSelector selected={goals} onToggle={toggleGoal} compact />
-              </div>
+              <GoalSelector selected={goals} onToggle={toggleGoal} compact dense />
 
-              {error && <p className="text-red-500 text-sm mt-4 text-center">{error}</p>}
-              {hint && <p className="text-amber-600 text-xs mt-2 text-center">{hint}</p>}
+              {error && <p className="text-center text-sm text-red-500">{error}</p>}
+              {hint && <p className="text-center text-xs text-amber-600">{hint}</p>}
             </div>
           </div>
         )}
-        </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-app-canvas via-app-canvas to-transparent">
-        <div className="max-w-md mx-auto space-y-3">
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-app-canvas via-app-canvas to-transparent p-5">
+        <div className="mx-auto max-w-md space-y-2">
           {step === 0 && (
             <>
               <button type="button" onClick={openChannel} className="btn-dark">
