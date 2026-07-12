@@ -181,4 +181,10 @@ export async function deleteAccount() {
   return data;
 }
 
+export async function grantTestCredit() {
+  if (MOCK) return mockApi.grantTestCredit();
+  const { data } = await api.post('/user/test-credit');
+  return data;
+}
+
 export default api;

@@ -7,6 +7,7 @@ import {
   getUserProfilePhotoFilePath,
 } from '../services/telegram';
 import { serializeUser } from '../services/userProfile';
+import { isTestCreditsEnabled } from './user';
 
 const router = Router();
 
@@ -17,6 +18,7 @@ router.post('/me', validateTelegramAuth, async (req: AuthRequest, res: Response)
     res.json({
       user: await serializeUser(user),
       channelSubscribed: true,
+      testCreditsEnabled: isTestCreditsEnabled(),
     });
   } catch (err) {
     console.error('Auth error:', err);

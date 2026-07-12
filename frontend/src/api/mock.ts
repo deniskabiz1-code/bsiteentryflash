@@ -14,7 +14,13 @@ let tasks = structuredClone(MOCK_DAILY_TASKS);
 export const mockApi = {
   fetchMe: async () => {
     await delay(300);
-    return { user, channelSubscribed: true };
+    return { user, channelSubscribed: true, testCreditsEnabled: true };
+  },
+
+  grantTestCredit: async () => {
+    await delay(200);
+    user = { ...user, referralCredits: (user.referralCredits ?? 0) + 1 };
+    return { user, referralCredits: user.referralCredits };
   },
 
   checkChannel: async () => {

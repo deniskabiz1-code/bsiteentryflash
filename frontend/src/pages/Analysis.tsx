@@ -26,7 +26,10 @@ export default function Analysis() {
   );
   const isFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
   const freeAnalysisAvailable = user?.freeAnalysisAvailable ?? isFirstAnalysis;
-  const isBlockedFromFreeTrial = isFirstAnalysis && !freeAnalysisAvailable;
+  const hasPaidAccess =
+    Boolean(user?.subscriptionActive) || (user?.referralCredits ?? 0) > 0;
+  const isBlockedFromFreeTrial =
+    isFirstAnalysis && !freeAnalysisAvailable && !hasPaidAccess;
   const isMandatoryFirstFlow = isFirstAnalysis && freeAnalysisAvailable;
   const viewportRef = useFirstAnalysisViewportLock(isMandatoryFirstFlow);
 

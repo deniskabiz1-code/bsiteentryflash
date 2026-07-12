@@ -1,7 +1,12 @@
 import { Router, Response } from 'express';
 import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegramAuth';
 import { findOrCreateUser, isSubscriptionActive } from '../services/telegram';
+import { serializeUser } from '../services/userProfile';
 import { prisma } from '../utils/prisma';
+
+export function isTestCreditsEnabled(): boolean {
+  return process.env.ENABLE_TEST_CREDITS === 'true';
+}
 
 const router = Router();
 
@@ -110,5 +115,28 @@ async function deleteUserAccount(req: AuthRequest, res: Response): Promise<void>
 
 router.post('/account/delete', validateTelegramAuth, deleteUserAccount);
 router.delete('/account', validateTelegramAuth, deleteUserAccount);
+
+router.post('/test-credit', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    if (!isTestCreditsEnabled()) {
+      res.status(403).json({ error: 'Тестовые кредиты отключены' });
+      return;
+    }
+
+    const user = await findOrCreateUser(req.telegramUser!);
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { referralCredits: { increment: 1 } },
+    });
+
+    res.json({
+      user: await serializeUser(updated),
+      referralCredits: updated.referralCredits,
+    });
+  } catch (err) {
+    console.error('Test credit error:', err);
+    res.status(500).json({ error: 'Не удалось начислить кредит' });
+  }
+});
 
 export default router;

@@ -5,6 +5,7 @@ import { User } from '@/types';
 interface AppContextType {
   user: User | null;
   channelSubscribed: boolean;
+  testCreditsEnabled: boolean;
   loading: boolean;
   error: string | null;
   refreshUser: () => Promise<void>;
@@ -14,6 +15,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType>({
   user: null,
   channelSubscribed: false,
+  testCreditsEnabled: false,
   loading: true,
   error: null,
   refreshUser: async () => {},
@@ -23,6 +25,7 @@ const AppContext = createContext<AppContextType>({
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [channelSubscribed, setChannelSubscribed] = useState(false);
+  const [testCreditsEnabled, setTestCreditsEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +35,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const data = await fetchMe();
       setUser(data.user);
       setChannelSubscribed(data.channelSubscribed);
+      setTestCreditsEnabled(Boolean(data.testCreditsEnabled));
     } catch (err) {
       setError('Ошибка загрузки данных');
       console.error(err);
@@ -51,7 +55,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [refreshUser]);
 
   return (
-    <AppContext.Provider value={{ user, channelSubscribed, loading, error, refreshUser, applyUser }}>
+    <AppContext.Provider value={{ user, channelSubscribed, testCreditsEnabled, loading, error, refreshUser, applyUser }}>
       {children}
     </AppContext.Provider>
   );
