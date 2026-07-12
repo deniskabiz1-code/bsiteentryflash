@@ -31,7 +31,8 @@ type AiConfig = {
 function normalizeBaseUrl(raw?: string): string | undefined {
   if (!raw) return undefined;
   const trimmed = raw.trim().replace(/\/+$/, '');
-  return trimmed || undefined;
+  if (!trimmed) return undefined;
+  return trimmed.endsWith('/v1') ? trimmed : `${trimmed}/v1`;
 }
 
 function resolveProviderLabel(baseURL?: string): string {
@@ -58,7 +59,7 @@ function resolveAiConfig(): AiConfig | null {
   const visionDetail =
     visionRaw === 'low' || visionRaw === 'auto' || visionRaw === 'high'
       ? visionRaw
-      : 'high';
+      : 'low';
   const reasoningEffort = process.env.OPENAI_REASONING_EFFORT?.trim() || undefined;
 
   return { apiKey, baseURL, model, jsonMode, visionDetail, reasoningEffort, provider };
@@ -90,7 +91,7 @@ export type AnalysisRunResult = {
   demo: boolean;
 };
 
-const AI_REQUEST_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 25_000);
+const AI_REQUEST_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 55_000);
 
 function getOpenAI(): OpenAI {
   const config = resolveAiConfig();
@@ -111,6 +112,20 @@ function getOpenAI(): OpenAI {
   }
 
   return openai;
+}
+
+function parseCompletionResponse(response: unknown): OpenAI.Chat.ChatCompletion {
+  if (typeof response === 'string') {
+    const trimmed = response.trim();
+    if (trimmed.startsWith('<')) {
+      throw new Error('AI provider returned HTML — check OPENAI_BASE_URL (needs /v1)');
+    }
+    return JSON.parse(trimmed) as OpenAI.Chat.ChatCompletion;
+  }
+  if (response && typeof response === 'object' && 'choices' in response) {
+    return response as OpenAI.Chat.ChatCompletion;
+  }
+  throw new Error('Unexpected AI response format');
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -221,13 +236,14 @@ async function requestVision(
     body.reasoning_effort = config.reasoningEffort;
   }
 
-  const response = await withTimeout(
+  const raw = await withTimeout(
     getOpenAI().chat.completions.create(
       body as unknown as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
     ),
     AI_REQUEST_TIMEOUT_MS,
     'AI vision request',
   );
+  const response = parseCompletionResponse(raw);
 
   const content = response.choices[0]?.message?.content;
   if (!content) throw new Error('Пустой ответ от AI');
@@ -274,7 +290,8 @@ export async function analyzeFace(photoPath: string): Promise<AnalysisRunResult>
     const data = await callVision(FACE_ANALYSIS_PROMPT, [photoPath]);
     return { data, demo: false };
   } catch (err) {
-    console.error('[ai] Face analysis failed, using demo data:', err);
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error('[ai] Face analysis failed, using demo data:', detail);
     await demoDelay();
     return { data: { ...DEMO_FACE_RESULT }, demo: true };
   }
