@@ -5,8 +5,9 @@ import SegmentedControl from '@/components/SegmentedControl';
 import {
   createPayment, getReferralInfo, submitReferralProof,
   updateProfile, updateReminders, getSkincareRoutine,
-  getLastCheckin, deleteAccount, grantTestCredit,
+  getLastCheckin, deleteAccount,
 } from '@/api/client';
+import TestCreditButton from '@/components/TestCreditButton';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useTelegramPhoto } from '@/hooks/useTelegramPhoto';
@@ -17,7 +18,7 @@ import { GOAL_LABELS } from '@/types';
 import { assetUrl } from '@/utils/assets';
 
 export default function Profile() {
-  const { user, refreshUser, testCreditsEnabled } = useApp();
+  const { user, refreshUser } = useApp();
   const { openLink, haptic } = useTelegram();
   const photoUrl = useTelegramPhoto();
 
@@ -36,7 +37,7 @@ export default function Profile() {
   const [deleteError, setDeleteError] = useState('');
   const [referralTab, setReferralTab] = useState('Ссылка');
   const [loading, setLoading] = useState(false);
-  const [grantingCredit, setGrantingCredit] = useState(false);
+
 
   useEffect(() => {
     if (user?.subscriptionActive) {
@@ -45,20 +46,6 @@ export default function Profile() {
     getLastCheckin().then((d) => setLastCheckin(d.checkin)).catch(() => {});
     getReferralInfo().then(setReferral).catch(() => {});
   }, [user]);
-
-  const handleGrantTestCredit = async () => {
-    setGrantingCredit(true);
-    try {
-      await grantTestCredit();
-      await refreshUser();
-      getReferralInfo().then(setReferral).catch(() => {});
-      haptic('success');
-    } catch {
-      haptic('error');
-    } finally {
-      setGrantingCredit(false);
-    }
-  };
 
   const handleSubscribe = async () => {
     try {
@@ -198,6 +185,9 @@ export default function Profile() {
           <button type="button" onClick={handleSubscribe} className="btn-dark">
             {user?.subscriptionActive ? 'Продлить подписку' : 'Оформить подписку'}
           </button>
+          {!user?.subscriptionActive && (
+            <TestCreditButton variant="accent" />
+          )}
         </section>
 
         <section className="card space-y-4">
@@ -208,16 +198,6 @@ export default function Profile() {
           <p className="text-[14px] text-app-muted">
             Кредиты: <span className="font-bold text-brand-greenDark">{referral?.referralCredits ?? user?.referralCredits ?? 0}</span>
           </p>
-          {testCreditsEnabled && (
-            <button
-              type="button"
-              onClick={handleGrantTestCredit}
-              disabled={grantingCredit}
-              className="btn-light text-[14px]"
-            >
-              {grantingCredit ? 'Начисляем...' : '+1 анализ (тест)'}
-            </button>
-          )}
           <SegmentedControl
             options={['Ссылка', 'TikTok']}
             value={referralTab}

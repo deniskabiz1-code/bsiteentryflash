@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Scissors, Sparkles } from 'lucide-react';
 
 import PhotoUpload from '@/components/PhotoUpload';
+import TestCreditButton from '@/components/TestCreditButton';
 import { analyzeFace } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -166,16 +167,12 @@ export default function Analysis() {
 
       <footer className={`min-h-0 shrink-0 overflow-hidden ${isMandatoryFirstFlow ? 'space-y-2 pb-1' : 'space-y-1.5'}`}>
         {!canAnalyze && !isFirstAnalysis && (
-          <p className="text-center text-[12px] leading-snug text-red-600">
-            Нужна подписка.{' '}
-            <button
-              type="button"
-              onClick={() => navigate('/profile')}
-              className="font-semibold underline"
-            >
-              Оформить
-            </button>
-          </p>
+          <div className="space-y-2">
+            <p className="text-center text-[12px] leading-snug text-red-600">
+              Нужна подписка или кредит.
+            </p>
+            <TestCreditButton />
+          </div>
         )}
         {error && (
           <p className="text-center text-[13px] font-medium text-red-500 line-clamp-2">{error}</p>
@@ -183,6 +180,7 @@ export default function Analysis() {
 
         {isBlockedFromFreeTrial ? (
           <div className="space-y-2">
+            <TestCreditButton variant="accent" />
             <button
               type="button"
               onClick={() => navigate('/profile')}

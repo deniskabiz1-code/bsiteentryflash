@@ -5,7 +5,7 @@ import { serializeUser } from '../services/userProfile';
 import { prisma } from '../utils/prisma';
 
 export function isTestCreditsEnabled(): boolean {
-  return process.env.ENABLE_TEST_CREDITS === 'true';
+  return process.env.ENABLE_TEST_CREDITS !== 'false';
 }
 
 const router = Router();
