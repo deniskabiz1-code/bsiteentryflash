@@ -11,6 +11,7 @@ import subscriptionRoutes from './routes/subscription';
 import referralRoutes from './routes/referral';
 import userRoutes from './routes/user';
 import { backfillTelegramFreeTrials } from './services/freeTrial';
+import { getAiProviderInfo } from './services/openai';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -39,7 +40,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.resolve(uploadDir)));
 
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', app: 'Primeform' });
+  res.json({ status: 'ok', app: 'Primeform', ai: getAiProviderInfo() });
 });
 
 app.use('/api/auth', authRoutes);

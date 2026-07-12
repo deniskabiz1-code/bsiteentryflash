@@ -8,6 +8,71 @@ import {
 } from '../data/demoAnalysis';
 
 let openai: OpenAI | null = null;
+let cachedConfigKey = '';
+
+export type AiProviderInfo = {
+  configured: boolean;
+  demo: boolean;
+  provider: string;
+  model: string;
+  baseUrl: string | null;
+};
+
+type AiConfig = {
+  apiKey: string;
+  baseURL: string | undefined;
+  model: string;
+  jsonMode: boolean;
+  visionDetail: 'high' | 'low' | 'auto';
+  provider: string;
+};
+
+function normalizeBaseUrl(raw?: string): string | undefined {
+  if (!raw) return undefined;
+  const trimmed = raw.trim().replace(/\/+$/, '');
+  return trimmed || undefined;
+}
+
+function resolveProviderLabel(baseURL?: string): string {
+  if (!baseURL) return 'openai';
+  const host = baseURL.toLowerCase();
+  if (host.includes('deepseek')) return 'deepseek';
+  if (host.includes('openrouter')) return 'openrouter';
+  if (host.includes('together')) return 'together';
+  if (host.includes('groq')) return 'groq';
+  if (host.includes('siliconflow')) return 'siliconflow';
+  return 'openai-compatible';
+}
+
+function resolveAiConfig(): AiConfig | null {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) return null;
+
+  const baseURL = normalizeBaseUrl(process.env.OPENAI_BASE_URL);
+  const provider = resolveProviderLabel(baseURL);
+  const defaultModel = provider === 'openai' ? 'gpt-4o' : 'deepseek-v4-flash';
+  const model = process.env.OPENAI_MODEL?.trim() || defaultModel;
+  const jsonMode = process.env.OPENAI_JSON_MODE !== 'false';
+  const visionRaw = process.env.OPENAI_VISION_DETAIL?.trim().toLowerCase();
+  const visionDetail =
+    visionRaw === 'low' || visionRaw === 'auto' || visionRaw === 'high'
+      ? visionRaw
+      : 'high';
+
+  return { apiKey, baseURL, model, jsonMode, visionDetail, provider };
+}
+
+export function getAiProviderInfo(): AiProviderInfo {
+  const config = resolveAiConfig();
+  const demo = shouldUseDemoAnalysis();
+  return {
+    configured: Boolean(config),
+    demo,
+    provider: config?.provider ?? 'none',
+    model: config?.model ?? 'none',
+    baseUrl: config?.baseURL ?? null,
+  };
+}
 
 export function isOpenAiConfigured(): boolean {
   return Boolean(process.env.OPENAI_API_KEY?.trim());
@@ -24,13 +89,21 @@ export type AnalysisRunResult = {
 };
 
 function getOpenAI(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) {
+  const config = resolveAiConfig();
+  if (!config) {
     throw new Error('OPENAI_API_KEY не настроен на сервере');
   }
-  if (!openai) {
-    openai = new OpenAI({ apiKey });
+
+  const configKey = `${config.apiKey}|${config.baseURL ?? ''}|${config.model}`;
+  if (!openai || cachedConfigKey !== configKey) {
+    openai = new OpenAI({
+      apiKey: config.apiKey,
+      baseURL: config.baseURL,
+    });
+    cachedConfigKey = configKey;
+    console.log(`[ai] Provider: ${config.provider}, model: ${config.model}, base: ${config.baseURL ?? 'default'}`);
   }
+
   return openai;
 }
 
@@ -87,17 +160,21 @@ function imageToBase64(filePath: string): string {
   return `data:${mime};base64,${buffer.toString('base64')}`;
 }
 
-async function callVision(
+async function requestVision(
   systemPrompt: string,
-  imagePaths: string[]
-): Promise<Record<string, unknown>> {
+  imagePaths: string[],
+  useJsonMode: boolean,
+): Promise<string> {
+  const config = resolveAiConfig();
+  if (!config) throw new Error('AI not configured');
+
   const imageContents = imagePaths.map((p) => ({
     type: 'image_url' as const,
-    image_url: { url: imageToBase64(p), detail: 'high' as const },
+    image_url: { url: imageToBase64(p), detail: config.visionDetail },
   }));
 
   const response = await getOpenAI().chat.completions.create({
-    model: 'gpt-4o',
+    model: config.model,
     messages: [
       { role: 'system', content: systemPrompt },
       {
@@ -109,13 +186,41 @@ async function callVision(
       },
     ],
     max_tokens: 4096,
-    response_format: { type: 'json_object' },
+    ...(useJsonMode ? { response_format: { type: 'json_object' as const } } : {}),
   });
 
   const content = response.choices[0]?.message?.content;
-  if (!content) throw new Error('Пустой ответ от OpenAI');
+  if (!content) throw new Error('Пустой ответ от AI');
+  return content;
+}
 
-  return JSON.parse(content);
+function parseJsonResponse(content: string): Record<string, unknown> {
+  const trimmed = content.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const match = trimmed.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Ответ AI не содержит JSON');
+    return JSON.parse(match[0]);
+  }
+}
+
+async function callVision(
+  systemPrompt: string,
+  imagePaths: string[],
+): Promise<Record<string, unknown>> {
+  const config = resolveAiConfig();
+  if (!config) throw new Error('AI not configured');
+
+  try {
+    const content = await requestVision(systemPrompt, imagePaths, config.jsonMode);
+    return parseJsonResponse(content);
+  } catch (firstErr) {
+    if (!config.jsonMode) throw firstErr;
+    console.warn('[ai] JSON mode failed, retrying without response_format:', firstErr);
+    const content = await requestVision(systemPrompt, imagePaths, false);
+    return parseJsonResponse(content);
+  }
 }
 
 export async function analyzeFace(photoPath: string): Promise<AnalysisRunResult> {
@@ -129,7 +234,7 @@ export async function analyzeFace(photoPath: string): Promise<AnalysisRunResult>
     const data = await callVision(FACE_ANALYSIS_PROMPT, [photoPath]);
     return { data, demo: false };
   } catch (err) {
-    console.error('[demo] OpenAI face analysis failed, using demo data:', err);
+    console.error('[ai] Face analysis failed, using demo data:', err);
     await demoDelay();
     return { data: { ...DEMO_FACE_RESULT }, demo: true };
   }
@@ -149,7 +254,7 @@ export async function analyzeHairstyle(
     const data = await callVision(HAIRSTYLE_ANALYSIS_PROMPT, [frontPath, sidePath]);
     return { data, demo: false };
   } catch (err) {
-    console.error('[demo] OpenAI hairstyle analysis failed, using demo data:', err);
+    console.error('[ai] Hairstyle analysis failed, using demo data:', err);
     await demoDelay();
     return { data: { ...DEMO_HAIRSTYLE_RESULT }, demo: true };
   }
