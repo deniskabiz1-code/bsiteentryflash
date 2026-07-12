@@ -90,23 +90,45 @@ export type AnalysisRunResult = {
   demo: boolean;
 };
 
+const AI_REQUEST_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 25_000);
+
 function getOpenAI(): OpenAI {
   const config = resolveAiConfig();
   if (!config) {
     throw new Error('OPENAI_API_KEY не настроен на сервере');
   }
 
-  const configKey = `${config.apiKey}|${config.baseURL ?? ''}|${config.model}`;
+  const configKey = `${config.apiKey}|${config.baseURL ?? ''}|${config.model}|${AI_REQUEST_TIMEOUT_MS}`;
   if (!openai || cachedConfigKey !== configKey) {
     openai = new OpenAI({
       apiKey: config.apiKey,
       baseURL: config.baseURL,
+      timeout: AI_REQUEST_TIMEOUT_MS,
+      maxRetries: 0,
     });
     cachedConfigKey = configKey;
     console.log(`[ai] Provider: ${config.provider}, model: ${config.model}, base: ${config.baseURL ?? 'default'}`);
   }
 
   return openai;
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`${label} timeout after ${ms}ms`));
+    }, ms);
+
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
 }
 
 const FACE_ANALYSIS_PROMPT = `You are an expert aesthetician and facial analyst. Analyze the provided face photo and return ONLY valid JSON with this exact structure:
@@ -157,6 +179,9 @@ All text fields must be in Russian. Be honest but encouraging. Do not include an
 function imageToBase64(filePath: string): string {
   const buffer = fs.readFileSync(filePath);
   const ext = path.extname(filePath).toLowerCase();
+  if (ext === '.heic' || ext === '.heif') {
+    throw new Error('HEIC requires conversion before AI analysis');
+  }
   const mime =
     ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
   return `data:${mime};base64,${buffer.toString('base64')}`;
@@ -196,8 +221,12 @@ async function requestVision(
     body.reasoning_effort = config.reasoningEffort;
   }
 
-  const response = await getOpenAI().chat.completions.create(
-    body as unknown as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
+  const response = await withTimeout(
+    getOpenAI().chat.completions.create(
+      body as unknown as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
+    ),
+    AI_REQUEST_TIMEOUT_MS,
+    'AI vision request',
   );
 
   const content = response.choices[0]?.message?.content;

@@ -7,6 +7,7 @@ import PhotoUpload from '@/components/PhotoUpload';
 import TestCreditCard from '@/components/TestCreditCard';
 import { analyzeFace } from '@/api/client';
 import { useApp } from '@/context/AppContext';
+import { preparePhotoForUpload } from '@/utils/preparePhoto';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useFirstAnalysisViewportLock } from '@/hooks/useFirstAnalysisViewportLock';
 import { setVerticalSwipeLock } from '@/lib/tgWebApp';
@@ -65,7 +66,8 @@ export default function Analysis() {
     setLoading(true);
     setError('');
     try {
-      const data = await analyzeFace(photo);
+      const prepared = await preparePhotoForUpload(photo);
+      const data = await analyzeFace(prepared);
       haptic('success');
       await refreshUser();
       const analysisId = data.analysis?.id;
@@ -80,12 +82,16 @@ export default function Analysis() {
         message?: string;
       };
       const msg = ax.response?.data?.error;
-      if (ax.code === 'ECONNABORTED') {
+      if (err instanceof Error && err.message.startsWith('Не удалось')) {
+        setError(err.message);
+      } else if (ax.code === 'ECONNABORTED') {
         setError('Сервер долго отвечает — подождите и повторите');
       } else if (!ax.response) {
-        setError('Нет связи с сервером');
+        setError('Ошибка связи с сервером. Проверьте интернет и повторите.');
       } else if (ax.response.status === 403) {
         setError(msg || 'Бесплатный анализ уже использован');
+      } else if (ax.response.status === 401) {
+        setError('Сессия Telegram устарела — закройте и снова откройте приложение');
       } else {
         setError(msg || 'Ошибка анализа');
       }

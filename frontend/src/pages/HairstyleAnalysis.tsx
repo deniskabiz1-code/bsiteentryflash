@@ -5,6 +5,7 @@ import ProgressDots from '@/components/ProgressDots';
 import PhotoUpload from '@/components/PhotoUpload';
 import { analyzeHairstyle } from '@/api/client';
 import { useTelegram } from '@/hooks/useTelegram';
+import { preparePhotoForUpload } from '@/utils/preparePhoto';
 import { HairstyleResult, FACE_SHAPE_LABELS } from '@/types';
 
 export default function HairstyleAnalysis() {
@@ -23,7 +24,11 @@ export default function HairstyleAnalysis() {
     setLoading(true);
     setError('');
     try {
-      const data = await analyzeHairstyle(frontPhoto, sidePhoto);
+      const [front, side] = await Promise.all([
+        preparePhotoForUpload(frontPhoto),
+        preparePhotoForUpload(sidePhoto),
+      ]);
+      const data = await analyzeHairstyle(front, side);
       setResult(data.analysis);
       setStep(2);
       haptic('success');

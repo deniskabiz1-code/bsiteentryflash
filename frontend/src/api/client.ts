@@ -66,9 +66,7 @@ export async function analyzeFace(photo: File) {
   if (MOCK) return mockApi.analyzeFace(photo);
   const form = new FormData();
   form.append('photo', photo);
-  const { data } = await api.post('/analysis/face', form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const { data } = await api.post('/analysis/face', form);
   return data;
 }
 
@@ -77,9 +75,7 @@ export async function analyzeHairstyle(front: File, side: File) {
   const form = new FormData();
   form.append('frontPhoto', front);
   form.append('sidePhoto', side);
-  const { data } = await api.post('/analysis/hairstyle', form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const { data } = await api.post('/analysis/hairstyle', form);
   return data;
 }
 
@@ -141,9 +137,7 @@ export async function submitReferralProof(file: File) {
   if (MOCK) return mockApi.submitReferralProof(file);
   const form = new FormData();
   form.append('screenshot', file);
-  const { data } = await api.post('/referral/proof', form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const { data } = await api.post('/referral/proof', form);
   return data;
 }
 
