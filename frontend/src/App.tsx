@@ -17,7 +17,9 @@ function AppRoutes() {
   const { user, loading } = useApp();
   const { overlayActive } = useOverlay();
   const location = useLocation();
-  const hideNavOnAnalysisUpload = location.pathname === '/analysis';
+  const hideNavOnAnalysisUpload =
+    location.pathname === '/analysis'
+    && (user?.faceAnalysisCount ?? 0) === 0;
 
   if (loading) return <LoadingScreen />;
 

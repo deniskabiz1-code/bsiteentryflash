@@ -54,6 +54,20 @@ html[data-tg] .tg-page-top {
   overflow: hidden;
 }
 
+.analysis-upload-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100dvh;
+  padding-bottom: 5.75rem;
+  overflow: hidden;
+}
+
+.analysis-upload-page .page-inner {
+  flex: 1;
+  min-height: 0;
+}
+
 @layer components {
   .page {
     min-height: 100vh;
