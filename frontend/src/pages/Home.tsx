@@ -143,7 +143,7 @@ export default function Home() {
             <>
               <p className="label-sm mb-1">Твой рост</p>
               <p className="mb-4 text-[28px] font-bold tracking-tight">
-                {score ?? '-'}
+                {score ?? '—'}
                 <span className="text-lg font-semibold text-app-muted"> баллов</span>
               </p>
               <MiniBarChart values={chartValues} />
