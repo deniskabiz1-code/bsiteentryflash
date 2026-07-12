@@ -54,18 +54,42 @@ html[data-tg] .tg-page-top {
   overflow: hidden;
 }
 
-.analysis-upload-page {
+html.pf-analysis-upload,
+html.pf-analysis-upload body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.pf-analysis-upload #root {
   display: flex;
   flex-direction: column;
   min-height: 0;
   height: 100dvh;
-  padding-bottom: 5.75rem;
+  max-height: 100dvh;
   overflow: hidden;
+}
+
+.analysis-upload-page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 5.75rem;
+  box-sizing: border-box;
+}
+
+.analysis-upload-page.page {
+  min-height: 0 !important;
 }
 
 .analysis-upload-page .page-inner {
   flex: 1;
   min-height: 0;
+}
+
+.analysis-upload-dense.first-analysis-grid {
+  gap: 0.5rem;
 }
 
 @layer components {

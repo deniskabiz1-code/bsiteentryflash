@@ -8,6 +8,7 @@ interface PhotoUploadProps {
   tips?: string[];
   compact?: boolean;
   fill?: boolean;
+  dense?: boolean;
 }
 
 export default function PhotoUpload({
@@ -17,6 +18,7 @@ export default function PhotoUpload({
   tips,
   compact = false,
   fill = false,
+  dense = false,
 }: PhotoUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(preview || null);
@@ -60,7 +62,7 @@ export default function PhotoUpload({
   }
 
   return (
-    <div className={`w-full ${compact ? (fill ? 'first-analysis-photo-fill h-full gap-3' : 'space-y-3') : 'space-y-4'}`}>
+    <div className={`w-full ${compact ? (fill ? `first-analysis-photo-fill h-full ${dense ? 'gap-2' : 'gap-3'}` : 'space-y-3') : 'space-y-4'}`}>
       {tips && (
         <div className="card !p-4 space-y-2">
           <p className="text-[13px] font-semibold text-app-muted">Советы для лучшего результата</p>
@@ -89,13 +91,21 @@ export default function PhotoUpload({
         onClick={() => inputRef.current?.click()}
         className={`flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed
           border-app-border bg-app-canvas transition-colors active:bg-app-track
-          ${compact ? (fill ? 'min-h-0 flex-1 py-6' : 'h-36 py-3') : 'aspect-[3/4] gap-4 shadow-card'}`}
+          ${compact ? (fill ? `min-h-0 flex-1 ${dense ? 'py-4 gap-1' : 'py-6'}` : 'h-36 py-3') : 'aspect-[3/4] gap-4 shadow-card'}`}
       >
-        <div className={`flex items-center justify-center rounded-full bg-brand-green ${compact ? (fill ? 'h-16 w-16' : 'h-14 w-14') : 'h-20 w-20 shadow-pill'}`}>
-          <Camera size={compact ? (fill ? 30 : 26) : 32} className="text-white" strokeWidth={1.5} />
+        <div className={`flex items-center justify-center rounded-full bg-brand-green ${
+          compact
+            ? (fill ? (dense ? 'h-12 w-12' : 'h-16 w-16') : 'h-14 w-14')
+            : 'h-20 w-20 shadow-pill'
+        }`}>
+          <Camera
+            size={compact ? (fill ? (dense ? 24 : 30) : 26) : 32}
+            className="text-white"
+            strokeWidth={1.5}
+          />
         </div>
-        <span className="text-[15px] font-medium text-app-text">{label}</span>
-        {compact && (
+        <span className={`font-medium text-app-text ${dense ? 'text-[14px]' : 'text-[15px]'}`}>{label}</span>
+        {compact && !dense && (
           <span className="text-[12px] text-app-muted">Нажмите, чтобы открыть камеру</span>
         )}
         {!compact && (
@@ -107,7 +117,7 @@ export default function PhotoUpload({
         <button
           type="button"
           onClick={openGallery}
-          className={`w-full text-center text-[13px] font-medium text-brand-greenDark ${fill ? 'shrink-0' : ''}`}
+          className={`w-full text-center font-medium text-brand-greenDark ${dense ? 'text-[12px]' : 'text-[13px]'} ${fill ? 'shrink-0' : ''}`}
         >
           Выбрать из галереи
         </button>

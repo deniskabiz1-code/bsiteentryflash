@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Scissors, Sparkles } from 'lucide-react';
@@ -8,6 +8,7 @@ import { analyzeFace } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useFirstAnalysisViewportLock } from '@/hooks/useFirstAnalysisViewportLock';
+import { setVerticalSwipeLock } from '@/lib/tgWebApp';
 
 export default function Analysis() {
   const navigate = useNavigate();
@@ -25,6 +26,26 @@ export default function Analysis() {
   );
   const isFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
   const viewportRef = useFirstAnalysisViewportLock(isFirstAnalysis);
+
+  useEffect(() => {
+    if (isFirstAnalysis) return;
+
+    document.documentElement.classList.add('pf-analysis-upload');
+    setVerticalSwipeLock(true);
+
+    const blockScroll = (event: Event) => {
+      if (event.cancelable) event.preventDefault();
+    };
+    document.addEventListener('touchmove', blockScroll, { passive: false });
+    document.addEventListener('wheel', blockScroll, { passive: false });
+
+    return () => {
+      document.documentElement.classList.remove('pf-analysis-upload');
+      setVerticalSwipeLock(false);
+      document.removeEventListener('touchmove', blockScroll);
+      document.removeEventListener('wheel', blockScroll);
+    };
+  }, [isFirstAnalysis]);
 
   const canAnalyze =
     user?.subscriptionActive ||
@@ -84,10 +105,12 @@ export default function Analysis() {
       : 'Сначала сделайте селфи';
 
   const content = (
-    <div className="page-inner first-analysis-grid h-full px-5 py-3">
-      <header className="min-h-0 shrink-0 space-y-1.5 overflow-hidden">
+    <div
+      className={`page-inner first-analysis-grid h-full px-5 ${isFirstAnalysis ? 'py-3' : 'analysis-upload-dense py-2'}`}
+    >
+      <header className="min-h-0 shrink-0 overflow-hidden">
         {isFirstAnalysis ? (
-          <>
+          <div className="space-y-1.5">
             <span className="pill-green inline-flex">
               <Sparkles size={14} />
               1 анализ бесплатно
@@ -98,50 +121,45 @@ export default function Analysis() {
             <p className="text-[14px] leading-snug text-app-muted">
               Сделайте селфи — AI бесплатно оценит внешность.
             </p>
-          </>
+          </div>
         ) : (
-          <>
-            <p className="label-sm">AI-анализ</p>
-            <h1 className="text-[22px] font-bold leading-snug tracking-tight">
-              Анализ лица
-            </h1>
-            <p className="text-[14px] leading-snug text-app-muted">
-              Загрузите селфи для оценки
-            </p>
-          </>
+          <h1 className="text-[20px] font-bold leading-tight tracking-tight">
+            Анализ лица
+          </h1>
         )}
       </header>
 
-      <div className="card flex min-h-0 h-full flex-col overflow-hidden !p-4">
+      <div className={`card flex min-h-0 h-full flex-col overflow-hidden ${isFirstAnalysis ? '!p-4' : '!p-3'}`}>
         <PhotoUpload
           onPhotoSelect={setPhoto}
           label="Сделать селфи"
           compact
           fill
+          dense={!isFirstAnalysis}
         />
       </div>
 
-      <footer className="min-h-0 shrink-0 space-y-2 overflow-hidden pb-1">
+      <footer className={`min-h-0 shrink-0 overflow-hidden ${isFirstAnalysis ? 'space-y-2 pb-1' : 'space-y-1.5'}`}>
         {!canAnalyze && !isFirstAnalysis && (
-          <p className="text-center text-[13px] leading-snug text-red-600">
-            Бесплатный анализ использован.{' '}
+          <p className="text-center text-[12px] leading-snug text-red-600">
+            Нужна подписка.{' '}
             <button
               type="button"
               onClick={() => navigate('/profile')}
               className="font-semibold underline"
             >
-              Оформить подписку
+              Оформить
             </button>
           </p>
         )}
         {error && (
-          <p className="text-center text-sm font-medium text-red-500">{error}</p>
+          <p className="text-center text-[13px] font-medium text-red-500 line-clamp-2">{error}</p>
         )}
         <button
           type="button"
           onClick={handleAnalyze}
           disabled={!photo || loading || !canAnalyze}
-          className={isFirstAnalysis ? 'btn-accent' : 'btn-dark'}
+          className={isFirstAnalysis ? 'btn-accent' : 'btn-dark !py-3.5'}
         >
           {analyzeLabel}
         </button>
@@ -149,9 +167,9 @@ export default function Analysis() {
           <button
             type="button"
             onClick={() => navigate('/analysis/hairstyle')}
-            className="flex w-full items-center justify-center gap-2 py-2 text-[14px] font-semibold text-app-muted"
+            className="flex w-full items-center justify-center gap-1.5 py-1 text-[13px] font-semibold text-app-muted"
           >
-            <Scissors size={16} />
+            <Scissors size={15} />
             Анализ причёски
           </button>
         )}
