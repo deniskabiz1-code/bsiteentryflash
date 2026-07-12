@@ -24,6 +24,7 @@ type AiConfig = {
   model: string;
   jsonMode: boolean;
   visionDetail: 'high' | 'low' | 'auto';
+  reasoningEffort?: string;
   provider: string;
 };
 
@@ -50,7 +51,7 @@ function resolveAiConfig(): AiConfig | null {
 
   const baseURL = normalizeBaseUrl(process.env.OPENAI_BASE_URL);
   const provider = resolveProviderLabel(baseURL);
-  const defaultModel = provider === 'openai' ? 'gpt-4o' : 'deepseek-v4-flash';
+  const defaultModel = baseURL ? 'gpt-5.5' : 'gpt-4o';
   const model = process.env.OPENAI_MODEL?.trim() || defaultModel;
   const jsonMode = process.env.OPENAI_JSON_MODE !== 'false';
   const visionRaw = process.env.OPENAI_VISION_DETAIL?.trim().toLowerCase();
@@ -58,8 +59,9 @@ function resolveAiConfig(): AiConfig | null {
     visionRaw === 'low' || visionRaw === 'auto' || visionRaw === 'high'
       ? visionRaw
       : 'high';
+  const reasoningEffort = process.env.OPENAI_REASONING_EFFORT?.trim() || undefined;
 
-  return { apiKey, baseURL, model, jsonMode, visionDetail, provider };
+  return { apiKey, baseURL, model, jsonMode, visionDetail, reasoningEffort, provider };
 }
 
 export function getAiProviderInfo(): AiProviderInfo {
@@ -173,7 +175,7 @@ async function requestVision(
     image_url: { url: imageToBase64(p), detail: config.visionDetail },
   }));
 
-  const response = await getOpenAI().chat.completions.create({
+  const body: Record<string, unknown> = {
     model: config.model,
     messages: [
       { role: 'system', content: systemPrompt },
@@ -186,8 +188,17 @@ async function requestVision(
       },
     ],
     max_tokens: 4096,
-    ...(useJsonMode ? { response_format: { type: 'json_object' as const } } : {}),
-  });
+  };
+  if (useJsonMode) {
+    body.response_format = { type: 'json_object' };
+  }
+  if (config.reasoningEffort) {
+    body.reasoning_effort = config.reasoningEffort;
+  }
+
+  const response = await getOpenAI().chat.completions.create(
+    body as unknown as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
+  );
 
   const content = response.choices[0]?.message?.content;
   if (!content) throw new Error('Пустой ответ от AI');
