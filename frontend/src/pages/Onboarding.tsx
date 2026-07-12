@@ -163,26 +163,28 @@ export default function Onboarding() {
         )}
 
         {step === 1 && (
-          <div className="onboarding-grid">
+          <div className="onboarding-grid min-h-0 flex-1">
             <header className="shrink-0 text-center">
-              <h1 className="text-[20px] font-bold tracking-tight">Настройка профиля</h1>
-              <p className="mt-0.5 text-[12px] text-app-muted">Можно изменить в любой момент</p>
+              <h1 className="text-[22px] font-bold tracking-tight">Настройка профиля</h1>
+              <p className="mt-1 text-[13px] text-app-muted">Можно изменить в любой момент</p>
             </header>
 
-            <div className="flex min-h-0 flex-col justify-center gap-3 overflow-hidden">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
               <input
-                className="input-field !py-2.5 text-center"
+                className="input-field shrink-0 text-center"
                 placeholder="Как вас зовут?"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
 
-              <AgeSlider value={age} onChange={setAge} compact />
+              <div className="shrink-0">
+                <AgeSlider value={age} onChange={setAge} compact />
+              </div>
 
-              <GoalSelector selected={goals} onToggle={toggleGoal} compact dense />
+              <GoalSelector selected={goals} onToggle={toggleGoal} compact fill />
 
-              {error && <p className="text-center text-sm text-red-500">{error}</p>}
-              {hint && <p className="text-center text-xs text-amber-600">{hint}</p>}
+              {error && <p className="shrink-0 text-center text-sm text-red-500">{error}</p>}
+              {hint && <p className="shrink-0 text-center text-xs text-amber-600">{hint}</p>}
             </div>
           </div>
         )}
