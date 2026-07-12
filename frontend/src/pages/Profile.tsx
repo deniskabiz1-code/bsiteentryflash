@@ -7,7 +7,7 @@ import {
   updateProfile, updateReminders, getSkincareRoutine,
   getLastCheckin, deleteAccount,
 } from '@/api/client';
-import TestCreditButton from '@/components/TestCreditButton';
+import TestCreditCard from '@/components/TestCreditCard';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useTelegramPhoto } from '@/hooks/useTelegramPhoto';
@@ -129,6 +129,8 @@ export default function Profile() {
   return (
     <div className="page">
       <div className="page-inner space-y-6">
+        <TestCreditCard />
+
         <section className="text-center pt-2">
           <UserAvatar
             photoUrl={photoUrl}
@@ -185,9 +187,6 @@ export default function Profile() {
           <button type="button" onClick={handleSubscribe} className="btn-dark">
             {user?.subscriptionActive ? 'Продлить подписку' : 'Оформить подписку'}
           </button>
-          {!user?.subscriptionActive && (
-            <TestCreditButton variant="accent" />
-          )}
         </section>
 
         <section className="card space-y-4">

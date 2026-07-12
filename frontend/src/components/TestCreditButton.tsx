@@ -6,17 +6,17 @@ import { useTelegram } from '@/hooks/useTelegram';
 type TestCreditButtonProps = {
   className?: string;
   variant?: 'light' | 'accent';
+  showCredits?: boolean;
 };
 
 export default function TestCreditButton({
   className = '',
   variant = 'light',
+  showCredits = false,
 }: TestCreditButtonProps) {
   const { user, refreshUser } = useApp();
   const { haptic } = useTelegram();
   const [loading, setLoading] = useState(false);
-
-  if (user?.subscriptionActive) return null;
 
   const handleClick = async () => {
     setLoading(true);
@@ -27,22 +27,30 @@ export default function TestCreditButton({
     } catch (err: unknown) {
       haptic('error');
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      alert(msg || 'Не удалось начислить. На Render включите ENABLE_TEST_CREDITS=true');
+      alert(msg || 'Не удалось начислить кредит. Проверьте деплой бэкенда на Render.');
     } finally {
       setLoading(false);
     }
   };
 
   const btnClass = variant === 'accent' ? 'btn-accent' : 'btn-light';
+  const credits = user?.referralCredits ?? 0;
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={loading}
-      className={`${btnClass} text-[14px] ${className}`}
-    >
-      {loading ? 'Начисляем...' : '+1 анализ (тест)'}
-    </button>
+    <div className={`space-y-2 ${className}`}>
+      {showCredits && (
+        <p className="text-[13px] text-app-muted">
+          Кредиты анализа: <span className="font-bold text-brand-greenDark">{credits}</span>
+        </p>
+      )}
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={loading}
+        className={`${btnClass} w-full text-[15px] font-semibold`}
+      >
+        {loading ? 'Начисляем...' : '+1 анализ (тест)'}
+      </button>
+    </div>
   );
 }
