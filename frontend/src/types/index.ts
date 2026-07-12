@@ -13,6 +13,7 @@ export interface User {
   reminderTime: string | null;
   onboarded: boolean;
   faceAnalysisCount: number;
+  freeAnalysisAvailable: boolean;
 }
 
 export interface FaceAnalysisResult {

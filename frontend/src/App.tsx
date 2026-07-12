@@ -19,7 +19,8 @@ function AppRoutes() {
   const location = useLocation();
   const hideNavOnAnalysisUpload =
     location.pathname === '/analysis'
-    && (user?.faceAnalysisCount ?? 0) === 0;
+    && (user?.faceAnalysisCount ?? 0) === 0
+    && (user?.freeAnalysisAvailable ?? true);
 
   if (loading) return <LoadingScreen />;
 
@@ -33,7 +34,9 @@ function AppRoutes() {
     );
   }
 
-  const needsFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
+  const needsFirstAnalysis =
+    (user?.faceAnalysisCount ?? 0) === 0
+    && (user?.freeAnalysisAvailable ?? true);
 
   return (
     <>

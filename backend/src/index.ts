@@ -10,6 +10,7 @@ import tasksRoutes from './routes/tasks';
 import subscriptionRoutes from './routes/subscription';
 import referralRoutes from './routes/referral';
 import userRoutes from './routes/user';
+import { backfillTelegramFreeTrials } from './services/freeTrial';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -62,5 +63,8 @@ app.use((err: Error, _req: express.Request, res: express.Response, next: express
 });
 
 app.listen(PORT, () => {
+  backfillTelegramFreeTrials().catch((err) => {
+    console.error('Free trial backfill failed:', err);
+  });
   console.log(`Primeform backend running on port ${PORT}`);
 });

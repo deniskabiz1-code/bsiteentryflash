@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegramAuth';
 import { findOrCreateUser, isSubscriptionActive } from '../services/telegram';
+import { hasTelegramUsedFreeTrial, markTelegramFreeTrialUsed } from '../services/freeTrial';
 import {
   analyzeFace,
   analyzeHairstyle,
@@ -45,6 +46,7 @@ const upload = multer({
 
 async function canPerformAnalysis(
   userId: number,
+  telegramId: bigint,
   subscriptionEnd: Date | null,
   referralCredits: number,
   type: 'face' | 'hairstyle'
@@ -57,7 +59,9 @@ async function canPerformAnalysis(
     const count = await prisma.analysis.count({
       where: { userId, type: 'face' },
     });
-    if (count === 0) return { allowed: true, useCredit: false };
+    if (count === 0 && !(await hasTelegramUsedFreeTrial(telegramId))) {
+      return { allowed: true, useCredit: false };
+    }
   }
 
   if (referralCredits > 0) {
@@ -67,7 +71,7 @@ async function canPerformAnalysis(
   return {
     allowed: false,
     useCredit: false,
-    reason: 'Требуется подписка или реферальные кредиты',
+    reason: 'Бесплатный анализ уже использован. Нужна подписка или реферальные кредиты',
   };
 }
 
@@ -85,6 +89,7 @@ router.post(
       const user = await findOrCreateUser(req.telegramUser!);
       const access = await canPerformAnalysis(
         user.id,
+        user.telegramId,
         user.subscriptionEnd,
         user.referralCredits,
         'face'
@@ -114,6 +119,8 @@ router.post(
           where: { id: user.id },
           data: { referralCredits: { decrement: 1 } },
         });
+      } else if (!isSubscriptionActive(user.subscriptionEnd)) {
+        await markTelegramFreeTrialUsed(user.telegramId);
       }
 
       res.json({

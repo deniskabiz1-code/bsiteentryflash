@@ -78,7 +78,9 @@ export default function Home() {
     0
   );
   const totalCount = tasks.reduce((acc, g) => acc + g.tasks.length, 0);
-  const needsFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
+  const needsFirstAnalysis =
+    (user?.faceAnalysisCount ?? 0) === 0
+    && (user?.freeAnalysisAvailable ?? true);
 
   if (contentLoading) {
     return (

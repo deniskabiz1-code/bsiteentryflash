@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegramAuth';
-import { findOrCreateUser, isSubscriptionActive } from '../services/telegram';
+import { findOrCreateUser } from '../services/telegram';
+import { serializeUser } from '../services/userProfile';
 import { prisma } from '../utils/prisma';
 
 const router = Router();
@@ -46,22 +47,7 @@ router.post('/complete', validateTelegramAuth, async (req: AuthRequest, res: Res
     });
 
     res.json({
-      user: {
-        id: updated.id,
-        telegramId: updated.telegramId.toString(),
-        username: updated.username,
-        name: updated.name,
-        age: updated.age,
-        goals: updated.goals,
-        referralCode: updated.referralCode,
-        referralCredits: updated.referralCredits,
-        subscriptionActive: isSubscriptionActive(updated.subscriptionEnd),
-        subscriptionEnd: updated.subscriptionEnd,
-        reminderEnabled: updated.reminderEnabled,
-        reminderTime: updated.reminderTime,
-        onboarded: updated.onboarded,
-        faceAnalysisCount: 0,
-      },
+      user: await serializeUser(updated),
     });
   } catch (err) {
     console.error('Onboarding error:', err);

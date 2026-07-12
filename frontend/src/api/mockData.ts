@@ -15,6 +15,7 @@ export const MOCK_USER = {
   reminderTime: '09:00',
   onboarded: true,
   faceAnalysisCount: 3,
+  freeAnalysisAvailable: false,
 };
 
 export const MOCK_FACE_RESULT: FaceAnalysisResult = {

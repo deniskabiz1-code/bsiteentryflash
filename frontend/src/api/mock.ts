@@ -24,7 +24,7 @@ export const mockApi = {
 
   completeOnboarding: async (payload: { name: string; age: number; goals: string[] }) => {
     await delay(500);
-    user = { ...user, ...payload, onboarded: true };
+    user = { ...user, ...payload, onboarded: true, faceAnalysisCount: 0, freeAnalysisAvailable: true };
     return { user };
   },
 

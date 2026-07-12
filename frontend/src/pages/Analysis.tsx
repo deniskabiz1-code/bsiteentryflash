@@ -25,7 +25,10 @@ export default function Analysis() {
     || (location.state as { welcome?: boolean } | null)?.welcome
   );
   const isFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
-  const viewportRef = useFirstAnalysisViewportLock(isFirstAnalysis);
+  const freeAnalysisAvailable = user?.freeAnalysisAvailable ?? isFirstAnalysis;
+  const isBlockedFromFreeTrial = isFirstAnalysis && !freeAnalysisAvailable;
+  const isMandatoryFirstFlow = isFirstAnalysis && freeAnalysisAvailable;
+  const viewportRef = useFirstAnalysisViewportLock(isMandatoryFirstFlow);
 
   useEffect(() => {
     if (isFirstAnalysis) return;
@@ -48,8 +51,8 @@ export default function Analysis() {
   }, [isFirstAnalysis]);
 
   const canAnalyze =
-    user?.subscriptionActive ||
-    isFirstAnalysis ||
+    Boolean(user?.subscriptionActive) ||
+    (isFirstAnalysis && freeAnalysisAvailable) ||
     (user?.referralCredits ?? 0) > 0;
 
   const handleAnalyze = async () => {
@@ -106,10 +109,21 @@ export default function Analysis() {
 
   const content = (
     <div
-      className={`page-inner first-analysis-grid h-full px-5 ${isFirstAnalysis ? 'py-3' : 'analysis-upload-dense py-2'}`}
+      className={`page-inner first-analysis-grid h-full px-5 ${
+        isMandatoryFirstFlow ? 'py-3' : 'analysis-upload-dense py-2'
+      }`}
     >
       <header className="min-h-0 shrink-0 overflow-hidden">
-        {isFirstAnalysis ? (
+        {isBlockedFromFreeTrial ? (
+          <div className="space-y-1.5">
+            <h1 className="text-[20px] font-bold leading-tight tracking-tight">
+              Бесплатный анализ недоступен
+            </h1>
+            <p className="text-[14px] leading-snug text-app-muted">
+              Этот Telegram-аккаунт уже использовал бесплатный анализ.
+            </p>
+          </div>
+        ) : isFirstAnalysis ? (
           <div className="space-y-1.5">
             <span className="pill-green inline-flex">
               <Sparkles size={14} />
@@ -129,17 +143,25 @@ export default function Analysis() {
         )}
       </header>
 
-      <div className={`card flex min-h-0 h-full flex-col overflow-hidden ${isFirstAnalysis ? '!p-4' : '!p-3'}`}>
-        <PhotoUpload
-          onPhotoSelect={setPhoto}
-          label="Сделать селфи"
-          compact
-          fill
-          dense={!isFirstAnalysis}
-        />
-      </div>
+      {isBlockedFromFreeTrial ? (
+        <div className="card flex min-h-0 flex-1 flex-col items-center justify-center overflow-hidden !p-5 text-center">
+          <p className="text-[14px] leading-relaxed text-app-muted">
+            Оформите подписку или получите реферальные кредиты, чтобы сделать анализ.
+          </p>
+        </div>
+      ) : (
+        <div className={`card flex min-h-0 h-full flex-col overflow-hidden ${isMandatoryFirstFlow ? '!p-4' : '!p-3'}`}>
+          <PhotoUpload
+            onPhotoSelect={setPhoto}
+            label="Сделать селфи"
+            compact
+            fill
+            dense={!isMandatoryFirstFlow}
+          />
+        </div>
+      )}
 
-      <footer className={`min-h-0 shrink-0 overflow-hidden ${isFirstAnalysis ? 'space-y-2 pb-1' : 'space-y-1.5'}`}>
+      <footer className={`min-h-0 shrink-0 overflow-hidden ${isMandatoryFirstFlow ? 'space-y-2 pb-1' : 'space-y-1.5'}`}>
         {!canAnalyze && !isFirstAnalysis && (
           <p className="text-center text-[12px] leading-snug text-red-600">
             Нужна подписка.{' '}
@@ -155,29 +177,51 @@ export default function Analysis() {
         {error && (
           <p className="text-center text-[13px] font-medium text-red-500 line-clamp-2">{error}</p>
         )}
-        <button
-          type="button"
-          onClick={handleAnalyze}
-          disabled={!photo || loading || !canAnalyze}
-          className={isFirstAnalysis ? 'btn-accent' : 'btn-dark !py-3.5'}
-        >
-          {analyzeLabel}
-        </button>
-        {user?.subscriptionActive && !isFirstAnalysis && (
-          <button
-            type="button"
-            onClick={() => navigate('/analysis/hairstyle')}
-            className="flex w-full items-center justify-center gap-1.5 py-1 text-[13px] font-semibold text-app-muted"
-          >
-            <Scissors size={15} />
-            Анализ причёски
-          </button>
+
+        {isBlockedFromFreeTrial ? (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => navigate('/profile')}
+              className="btn-dark"
+            >
+              Оформить подписку
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="btn-light"
+            >
+              На главную
+            </button>
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={handleAnalyze}
+              disabled={!photo || loading || !canAnalyze}
+              className={isMandatoryFirstFlow ? 'btn-accent' : 'btn-dark !py-3.5'}
+            >
+              {analyzeLabel}
+            </button>
+            {user?.subscriptionActive && !isFirstAnalysis && (
+              <button
+                type="button"
+                onClick={() => navigate('/analysis/hairstyle')}
+                className="flex w-full items-center justify-center gap-1.5 py-1 text-[13px] font-semibold text-app-muted"
+              >
+                <Scissors size={15} />
+                Анализ причёски
+              </button>
+            )}
+          </>
         )}
       </footer>
     </div>
   );
 
-  if (isFirstAnalysis) {
+  if (isMandatoryFirstFlow) {
     return createPortal(
       <div ref={viewportRef} className="bg-app-canvas">
         {content}

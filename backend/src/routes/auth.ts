@@ -3,11 +3,10 @@ import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegra
 import {
   findOrCreateUser,
   checkChannelSubscription,
-  isSubscriptionActive,
   getChannelOpenUrl,
   getUserProfilePhotoFilePath,
 } from '../services/telegram';
-import { prisma } from '../utils/prisma';
+import { serializeUser } from '../services/userProfile';
 
 const router = Router();
 
@@ -15,27 +14,8 @@ router.post('/me', validateTelegramAuth, async (req: AuthRequest, res: Response)
   try {
     const user = await findOrCreateUser(req.telegramUser!);
 
-    const faceAnalysisCount = await prisma.analysis.count({
-      where: { userId: user.id, type: 'face' },
-    });
-
     res.json({
-      user: {
-        id: user.id,
-        telegramId: user.telegramId.toString(),
-        username: user.username,
-        name: user.name,
-        age: user.age,
-        goals: user.goals,
-        referralCode: user.referralCode,
-        referralCredits: user.referralCredits,
-        subscriptionActive: isSubscriptionActive(user.subscriptionEnd),
-        subscriptionEnd: user.subscriptionEnd,
-        reminderEnabled: user.reminderEnabled,
-        reminderTime: user.reminderTime,
-        onboarded: user.onboarded,
-        faceAnalysisCount,
-      },
+      user: await serializeUser(user),
       channelSubscribed: true,
     });
   } catch (err) {

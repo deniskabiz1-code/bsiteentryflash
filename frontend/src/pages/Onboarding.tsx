@@ -104,9 +104,14 @@ export default function Onboarding() {
     setHint('');
     try {
       const data = await completeOnboarding({ name: name.trim(), age, goals });
-      applyUser(data.user as User);
+      const nextUser = data.user as User;
+      applyUser(nextUser);
       haptic('success');
-      navigate('/analysis', { replace: true, state: { welcome: true, firstAnalysis: true } });
+      if (nextUser.freeAnalysisAvailable) {
+        navigate('/analysis', { replace: true, state: { welcome: true, firstAnalysis: true } });
+      } else {
+        navigate('/', { replace: true });
+      }
     } catch (err: unknown) {
       const res = (err as { response?: { data?: { error?: string; hint?: string } } })?.response?.data;
       setError(res?.error || 'Ошибка сохранения');
