@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, ChevronRight, Trash2 } from 'lucide-react';
 
@@ -7,6 +7,7 @@ import MiniBarChart from '@/components/MiniBarChart';
 import SegmentedControl from '@/components/SegmentedControl';
 import { getAnalysisHistory, deleteAnalysis } from '@/api/client';
 import { useTelegram } from '@/hooks/useTelegram';
+import { useConditionalPageScrollLock } from '@/hooks/useConditionalPageScrollLock';
 import { Analysis, FaceAnalysisResult } from '@/types';
 import { assetUrl } from '@/utils/assets';
 
@@ -18,6 +19,7 @@ export default function Progress() {
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [period, setPeriod] = useState('Месяц');
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const load = async () => {
     try {
@@ -56,6 +58,8 @@ export default function Progress() {
   const first = faceAnalyses[faceAnalyses.length - 1];
   const latest = faceAnalyses[0];
   const delta = (latest?.overallScore || 0) - (first?.overallScore || 0);
+  const remeasureKey = `${faceAnalyses.length}-${first?.id ?? 0}-${latest?.id ?? 0}-${delta}`;
+  const allowScroll = useConditionalPageScrollLock(contentRef, !loading, remeasureKey);
 
   if (loading) {
     return (
@@ -66,8 +70,11 @@ export default function Progress() {
   }
 
   return (
-    <div className="page">
-      <div className="page-inner space-y-6">
+    <div className={`page ${allowScroll ? '' : 'progress-lock-page'}`}>
+      <div
+        ref={contentRef}
+        className={`page-inner ${allowScroll ? 'space-y-6' : 'progress-lock-inner'}`}
+      >
         <section className="text-center pt-2">
           <p className="label-sm mb-3">Текущий балл</p>
           <p className="heading-xl">{latest?.overallScore ?? '—'}<span className="text-[20px] text-app-muted font-semibold">/100</span></p>
