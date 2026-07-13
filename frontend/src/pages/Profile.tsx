@@ -18,7 +18,7 @@ import { assetUrl } from '@/utils/assets';
 import { getDeviceTimezone } from '@/utils/timezone';
 
 export default function Profile() {
-  const { user, refreshUser } = useApp();
+  const { user, refreshUser, applyUser } = useApp();
   const { openLink, haptic } = useTelegram();
   const photoUrl = useTelegramPhoto();
 
@@ -35,6 +35,7 @@ export default function Profile() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const deviceTimezone = getDeviceTimezone();
 
@@ -62,12 +63,19 @@ export default function Profile() {
 
   const handleSaveProfile = async () => {
     setLoading(true);
+    setSaveError('');
     try {
-      await updateProfile({ name, age: parseInt(age, 10), goals });
-      await refreshUser();
+      const data = await updateProfile({ name, age: parseInt(age, 10), goals });
+      if (data.user) {
+        applyUser(data.user);
+      } else {
+        await refreshUser();
+      }
       setEditing(false);
       haptic('success');
-    } catch {
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setSaveError(msg || 'Не удалось сохранить. Попробуйте снова.');
       haptic('error');
     } finally {
       setLoading(false);
@@ -179,7 +187,14 @@ export default function Profile() {
             <h2 className="text-[17px] font-bold">Данные профиля</h2>
             <button
               type="button"
-              onClick={() => editing ? handleSaveProfile() : setEditing(true)}
+              onClick={() => {
+                if (editing) {
+                  handleSaveProfile();
+                } else {
+                  setSaveError('');
+                  setEditing(true);
+                }
+              }}
               className="text-[14px] font-semibold text-app-text underline"
             >
               {editing ? (loading ? '...' : 'Сохранить') : 'Изменить'}
@@ -187,6 +202,9 @@ export default function Profile() {
           </div>
           {editing ? (
             <div className="space-y-5">
+              {saveError && (
+                <p className="text-center text-[13px] font-medium text-red-500">{saveError}</p>
+              )}
               <input className="input-field" value={name} onChange={(e) => setName(e.target.value)} placeholder="Имя" />
               <AgeSlider
                 value={parseInt(age, 10) || 14}

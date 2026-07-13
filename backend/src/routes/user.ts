@@ -17,20 +17,32 @@ router.put('/profile', validateTelegramAuth, async (req: AuthRequest, res: Respo
     const user = await findOrCreateUser(req.telegramUser!);
 
     const data: Record<string, unknown> = {};
-    if (name) data.name = name.trim();
-    if (age) {
-      const ageNum = parseInt(age, 10);
-      if (ageNum >= 14 && ageNum <= 60) data.age = ageNum;
+    if (typeof name === 'string' && name.trim()) {
+      data.name = name.trim();
     }
-    if (Array.isArray(goals) && goals.length > 0) data.goals = goals;
+    if (age !== undefined && age !== null && age !== '') {
+      const ageNum = parseInt(String(age), 10);
+      if (ageNum >= 14 && ageNum <= 60) {
+        data.age = ageNum;
+      }
+    }
+    if (Array.isArray(goals)) {
+      data.goals = goals;
+    }
+
+    if (Object.keys(data).length === 0) {
+      res.status(400).json({ error: 'Нет данных для сохранения' });
+      return;
+    }
 
     const updated = await prisma.user.update({
       where: { id: user.id },
       data,
     });
 
-    res.json({ user: updated });
+    res.json({ user: await serializeUser(updated) });
   } catch (err) {
+    console.error('Profile update error:', err);
     res.status(500).json({ error: 'Ошибка обновления' });
   }
 });
