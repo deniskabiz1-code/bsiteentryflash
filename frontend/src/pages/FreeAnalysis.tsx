@@ -8,6 +8,14 @@ import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 
 const TIKTOK_COMMENT_SCREENSHOTS = 5;
+const TIKTOK_BOT_MENTION = '@primeform_app_bot';
+const TIKTOK_COMMENT_EXAMPLES = [
+  'Кто пробовал @primeform_app_bot? норм анализ лица прямо в Telegram',
+  'Для looksmax советую @primeform_app_bot — чек-ин и советы по коже',
+  'Зацените @primeform_app_bot, если хотите объективную оценку внешности',
+  '@primeform_app_bot помог понять, над чем реально работать',
+  'Мини-апп @primeform_app_bot — удобно для еженедельного прогресса',
+];
 
 export default function FreeAnalysis() {
   const navigate = useNavigate();
@@ -162,10 +170,29 @@ export default function FreeAnalysis() {
                       ))}
                     </div>
                   </li>
-                  <li>Оставьте 5 разных комментариев под looksmax-видео (не спам — осмысленные).</li>
-                  <li>Сделайте скриншот каждого комментария — чтобы был виден ваш текст.</li>
+                  <li>
+                    Оставьте 5 разных комментариев под looksmax-видео. В каждом комментарии
+                    обязательно укажите <span className="font-semibold text-app-text">{TIKTOK_BOT_MENTION}</span>.
+                  </li>
+                  <li>Сделайте скриншот каждого комментария — на нём должен быть виден текст с {TIKTOK_BOT_MENTION}.</li>
                   <li>Загрузите все 5 скриншотов ниже и отправьте на проверку.</li>
                 </ol>
+              </div>
+              <div className="space-y-2">
+                <p className="text-[13px] font-semibold">Примеры комментариев</p>
+                <ul className="space-y-2">
+                  {TIKTOK_COMMENT_EXAMPLES.map((example) => (
+                    <li
+                      key={example}
+                      className="rounded-xl bg-app-track/40 px-3 py-2 text-[12px] leading-snug text-app-muted"
+                    >
+                      «{example}»
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-[12px] text-app-muted">
+                  Не копируйте один в один — напишите своими словами, но {TIKTOK_BOT_MENTION} должен быть в каждом из 5 комментариев.
+                </p>
               </div>
               <ul className="text-[13px] text-app-muted space-y-1 list-disc pl-5">
                 <li>Один бонус за аккаунт после одобрения</li>
