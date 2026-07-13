@@ -1,8 +1,10 @@
-import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { acquirePageFitLock } from '@/lib/pageScrollLock';
 import { setVerticalSwipeLock } from '@/lib/tgWebApp';
 
 const BOTTOM_NAV_PX = 92;
+/** Prevent lock/unlock flicker when height is near the threshold. */
+const HYSTERESIS_PX = 24;
 
 function isInteractiveTouchTarget(target: EventTarget | null): boolean {
   return (
@@ -17,6 +19,12 @@ function readViewportBottom(): number {
   return vv.offsetTop + vv.height;
 }
 
+/** Content bottom in document coordinates — stable while the user scrolls. */
+function readContentDocumentBottom(content: HTMLElement): number {
+  const rect = content.getBoundingClientRect();
+  return rect.top + window.scrollY + content.offsetHeight;
+}
+
 /** Block page scroll only when content fits; never change page layout/CSS. */
 export function useConditionalPageScrollLock(
   contentRef: RefObject<HTMLElement | null>,
@@ -24,6 +32,11 @@ export function useConditionalPageScrollLock(
   remeasureKey: string | number,
 ) {
   const [allowScroll, setAllowScroll] = useState(true);
+  const allowScrollRef = useRef(true);
+
+  useEffect(() => {
+    allowScrollRef.current = allowScroll;
+  }, [allowScroll]);
 
   useEffect(() => {
     if (!ready) {
@@ -36,8 +49,18 @@ export function useConditionalPageScrollLock(
       if (!content) return;
 
       const available = readViewportBottom() - BOTTOM_NAV_PX;
-      const bottom = content.getBoundingClientRect().bottom;
-      setAllowScroll(bottom > available + 8);
+      const documentBottom = readContentDocumentBottom(content);
+      const overflows = documentBottom > available + 8;
+      const prev = allowScrollRef.current;
+
+      if (overflows) {
+        setAllowScroll(true);
+        return;
+      }
+
+      if (prev || documentBottom < available - HYSTERESIS_PX) {
+        setAllowScroll(false);
+      }
     };
 
     const scheduleMeasure = () => {
@@ -57,13 +80,11 @@ export function useConditionalPageScrollLock(
     }
     window.addEventListener('resize', scheduleMeasure);
     window.visualViewport?.addEventListener('resize', scheduleMeasure);
-    window.visualViewport?.addEventListener('scroll', scheduleMeasure);
 
     return () => {
       observer.disconnect();
       window.removeEventListener('resize', scheduleMeasure);
       window.visualViewport?.removeEventListener('resize', scheduleMeasure);
-      window.visualViewport?.removeEventListener('scroll', scheduleMeasure);
     };
   }, [ready, remeasureKey, contentRef]);
 
@@ -79,20 +100,14 @@ export function useConditionalPageScrollLock(
       if (event.cancelable) event.preventDefault();
     };
 
-    const resetScroll = () => {
-      if (window.scrollY !== 0) window.scrollTo(0, 0);
-    };
-
     document.addEventListener('touchmove', blockScroll, { passive: false });
     document.addEventListener('wheel', blockScroll, { passive: false });
-    document.addEventListener('scroll', resetScroll, { passive: true });
 
     return () => {
       releaseLock();
       setVerticalSwipeLock(false);
       document.removeEventListener('touchmove', blockScroll);
       document.removeEventListener('wheel', blockScroll);
-      document.removeEventListener('scroll', resetScroll);
     };
   }, [ready, allowScroll]);
 
