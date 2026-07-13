@@ -149,6 +149,85 @@ export async function sendBotMessage(
   }
 }
 
+type PhotoPayload = {
+  buffer: Uint8Array;
+  filename: string;
+};
+
+function isAdminAnalysisNotifyEnabled(): boolean {
+  if (process.env.ADMIN_NOTIFY_ANALYSES === 'false') return false;
+  return Boolean(process.env.ADMIN_TELEGRAM_ID?.trim());
+}
+
+export async function sendBotPhotoBuffer(
+  telegramId: number,
+  photo: PhotoPayload,
+  caption?: string,
+): Promise<void> {
+  const botToken = process.env.BOT_TOKEN;
+  if (!botToken) return;
+
+  const form = new FormData();
+  form.append('chat_id', String(telegramId));
+  form.append('photo', new Blob([photo.buffer]), photo.filename);
+  if (caption) {
+    form.append('caption', caption);
+    form.append('parse_mode', 'HTML');
+  }
+
+  try {
+    const res = await fetch(`${BOT_API}${botToken}/sendPhoto`, {
+      method: 'POST',
+      body: form,
+    });
+    const data = (await res.json()) as { ok: boolean; description?: string };
+    if (!data.ok) {
+      console.error('sendBotPhotoBuffer failed:', data.description);
+    }
+  } catch (err) {
+    console.error('Failed to send bot photo buffer:', err);
+  }
+}
+
+export async function sendBotMediaGroupBuffers(
+  telegramId: number,
+  photos: PhotoPayload[],
+  caption?: string,
+): Promise<void> {
+  const botToken = process.env.BOT_TOKEN;
+  if (!botToken || photos.length === 0) return;
+
+  const form = new FormData();
+  form.append('chat_id', String(telegramId));
+
+  const media = photos.map((photo, index) => {
+    const attachName = `file${index}`;
+    form.append(attachName, new Blob([photo.buffer]), photo.filename);
+    return {
+      type: 'photo',
+      media: `attach://${attachName}`,
+      ...(index === 0 && caption
+        ? { caption, parse_mode: 'HTML' }
+        : {}),
+    };
+  });
+
+  form.append('media', JSON.stringify(media));
+
+  try {
+    const res = await fetch(`${BOT_API}${botToken}/sendMediaGroup`, {
+      method: 'POST',
+      body: form,
+    });
+    const data = (await res.json()) as { ok: boolean; description?: string };
+    if (!data.ok) {
+      console.error('sendBotMediaGroupBuffers failed:', data.description);
+    }
+  } catch (err) {
+    console.error('Failed to send bot media group buffers:', err);
+  }
+}
+
 export async function sendBotPhoto(
   telegramId: number,
   photoUrl: string,
@@ -211,6 +290,63 @@ export async function sendBotMediaGroup(
   } catch (err) {
     console.error('Failed to send bot media group:', err);
   }
+}
+
+export async function notifyAdminAnalysisSubmission(payload: {
+  type: 'face' | 'hairstyle' | 'try-on';
+  analysisId?: number;
+  username: string | null;
+  telegramId: bigint;
+  name?: string | null;
+  age?: number | null;
+  overallScore?: number | null;
+  hairstyleName?: string;
+  photos: PhotoPayload[];
+}): Promise<void> {
+  if (!isAdminAnalysisNotifyEnabled()) return;
+
+  const adminId = Number(process.env.ADMIN_TELEGRAM_ID!.trim());
+  const userLabel = payload.username ? `@${payload.username}` : `ID ${payload.telegramId}`;
+  const profileBits = [
+    payload.name?.trim(),
+    payload.age ? `${payload.age} лет` : null,
+  ].filter(Boolean);
+
+  const typeLabels = {
+    face: '🪞 <b>Новый анализ лица</b>',
+    hairstyle: '💇 <b>Новый анализ причёски</b>',
+    'try-on': '✂️ <b>Примерка причёски</b>',
+  } as const;
+
+  const captionLines = [
+    typeLabels[payload.type],
+    '',
+    `Пользователь: ${userLabel}`,
+  ];
+
+  if (profileBits.length > 0) {
+    captionLines.push(`Профиль: ${profileBits.join(', ')}`);
+  }
+  if (payload.overallScore != null) {
+    captionLines.push(`Балл: <b>${payload.overallScore}/100</b>`);
+  }
+  if (payload.hairstyleName) {
+    captionLines.push(`Стиль: ${payload.hairstyleName}`);
+  }
+  if (payload.analysisId != null) {
+    captionLines.push(`Анализ #${payload.analysisId}`);
+  }
+
+  const caption = captionLines.join('\n');
+  const photos = payload.photos.filter((photo) => photo.buffer.length > 0);
+  if (photos.length === 0) return;
+
+  if (photos.length === 1) {
+    await sendBotPhotoBuffer(adminId, photos[0], caption);
+    return;
+  }
+
+  await sendBotMediaGroupBuffers(adminId, photos, caption);
 }
 
 export async function notifyAdminReferralProof(proof: {

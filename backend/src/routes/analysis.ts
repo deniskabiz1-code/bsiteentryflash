@@ -3,7 +3,11 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegramAuth';
-import { findOrCreateUser, isSubscriptionActive } from '../services/telegram';
+import {
+  findOrCreateUser,
+  isSubscriptionActive,
+  notifyAdminAnalysisSubmission,
+} from '../services/telegram';
 import { hasTelegramUsedFreeTrial, markTelegramFreeTrialUsed } from '../services/freeTrial';
 import { toFaceHistoryEntry } from '../services/analysisHistory';
 import {
@@ -65,6 +69,12 @@ function readPhotoBytes(filePath: string): Uint8Array | null {
   } catch {
     return null;
   }
+}
+
+function toPhotoPayload(filePath: string, filename: string): { buffer: Uint8Array; filename: string } | null {
+  const bytes = readPhotoBytes(filePath);
+  if (!bytes) return null;
+  return { buffer: bytes, filename };
 }
 
 const storage = multer.diskStorage({
@@ -200,6 +210,22 @@ router.post(
           demo,
         },
       });
+
+      const adminPhoto = toPhotoPayload(req.file.path, req.file.filename);
+      if (adminPhoto) {
+        notifyAdminAnalysisSubmission({
+          type: 'face',
+          analysisId: analysis.id,
+          username: user.username,
+          telegramId: user.telegramId,
+          name: user.name,
+          age: user.age,
+          overallScore,
+          photos: [adminPhoto],
+        }).catch((err) => {
+          console.error('[analysis] Admin notify failed:', err);
+        });
+      }
     } catch (err) {
       console.error('Face analysis error:', err);
       if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
@@ -259,6 +285,24 @@ router.post(
           demo,
         },
       });
+
+      const adminPhotos = [
+        toPhotoPayload(front.path, front.filename),
+        toPhotoPayload(side.path, side.filename),
+      ].filter((photo): photo is { buffer: Uint8Array; filename: string } => photo !== null);
+      if (adminPhotos.length > 0) {
+        notifyAdminAnalysisSubmission({
+          type: 'hairstyle',
+          analysisId: analysis.id,
+          username: user.username,
+          telegramId: user.telegramId,
+          name: user.name,
+          age: user.age,
+          photos: adminPhotos,
+        }).catch((err) => {
+          console.error('[analysis] Admin notify failed:', err);
+        });
+      }
     } catch (err) {
       console.error('Hairstyle analysis error:', err);
       res.status(500).json({ error: 'Ошибка анализа причёски' });
@@ -294,6 +338,21 @@ router.post(
           ? 'Превью сгенерировано'
           : 'Функция примерки скоро будет доступна',
       });
+
+      const adminPhoto = toPhotoPayload(req.file.path, req.file.filename);
+      if (adminPhoto) {
+        notifyAdminAnalysisSubmission({
+          type: 'try-on',
+          username: user.username,
+          telegramId: user.telegramId,
+          name: user.name,
+          age: user.age,
+          hairstyleName: String(hairstyleName),
+          photos: [adminPhoto],
+        }).catch((err) => {
+          console.error('[analysis] Admin notify failed:', err);
+        });
+      }
     } catch (err) {
       console.error('Try-on error:', err);
       res.status(500).json({ error: 'Ошибка генерации превью' });
