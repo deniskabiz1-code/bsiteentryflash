@@ -17,7 +17,7 @@ import AgeSlider from '@/components/AgeSlider';
 import GoalSelector from '@/components/GoalSelector';
 import UserAvatar from '@/components/UserAvatar';
 import { GOAL_LABELS } from '@/types';
-import { assetUrl } from '@/utils/assets';
+import AnalysisPhoto from '@/components/AnalysisPhoto';
 import { getDeviceTimezone } from '@/utils/timezone';
 
 export default function Profile() {
@@ -30,7 +30,12 @@ export default function Profile() {
   const [age, setAge] = useState(String(user?.age || ''));
   const [goals, setGoals] = useState<string[]>(user?.goals || []);
   const [skincare, setSkincare] = useState<EnrichedSkincareStep[]>([]);
-  const [lastCheckin, setLastCheckin] = useState<{ photoUrl: string; overallScore: number; createdAt: string } | null>(null);
+  const [lastCheckin, setLastCheckin] = useState<{
+    id: number;
+    photoUrl: string;
+    overallScore: number;
+    createdAt: string;
+  } | null>(null);
   const [reminderEnabled, setReminderEnabled] = useState(user?.reminderEnabled || false);
   const [reminderTime, setReminderTime] = useState(user?.reminderTime || '09:00');
   const [showDelete, setShowDelete] = useState(false);
@@ -144,7 +149,12 @@ export default function Profile() {
 
         {lastCheckin && (
           <section className="card-green flex items-center gap-4">
-            <img src={assetUrl(lastCheckin.photoUrl)} alt="" className="w-16 h-16 rounded-2xl object-cover" />
+            <AnalysisPhoto
+              analysisId={lastCheckin.id}
+              photoUrl={lastCheckin.photoUrl}
+              alt=""
+              className="w-16 h-16 rounded-2xl object-cover"
+            />
             <div className="flex-1">
               <p className="label-sm">Последний чек-ин</p>
               <p className="text-[28px] font-bold leading-none mt-1">{lastCheckin.overallScore}<span className="text-app-muted text-base">/100</span></p>

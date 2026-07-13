@@ -92,6 +92,20 @@ export async function getAnalysis(id: number) {
   return data;
 }
 
+export async function fetchAnalysisPhoto(id: number): Promise<Blob | null> {
+  if (MOCK) return null;
+  try {
+    const { data } = await api.get(`/analysis/${id}/photo`, {
+      responseType: 'blob',
+      timeout: 30000,
+    });
+    if (data instanceof Blob && data.size > 0) return data;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function deleteAnalysis(id: number) {
   if (MOCK) return mockApi.deleteAnalysis(id);
   const { data } = await api.delete(`/analysis/${id}`);

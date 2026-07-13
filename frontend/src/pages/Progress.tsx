@@ -11,7 +11,7 @@ import { useDocumentScrollLock } from '@/hooks/useDocumentScrollLock';
 import { useTelegram } from '@/hooks/useTelegram';
 
 import { Analysis, FaceAnalysisResult } from '@/types';
-import { assetUrl } from '@/utils/assets';
+import AnalysisPhoto from '@/components/AnalysisPhoto';
 
 export default function Progress() {
   const navigate = useNavigate();
@@ -126,7 +126,7 @@ export default function Progress() {
             <h2 className="text-[17px] font-bold mb-4">До / После</h2>
             <div className="flex items-center gap-3">
               <div className="flex-1 text-center">
-                <img src={assetUrl(first.photoUrl)} alt="До" className="w-full aspect-square object-cover rounded-2xl" />
+                <AnalysisPhoto analysisId={first.id} photoUrl={first.photoUrl} alt="До" className="w-full aspect-square object-cover rounded-2xl" />
                 <p className="text-[15px] mt-2 font-bold">{first.overallScore}</p>
                 <p className="text-[12px] text-app-muted">Первый</p>
               </div>
@@ -134,7 +134,7 @@ export default function Progress() {
                 {delta >= 0 ? '+' : ''}{delta}
               </span>
               <div className="flex-1 text-center">
-                <img src={assetUrl(latest.photoUrl)} alt="После" className="w-full aspect-square object-cover rounded-2xl" />
+                <AnalysisPhoto analysisId={latest.id} photoUrl={latest.photoUrl} alt="После" className="w-full aspect-square object-cover rounded-2xl" />
                 <p className="text-[15px] mt-2 font-bold">{latest.overallScore}</p>
                 <p className="text-[12px] text-app-muted">Последний</p>
               </div>
@@ -156,8 +156,9 @@ export default function Progress() {
                     onClick={() => openAnalysis(a)}
                     className="flex min-w-0 flex-1 items-center gap-3 px-5 py-4 text-left active:bg-app-canvas"
                   >
-                    <img
-                      src={assetUrl(a.photoUrl)}
+                    <AnalysisPhoto
+                      analysisId={a.id}
+                      photoUrl={a.photoUrl}
                       alt=""
                       className="h-12 w-12 flex-shrink-0 rounded-2xl object-cover"
                     />

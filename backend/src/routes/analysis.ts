@@ -290,6 +290,32 @@ router.get('/history', validateTelegramAuth, async (req: AuthRequest, res: Respo
   }
 });
 
+router.get('/:id/photo', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await findOrCreateUser(req.telegramUser!);
+    const analysisId = parseInt(String(req.params.id), 10);
+    const analysis = await prisma.analysis.findFirst({
+      where: { id: analysisId, userId: user.id },
+    });
+
+    if (!analysis) {
+      res.status(404).json({ error: 'Анализ не найден' });
+      return;
+    }
+
+    const filePath = path.join(uploadDir, path.basename(analysis.photoUrl));
+    if (!fs.existsSync(filePath)) {
+      res.status(404).json({ error: 'Фото не найдено' });
+      return;
+    }
+
+    res.sendFile(path.resolve(filePath));
+  } catch (err) {
+    console.error('Analysis photo error:', err);
+    res.status(500).json({ error: 'Ошибка загрузки фото' });
+  }
+});
+
 router.get('/:id', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
   try {
     const user = await findOrCreateUser(req.telegramUser!);

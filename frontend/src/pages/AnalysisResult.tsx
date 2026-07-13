@@ -5,8 +5,8 @@ import SkincareRoutineSection from '@/components/SkincareRoutineSection';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { SCORE_LABELS, SKIN_TYPE_LABELS, PUFFINESS_LABELS } from '@/types';
+import AnalysisPhoto from '@/components/AnalysisPhoto';
 import { toAnalysisResultView, type AnalysisResultView } from '@/utils/analysisView';
-import { assetUrl } from '@/utils/assets';
 
 export default function AnalysisResult() {
   const { id } = useParams();
@@ -23,7 +23,10 @@ export default function AnalysisResult() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!id || stateAnalysis) return;
+    if (!id) {
+      if (stateAnalysis) setResult(toAnalysisResultView(stateAnalysis));
+      return;
+    }
 
     const analysisId = parseInt(id, 10);
     if (Number.isNaN(analysisId)) {
@@ -32,7 +35,11 @@ export default function AnalysisResult() {
       return;
     }
 
-    setLoading(true);
+    if (stateAnalysis) {
+      setResult(toAnalysisResultView(stateAnalysis));
+    }
+
+    setLoading(!stateAnalysis);
     setError('');
     getAnalysis(analysisId)
       .then((data) => setResult(toAnalysisResultView(data.analysis)))
@@ -88,10 +95,11 @@ export default function AnalysisResult() {
   return (
     <div className="page">
       <div className="page-inner space-y-6">
-        {result.photoUrl && (
+        {(result.photoUrl || result.id) && (
           <div className="flex justify-center pt-2">
-            <img
-              src={assetUrl(result.photoUrl)}
+            <AnalysisPhoto
+              analysisId={result.id}
+              photoUrl={result.photoUrl}
               alt="Анализ"
               className="h-40 w-40 rounded-3xl object-cover shadow-card"
             />
