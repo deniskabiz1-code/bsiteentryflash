@@ -25,16 +25,22 @@ export default function Home() {
 
   const load = async () => {
     try {
-      const [taskData, historyData] = await Promise.all([
-        getDailyTasks(),
-        getAnalysisHistory(),
-      ]);
-      setStreak(taskData.streak);
-      setDailyTip(taskData.dailyTip);
-      setTasks(taskData.tasks);
-      setNeverDo(taskData.neverDo);
-
+      const historyData = await getAnalysisHistory();
       const face = historyData.analyses?.filter((a: { type: string }) => a.type === 'face') || [];
+      const hasFaceAnalysis = face.length > 0;
+
+      if (hasFaceAnalysis) {
+        const taskData = await getDailyTasks();
+        setStreak(taskData.streak);
+        setDailyTip(taskData.dailyTip);
+        setTasks(taskData.tasks);
+        setNeverDo(taskData.neverDo);
+      } else {
+        setStreak(0);
+        setDailyTip('');
+        setTasks([]);
+        setNeverDo([]);
+      }
       if (face.length > 0) {
         setScore(face[0].overallScore);
         const vals = [...face].reverse().map((a: { overallScore: number }) => a.overallScore || 0);
@@ -80,6 +86,7 @@ export default function Home() {
   const needsFirstAnalysis =
     (user?.faceAnalysisCount ?? 0) === 0
     && (user?.freeAnalysisAvailable ?? true);
+  const hasAnalysis = (user?.faceAnalysisCount ?? 0) > 0;
 
   if (contentLoading) {
     return (
@@ -157,68 +164,79 @@ export default function Home() {
           )}
         </section>
 
-        <section className="card">
-          <p className="label-sm mb-2">Совет дня</p>
-          <p className="text-[15px] leading-relaxed text-app-text">{dailyTip}</p>
-        </section>
+        {hasAnalysis ? (
+          <>
+            <section className="card">
+              <p className="label-sm mb-2">Совет дня</p>
+              <p className="text-[15px] leading-relaxed text-app-text">{dailyTip}</p>
+            </section>
 
-        <section>
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h2 className="text-[17px] font-bold">Задачи на сегодня</h2>
-            <span className="pill-gray">{completedCount}/{totalCount}</span>
-          </div>
+            <section>
+              <div className="flex items-center justify-between mb-3 px-1">
+                <h2 className="text-[17px] font-bold">Задачи на сегодня</h2>
+                <span className="pill-gray">{completedCount}/{totalCount}</span>
+              </div>
 
-          <div className="card !p-0 overflow-hidden">
-            {tasks.map((group) => (
-              <div key={group.category}>
-                <p className="px-5 pt-4 pb-2 text-[13px] font-semibold text-app-muted">{group.label}</p>
-                {group.tasks.map((task) => (
-                  <button
-                    key={task.key}
-                    type="button"
-                    onClick={() => handleToggle(task.key)}
-                    className="w-full flex items-center gap-3 px-5 py-3.5 border-t border-app-border active:bg-app-canvas transition-colors"
-                  >
-                    <div
-                      className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                        task.completed
-                          ? 'bg-brand-green border-brand-green'
-                          : 'border-app-border bg-app-surface'
-                      }`}
-                    >
-                      {task.completed && (
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                          <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className={`text-[15px] text-left flex-1 ${task.completed ? 'text-app-muted line-through' : 'text-app-text'}`}>
-                      {task.label}
-                    </span>
-                  </button>
+              <div className="card !p-0 overflow-hidden">
+                {tasks.map((group) => (
+                  <div key={group.category}>
+                    <p className="px-5 pt-4 pb-2 text-[13px] font-semibold text-app-muted">{group.label}</p>
+                    {group.tasks.map((task) => (
+                      <button
+                        key={task.key}
+                        type="button"
+                        onClick={() => handleToggle(task.key)}
+                        className="w-full flex items-center gap-3 px-5 py-3.5 border-t border-app-border active:bg-app-canvas transition-colors"
+                      >
+                        <div
+                          className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            task.completed
+                              ? 'bg-brand-green border-brand-green'
+                              : 'border-app-border bg-app-surface'
+                          }`}
+                        >
+                          {task.completed && (
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className={`text-[15px] text-left flex-1 ${task.completed ? 'text-app-muted line-through' : 'text-app-text'}`}>
+                          {task.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 ))}
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
 
-        <section className="card">
-          <button
-            type="button"
-            onClick={() => setNeverDoOpen(!neverDoOpen)}
-            className="w-full flex items-center justify-between"
-          >
-            <span className="text-[15px] font-semibold">Что не стоит делать никогда</span>
-            {neverDoOpen ? <ChevronUp size={18} className="text-app-muted" /> : <ChevronDown size={18} className="text-app-muted" />}
-          </button>
-          {neverDoOpen && (
-            <div className="mt-3 pt-3 border-t border-app-border space-y-2">
-              {neverDo.map((item, i) => (
-                <p key={i} className="text-[14px] text-app-muted">✕ {item}</p>
-              ))}
-            </div>
-          )}
-        </section>
+            <section className="card">
+              <button
+                type="button"
+                onClick={() => setNeverDoOpen(!neverDoOpen)}
+                className="w-full flex items-center justify-between"
+              >
+                <span className="text-[15px] font-semibold">Что не стоит делать никогда</span>
+                {neverDoOpen ? <ChevronUp size={18} className="text-app-muted" /> : <ChevronDown size={18} className="text-app-muted" />}
+              </button>
+              {neverDoOpen && (
+                <div className="mt-3 pt-3 border-t border-app-border space-y-2">
+                  {neverDo.map((item, i) => (
+                    <p key={i} className="text-[14px] text-app-muted">✕ {item}</p>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        ) : (
+          <section className="card">
+            <p className="label-sm mb-2">Советы и задачи</p>
+            <p className="text-[15px] leading-relaxed text-app-muted">
+              Появятся после первого анализа лица — они подстраиваются под ваши цели и результаты.
+            </p>
+          </section>
+        )}
       </div>
     </div>
   );
