@@ -154,9 +154,39 @@ export function getPublicApiBaseUrl(): string {
   return `http://localhost:${port}`;
 }
 
+export async function sendBotMediaGroup(
+  telegramId: number,
+  photoUrls: string[],
+  caption?: string,
+): Promise<void> {
+  const botToken = process.env.BOT_TOKEN;
+  if (!botToken || photoUrls.length === 0) return;
+
+  const media = photoUrls.map((url, index) => ({
+    type: 'photo',
+    media: url,
+    ...(index === 0 && caption
+      ? { caption, parse_mode: 'HTML' }
+      : {}),
+  }));
+
+  try {
+    await fetch(`${BOT_API}${botToken}/sendMediaGroup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: telegramId,
+        media,
+      }),
+    });
+  } catch (err) {
+    console.error('Failed to send bot media group:', err);
+  }
+}
+
 export async function notifyAdminReferralProof(proof: {
   id: number;
-  imageUrl: string;
+  imageUrls: string[];
   username: string | null;
   telegramId: bigint;
 }): Promise<void> {
@@ -164,13 +194,13 @@ export async function notifyAdminReferralProof(proof: {
   if (!adminId) return;
 
   const baseUrl = getPublicApiBaseUrl();
-  const imageFullUrl = `${baseUrl}${proof.imageUrl}`;
+  const imageFullUrls = proof.imageUrls.map((url) => `${baseUrl}${url}`);
   const userLabel = proof.username ? `@${proof.username}` : `ID ${proof.telegramId}`;
   const caption = [
     '📸 <b>Новая заявка TikTok</b>',
     '',
     `Пользователь: ${userLabel}`,
-    `Заявка #${proof.id}`,
+    `Заявка #${proof.id} · ${proof.imageUrls.length} скриншотов`,
     '',
     'Одобрить:',
     `<code>node backend/scripts/referral-admin.mjs approve ${proof.id}</code>`,
@@ -179,7 +209,12 @@ export async function notifyAdminReferralProof(proof: {
     `<code>node backend/scripts/referral-admin.mjs reject ${proof.id}</code>`,
   ].join('\n');
 
-  await sendBotPhoto(Number(adminId), imageFullUrl, caption);
+  if (imageFullUrls.length === 1) {
+    await sendBotPhoto(Number(adminId), imageFullUrls[0], caption);
+    return;
+  }
+
+  await sendBotMediaGroup(Number(adminId), imageFullUrls, caption);
 }
 
 function generateReferralCode(): string {

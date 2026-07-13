@@ -121,10 +121,10 @@ export const mockApi = {
 
   applyReferralCode: async (_code: string) => ({ success: true, credits: 1 }),
 
-  submitReferralProof: async (_file: File) => ({
+  submitReferralProof: async (files: File[]) => ({
     success: true,
     proofId: 1,
-    message: 'Скриншот отправлен на проверку',
+    message: `Скриншоты отправлены на проверку (${files.length})`,
   }),
 
   updateProfile: async (payload: { name?: string; age?: number; goals?: string[] }) => {

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Copy, Gift, Share2, Upload } from 'lucide-react';
+import { ArrowLeft, Copy, Gift, ImagePlus, Share2 } from 'lucide-react';
 import SegmentedControl from '@/components/SegmentedControl';
 import TestCreditButton from '@/components/TestCreditButton';
 import { getReferralInfo, submitReferralProof } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
+
+const TIKTOK_COMMENT_SCREENSHOTS = 5;
 
 export default function FreeAnalysis() {
   const navigate = useNavigate();
@@ -14,10 +16,23 @@ export default function FreeAnalysis() {
 
   const [referral, setReferral] = useState<{ referralLink: string; referralCredits: number } | null>(null);
   const [referralTab, setReferralTab] = useState('Ссылка');
+  const [screenshots, setScreenshots] = useState<(File | null)[]>(
+    () => Array(TIKTOK_COMMENT_SCREENSHOTS).fill(null),
+  );
+  const [previewUrls, setPreviewUrls] = useState<(string | null)[]>(
+    () => Array(TIKTOK_COMMENT_SCREENSHOTS).fill(null),
+  );
+  const [proofSubmitting, setProofSubmitting] = useState(false);
 
   useEffect(() => {
     getReferralInfo().then(setReferral).catch(() => {});
   }, []);
+
+  useEffect(() => () => {
+    previewUrls.forEach((url) => {
+      if (url) URL.revokeObjectURL(url);
+    });
+  }, [previewUrls]);
 
   const credits = referral?.referralCredits ?? user?.referralCredits ?? 0;
 
@@ -28,15 +43,41 @@ export default function FreeAnalysis() {
     }
   };
 
-  const handleProofUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const filledScreenshots = screenshots.filter(Boolean).length;
+  const allScreenshotsReady = filledScreenshots === TIKTOK_COMMENT_SCREENSHOTS;
+
+  const handleScreenshotPick = (index: number, file: File | null) => {
+    setScreenshots((prev) => {
+      const next = [...prev];
+      next[index] = file;
+      return next;
+    });
+    setPreviewUrls((prev) => {
+      const next = [...prev];
+      if (next[index]) URL.revokeObjectURL(next[index]!);
+      next[index] = file ? URL.createObjectURL(file) : null;
+      return next;
+    });
+  };
+
+  const handleProofSubmit = async () => {
+    if (!allScreenshotsReady || proofSubmitting) return;
+    setProofSubmitting(true);
     try {
-      await submitReferralProof(file);
+      await submitReferralProof(screenshots.filter(Boolean) as File[]);
       haptic('success');
-      alert('Скриншот отправлен на проверку. Обычно проверяем в течение суток.');
-    } catch {
+      alert('5 скриншотов отправлены на проверку. Обычно проверяем в течение суток.');
+      setScreenshots(Array(TIKTOK_COMMENT_SCREENSHOTS).fill(null));
+      setPreviewUrls((prev) => {
+        prev.forEach((url) => { if (url) URL.revokeObjectURL(url); });
+        return Array(TIKTOK_COMMENT_SCREENSHOTS).fill(null);
+      });
+    } catch (err: unknown) {
       haptic('error');
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      alert(msg || 'Не удалось отправить скриншоты');
+    } finally {
+      setProofSubmitting(false);
     }
   };
 
@@ -106,19 +147,62 @@ export default function FreeAnalysis() {
           ) : (
             <>
               <p className="text-[14px] text-app-muted">
-                Оставьте 5 комментариев под looksmax-видео в TikTok и загрузите скриншот.
-                Мы проверим вручную и начислим +1 анализ.
+                Оставьте 5 комментариев под looksmax-видео в TikTok и загрузите скриншот
+                каждого комментария отдельно.
               </p>
               <ul className="text-[13px] text-app-muted space-y-1 list-disc pl-5">
-                <li>На скриншоте должны быть видны все 5 комментариев</li>
+                <li>5 скриншотов — по одному на каждый комментарий</li>
+                <li>На скриншоте должен быть виден текст комментария</li>
                 <li>Один бонус за аккаунт после одобрения</li>
                 <li>Решение придёт в Telegram от бота</li>
               </ul>
-              <label className="btn-light flex items-center justify-center gap-2 cursor-pointer">
-                <Upload size={16} />
-                Загрузить скриншот
-                <input type="file" accept="image/*" className="hidden" onChange={handleProofUpload} />
-              </label>
+              <div className="space-y-3">
+                <p className="text-[13px] font-semibold text-app-muted">
+                  Скриншоты: {filledScreenshots}/{TIKTOK_COMMENT_SCREENSHOTS}
+                </p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {screenshots.map((_, index) => (
+                    <label
+                      key={index}
+                      className="relative flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-app-border bg-app-track/40 p-2 text-center overflow-hidden"
+                    >
+                      {previewUrls[index] ? (
+                        <img
+                          src={previewUrls[index]!}
+                          alt={`Комментарий ${index + 1}`}
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : (
+                        <>
+                          <ImagePlus size={20} className="text-app-muted" />
+                          <span className="text-[11px] font-semibold text-app-muted">
+                            Коммент. {index + 1}
+                          </span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          handleScreenshotPick(index, e.target.files?.[0] || null);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleProofSubmit}
+                  disabled={!allScreenshotsReady || proofSubmitting}
+                  className="btn-accent disabled:opacity-50"
+                >
+                  {proofSubmitting
+                    ? 'Отправляем...'
+                    : `Отправить ${TIKTOK_COMMENT_SCREENSHOTS} скриншотов`}
+                </button>
+              </div>
             </>
           )}
         </section>

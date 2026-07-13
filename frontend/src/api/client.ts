@@ -134,10 +134,12 @@ export async function applyReferralCode(code: string) {
   return data;
 }
 
-export async function submitReferralProof(file: File) {
-  if (MOCK) return mockApi.submitReferralProof(file);
+export async function submitReferralProof(files: File[]) {
+  if (MOCK) return mockApi.submitReferralProof(files);
   const form = new FormData();
-  form.append('screenshot', file);
+  for (const file of files) {
+    form.append('screenshots', file);
+  }
   const { data } = await api.post('/referral/proof', form);
   return data;
 }

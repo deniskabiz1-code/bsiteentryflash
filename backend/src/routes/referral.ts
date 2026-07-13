@@ -21,7 +21,11 @@ const storage = multer.diskStorage({
     cb(null, `${unique}${path.extname(file.originalname) || '.jpg'}`);
   },
 });
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+const TIKTOK_PROOF_SCREENSHOTS = 5;
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024, files: TIKTOK_PROOF_SCREENSHOTS },
+});
 
 router.get('/info', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
   try {
@@ -83,26 +87,50 @@ router.post('/apply', validateTelegramAuth, async (req: AuthRequest, res: Respon
 router.post(
   '/proof',
   validateTelegramAuth,
-  upload.single('screenshot'),
+  upload.array('screenshots', TIKTOK_PROOF_SCREENSHOTS),
   async (req: AuthRequest, res: Response) => {
     try {
-      if (!req.file) {
-        res.status(400).json({ error: 'Загрузите скриншот' });
+      const files = req.files as Express.Multer.File[] | undefined;
+      if (!files?.length) {
+        res.status(400).json({ error: 'Загрузите скриншоты комментариев' });
+        return;
+      }
+      if (files.length !== TIKTOK_PROOF_SCREENSHOTS) {
+        res.status(400).json({
+          error: `Нужно ровно ${TIKTOK_PROOF_SCREENSHOTS} скриншотов — по одному на каждый комментарий`,
+        });
         return;
       }
 
       const user = await findOrCreateUser(req.telegramUser!);
 
+      const pendingProof = await prisma.referralProof.findFirst({
+        where: { userId: user.id, status: 'pending' },
+      });
+      if (pendingProof) {
+        res.status(400).json({ error: 'Заявка уже на проверке' });
+        return;
+      }
+
+      const approvedProof = await prisma.referralProof.findFirst({
+        where: { userId: user.id, status: 'approved' },
+      });
+      if (approvedProof) {
+        res.status(400).json({ error: 'TikTok-бонус уже был получен' });
+        return;
+      }
+
+      const imageUrls = files.map((file) => `/uploads/${file.filename}`);
       const proof = await prisma.referralProof.create({
         data: {
           userId: user.id,
-          imageUrl: `/uploads/${req.file.filename}`,
+          imageUrls,
         },
       });
 
       notifyAdminReferralProof({
         id: proof.id,
-        imageUrl: proof.imageUrl,
+        imageUrls: proof.imageUrls,
         username: user.username,
         telegramId: user.telegramId,
       }).catch((err) => {
@@ -112,7 +140,7 @@ router.post(
       res.json({
         success: true,
         proofId: proof.id,
-        message: 'Скриншот отправлен на проверку',
+        message: 'Скриншоты отправлены на проверку',
       });
     } catch (err) {
       res.status(500).json({ error: 'Ошибка загрузки' });
@@ -146,8 +174,8 @@ router.get('/admin/pending', async (req: Request, res: Response) => {
     res.json({
       proofs: proofs.map((proof) => ({
         id: proof.id,
-        imageUrl: proof.imageUrl,
-        imageFullUrl: `${baseUrl}${proof.imageUrl}`,
+        imageUrls: proof.imageUrls,
+        imageFullUrls: proof.imageUrls.map((url) => `${baseUrl}${url}`),
         createdAt: proof.createdAt,
         user: {
           id: proof.user.id,
@@ -203,7 +231,7 @@ router.post('/admin/approve', async (req: Request, res: Response) => {
       });
       sendBotMessage(
         Number(proof.user.telegramId),
-        '❌ <b>Заявка отклонена</b>\n\nСкриншот не прошёл проверку. Убедитесь, что видны 5 комментариев под looksmax-видео, и отправьте снова.',
+        '❌ <b>Заявка отклонена</b>\n\nСкриншоты не прошли проверку. Загрузите 5 скриншотов — по одному на каждый комментарий под looksmax-видео.',
       ).catch(() => {});
       res.json({ success: true, message: 'Заявка отклонена' });
     }

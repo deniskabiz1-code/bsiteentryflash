@@ -35,7 +35,11 @@ async function listPending() {
   }
   for (const proof of data.proofs) {
     const user = proof.user?.username ? `@${proof.user.username}` : proof.user?.telegramId;
-    console.log(`#${proof.id}  ${user}  ${proof.imageFullUrl}`);
+    const urls = proof.imageFullUrls?.length ? proof.imageFullUrls : [];
+    console.log(`#${proof.id}  ${user}  ${urls.length} screenshot(s)`);
+    for (const url of urls) {
+      console.log(`  ${url}`);
+    }
   }
 }
 
