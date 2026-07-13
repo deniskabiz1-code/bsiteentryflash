@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Copy, Gift, ImagePlus, Share2 } from 'lucide-react';
 import SegmentedControl from '@/components/SegmentedControl';
 import TestCreditButton from '@/components/TestCreditButton';
-import { getReferralInfo, submitReferralProof } from '@/api/client';
+import { createPayment, getReferralInfo, submitReferralProof } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 
@@ -16,7 +16,7 @@ const TIKTOK_COMMENT_EXAMPLES = [
 export default function FreeAnalysis() {
   const navigate = useNavigate();
   const { user, testCreditsEnabled } = useApp();
-  const { haptic } = useTelegram();
+  const { haptic, openLink } = useTelegram();
 
   const [referral, setReferral] = useState<{ referralLink: string; referralCredits: number } | null>(null);
   const [referralTab, setReferralTab] = useState('Ссылка');
@@ -39,6 +39,15 @@ export default function FreeAnalysis() {
   }, [previewUrls]);
 
   const credits = referral?.referralCredits ?? user?.referralCredits ?? 0;
+
+  const handleSubscribe = async () => {
+    try {
+      const data = await createPayment();
+      openLink(data.paymentUrl);
+    } catch {
+      haptic('error');
+    }
+  };
 
   const copyReferralLink = () => {
     if (referral?.referralLink) {
@@ -246,11 +255,14 @@ export default function FreeAnalysis() {
           )}
         </section>
 
-        <section className="card space-y-2">
+        <section className="card space-y-3">
           <h2 className="text-[17px] font-bold">Подписка</h2>
           <p className="text-[14px] text-app-muted">
-            400 ₽/мес — безлимитный анализ, причёска и персональный уход. Оформить можно во вкладке «Профиль».
+            400 ₽/мес — безлимитный анализ, причёска и персональный уход.
           </p>
+          <button type="button" onClick={handleSubscribe} className="btn-dark">
+            {user?.subscriptionActive ? 'Продлить подписку' : 'Оформить подписку'}
+          </button>
         </section>
       </div>
     </div>
