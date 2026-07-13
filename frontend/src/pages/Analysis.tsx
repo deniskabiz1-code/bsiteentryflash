@@ -27,10 +27,6 @@ export default function Analysis() {
   );
   const isFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
   const freeAnalysisAvailable = user?.freeAnalysisAvailable ?? isFirstAnalysis;
-  const hasPaidAccess =
-    Boolean(user?.subscriptionActive) || (user?.referralCredits ?? 0) > 0;
-  const isBlockedFromFreeTrial =
-    isFirstAnalysis && !freeAnalysisAvailable && !hasPaidAccess;
   const isMandatoryFirstFlow = isFirstAnalysis && freeAnalysisAvailable;
   const viewportRef = useFirstAnalysisViewportLock(isMandatoryFirstFlow);
 
@@ -58,7 +54,7 @@ export default function Analysis() {
     Boolean(user?.subscriptionActive) ||
     (isFirstAnalysis && freeAnalysisAvailable) ||
     (user?.referralCredits ?? 0) > 0;
-  const hasNoAnalysesLeft = !canAnalyze && !user?.subscriptionActive;
+  const noFreeAnalysisLeft = !canAnalyze && !user?.subscriptionActive;
 
   const handleAnalyze = async () => {
     if (!photo) { setError('Загрузите фото'); return; }
@@ -124,15 +120,10 @@ export default function Analysis() {
       }`}
     >
       <header className="min-h-0 shrink-0 overflow-hidden">
-        {isBlockedFromFreeTrial ? (
-          <div className="space-y-1.5">
-            <h1 className="text-[20px] font-bold leading-tight tracking-tight">
-              Бесплатный анализ недоступен
-            </h1>
-            <p className="text-[14px] leading-snug text-app-muted">
-              Этот Telegram-аккаунт уже использовал бесплатный анализ.
-            </p>
-          </div>
+        {noFreeAnalysisLeft ? (
+          <h1 className="text-[20px] font-bold leading-tight tracking-tight">
+            Бесплатных анализов не осталось
+          </h1>
         ) : isFirstAnalysis ? (
           <div className="space-y-1.5">
             <span className="pill-green inline-flex">
@@ -146,15 +137,6 @@ export default function Analysis() {
               Сделайте селфи — AI бесплатно оценит внешность.
             </p>
           </div>
-        ) : hasNoAnalysesLeft ? (
-          <div className="space-y-1.5">
-            <h1 className="text-[20px] font-bold leading-tight tracking-tight">
-              Нет доступных анализов
-            </h1>
-            <p className="text-[14px] leading-snug text-app-muted">
-              Получите бесплатный кредит или оформите подписку.
-            </p>
-          </div>
         ) : (
           <h1 className="text-[20px] font-bold leading-tight tracking-tight">
             Анализ лица
@@ -162,18 +144,8 @@ export default function Analysis() {
         )}
       </header>
 
-      {isBlockedFromFreeTrial ? (
-        <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden px-1">
-          <p className="text-center text-[14px] leading-snug text-app-muted">
-            Бесплатный анализ на этот аккаунт уже использован. Получите кредит или оформите подписку.
-          </p>
-        </div>
-      ) : hasNoAnalysesLeft ? (
-        <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden px-1">
-          <p className="text-center text-[14px] leading-snug text-app-muted">
-            Поделитесь реферальной ссылкой, отправьте TikTok-скриншот или оформите подписку.
-          </p>
-        </div>
+      {noFreeAnalysisLeft ? (
+        <div className="flex min-h-0 flex-1" />
       ) : (
         <div className={`card flex min-h-0 h-full flex-col overflow-hidden ${isMandatoryFirstFlow ? '!p-4' : '!p-3'}`}>
           <PhotoUpload
@@ -191,14 +163,14 @@ export default function Analysis() {
           <p className="text-center text-[13px] font-medium text-red-500 line-clamp-2">{error}</p>
         )}
 
-        {isBlockedFromFreeTrial || hasNoAnalysesLeft ? (
+        {noFreeAnalysisLeft ? (
           <div className="space-y-2">
             <button
               type="button"
               onClick={() => navigate('/free-analysis')}
               className="btn-accent"
             >
-              Как получить бесплатный анализ
+              Получить бесплатный анализ
             </button>
             <button
               type="button"
