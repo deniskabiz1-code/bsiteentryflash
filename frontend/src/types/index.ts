@@ -40,6 +40,17 @@ export interface FaceAnalysisResult {
     product_type: string;
     tip: string;
   }[];
+  progress_vs_last?: {
+    has_previous: boolean;
+    overall_delta: number;
+    summary: string;
+    metric_deltas: {
+      skin: number;
+      jawline: number;
+      symmetry: number;
+      hairstyle: number;
+    };
+  };
 }
 
 export interface HairstyleResult {

@@ -84,6 +84,10 @@ export default function AnalysisResult() {
   const isDemo = Boolean(result.demo);
   const subscribed = Boolean(user?.subscriptionActive);
   const scores = result.scores || {};
+  const progress = result.progress_vs_last;
+  const metricDeltas = progress?.has_previous ? progress.metric_deltas : null;
+
+  const formatDelta = (value: number) => `${value >= 0 ? '+' : ''}${value}`;
   const formattedDate = result.createdAt
     ? new Date(result.createdAt).toLocaleDateString('ru-RU', {
         day: 'numeric',
@@ -117,21 +121,43 @@ export default function AnalysisResult() {
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <span className="pill-green">Анализ завершён</span>
+            {progress?.has_previous && progress.overall_delta !== 0 && (
+              <span className={`pill-green ${progress.overall_delta < 0 ? '!bg-red-50 !text-red-600' : ''}`}>
+                {formatDelta(progress.overall_delta)} с прошлого чек-ина
+              </span>
+            )}
             {isDemo && (
               <span className="pill-gray">Демо · ИИ не подключён</span>
             )}
           </div>
         </section>
 
+        {progress?.has_previous && progress.summary && (
+          <section className="card-green">
+            <p className="label-sm mb-2">Динамика с прошлого анализа</p>
+            <p className="text-[15px] leading-relaxed">{progress.summary}</p>
+          </section>
+        )}
+
         <section className="card-green">
           <p className="label-sm mb-3">По параметрам</p>
           <div className="space-y-0">
-            {Object.entries(scores).map(([key, value]) => (
-              <div key={key} className="list-row">
-                <span className="text-[15px] text-app-text">{SCORE_LABELS[key]}</span>
-                <span className="text-[15px] font-bold text-brand-greenDark">{value as number}</span>
-              </div>
-            ))}
+            {Object.entries(scores).map(([key, value]) => {
+              const delta = metricDeltas?.[key as keyof typeof metricDeltas];
+              return (
+                <div key={key} className="list-row">
+                  <span className="text-[15px] text-app-text">{SCORE_LABELS[key]}</span>
+                  <div className="flex items-center gap-2">
+                    {typeof delta === 'number' && delta !== 0 && (
+                      <span className={`text-[12px] font-semibold ${delta >= 0 ? 'text-brand-greenDark' : 'text-red-500'}`}>
+                        {formatDelta(delta)}
+                      </span>
+                    )}
+                    <span className="text-[15px] font-bold text-brand-greenDark">{value as number}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 

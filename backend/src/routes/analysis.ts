@@ -5,6 +5,7 @@ import fs from 'fs';
 import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegramAuth';
 import { findOrCreateUser, isSubscriptionActive } from '../services/telegram';
 import { hasTelegramUsedFreeTrial, markTelegramFreeTrialUsed } from '../services/freeTrial';
+import { toFaceHistoryEntry } from '../services/analysisHistory';
 import {
   analyzeFace,
   analyzeHairstyle,
@@ -129,7 +130,21 @@ router.post(
         return;
       }
 
-      const { data: result, demo } = await analyzeFace(req.file.path);
+      const priorFace = await prisma.analysis.findMany({
+        where: { userId: user.id, type: 'face' },
+        orderBy: { createdAt: 'desc' },
+        take: 4,
+        select: { overallScore: true, resultJson: true, createdAt: true },
+      });
+
+      const { data: result, demo } = await analyzeFace(req.file.path, {
+        name: user.name,
+        age: user.age,
+        goals: user.goals,
+        previousAnalyses: priorFace.map((a) =>
+          toFaceHistoryEntry(a.createdAt, a.overallScore, a.resultJson),
+        ),
+      });
       const overallScore = (result.overall_score as number) || 0;
 
       const analysis = await prisma.analysis.create({

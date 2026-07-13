@@ -6,6 +6,10 @@ import {
   DEMO_HAIRSTYLE_RESULT,
   demoDelay,
 } from '../data/demoAnalysis';
+import {
+  buildFaceAnalysisUserMessage,
+  type FaceAnalysisUserContext,
+} from './analysisHistory';
 
 let openai: OpenAI | null = null;
 let cachedConfigKey = '';
@@ -170,7 +174,17 @@ const FACE_ANALYSIS_PROMPT = `You are an expert aesthetician and facial analyst.
 ],
 "skincare_routine": [
 { "step": "<step name in Russian>", "product_type": "<Russian>", "tip": "<Russian>" }
-]
+],
+"progress_vs_last": {
+"has_previous": <true if prior analyses were provided, else false>,
+"overall_delta": <integer: current overall_score minus previous overall_score, 0 if first analysis>,
+"summary": "<1-2 sentences in Russian: what improved, regressed, or stayed stable since last check-in>",
+"metric_deltas": {
+"skin": <integer delta vs last analysis>,
+"jawline": <integer delta>,
+"symmetry": <integer delta>,
+"hairstyle": <integer delta>
+}
 }
 
 SCORING RULES (mandatory — follow strictly):
@@ -185,6 +199,17 @@ SCORING RULES (mandatory — follow strictly):
 - overall_score = rounded mean of the four sub-scores, then adjust by at most ±5 if the holistic impression differs.
 - Scores above 82 or below 50 on any metric must match something clearly visible in the photo.
 - Be honest, not flattering. Users need real differentiation between analyses.
+
+CONTINUITY RULES (when prior analyses are provided in the user message):
+- Treat this as a follow-up check-in, not a standalone rating.
+- Compare the new photo to the most recent prior analysis. Adjust sub-scores to reflect visible improvement (+2 to +10), regression (-2 to -10), or stability (±2).
+- overall_score must be consistent with sub-scores and the visible change since last time.
+- improvement_tips: personalize — reference progress or persistent issues from prior tips/problem_zones; avoid repeating the exact same tip unless still the top priority.
+- growth_plan: evolve prior steps — mark what to keep, intensify, or replace based on progress.
+- progress_vs_last: fill honestly. overall_delta and metric_deltas must match your scoring vs the last entry in history.
+- If no real change is visible, say so in summary and keep deltas near 0.
+
+When no prior analyses are provided: set has_previous to false, overall_delta and all metric_deltas to 0, summary to "".
 
 All text fields must be in Russian. Be honest but encouraging. Do not include any text outside the JSON object.`;
 
@@ -224,6 +249,7 @@ async function requestVision(
   imagePaths: string[],
   useJsonMode: boolean,
   options: VisionRequestOptions = {},
+  userText = 'Проанализируй это фото и верни JSON.',
 ): Promise<string> {
   const config = resolveAiConfig();
   if (!config) throw new Error('AI not configured');
@@ -240,7 +266,7 @@ async function requestVision(
       {
         role: 'user',
         content: [
-          { type: 'text', text: 'Проанализируй это фото и верни JSON.' },
+          { type: 'text', text: userText },
           ...imageContents,
         ],
       },
@@ -286,30 +312,76 @@ async function callVision(
   systemPrompt: string,
   imagePaths: string[],
   options: VisionRequestOptions = {},
+  userText?: string,
 ): Promise<Record<string, unknown>> {
   const config = resolveAiConfig();
   if (!config) throw new Error('AI not configured');
 
   try {
-    const content = await requestVision(systemPrompt, imagePaths, config.jsonMode, options);
+    const content = await requestVision(systemPrompt, imagePaths, config.jsonMode, options, userText);
     return parseJsonResponse(content);
   } catch (firstErr) {
     if (!config.jsonMode) throw firstErr;
     console.warn('[ai] JSON mode failed, retrying without response_format:', firstErr);
-    const content = await requestVision(systemPrompt, imagePaths, false, options);
+    const content = await requestVision(systemPrompt, imagePaths, false, options, userText);
     return parseJsonResponse(content);
   }
 }
 
-export async function analyzeFace(photoPath: string): Promise<AnalysisRunResult> {
+function buildDemoProgress(context?: FaceAnalysisUserContext): Record<string, unknown> {
+  const last = context?.previousAnalyses[0];
+  if (!last) {
+    return {
+      progress_vs_last: {
+        has_previous: false,
+        overall_delta: 0,
+        summary: '',
+        metric_deltas: { skin: 0, jawline: 0, symmetry: 0, hairstyle: 0 },
+      },
+    };
+  }
+
+  const current = DEMO_FACE_RESULT;
+  const delta = (key: keyof typeof current.scores) =>
+    (current.scores[key] ?? 0) - (last.scores[key] ?? 0);
+
+  return {
+    progress_vs_last: {
+      has_previous: true,
+      overall_delta: current.overall_score - last.overall_score,
+      summary: 'Кожа выглядит чуть ровнее, контур челюсти стабилен. Продолжайте SPF и вечерний уход.',
+      metric_deltas: {
+        skin: delta('skin'),
+        jawline: delta('jawline'),
+        symmetry: delta('symmetry'),
+        hairstyle: delta('hairstyle'),
+      },
+    },
+  };
+}
+
+export async function analyzeFace(
+  photoPath: string,
+  context?: FaceAnalysisUserContext,
+): Promise<AnalysisRunResult> {
+  const userText = buildFaceAnalysisUserMessage(context);
+
   if (shouldUseDemoAnalysis()) {
     console.log('[demo] Face analysis — demo mode');
     await demoDelay();
-    return { data: { ...DEMO_FACE_RESULT }, demo: true };
+    return {
+      data: { ...DEMO_FACE_RESULT, ...buildDemoProgress(context) },
+      demo: true,
+    };
   }
 
   try {
-    const data = await callVision(FACE_ANALYSIS_PROMPT, [photoPath], { temperature: 0.85 });
+    const data = await callVision(
+      FACE_ANALYSIS_PROMPT,
+      [photoPath],
+      { temperature: 0.85 },
+      userText,
+    );
     return { data, demo: false };
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
