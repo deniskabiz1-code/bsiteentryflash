@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getTgWebApp } from '@/lib/tgWebApp';
+import { DEFAULT_CHANNEL_URL, DEFAULT_CHANNEL_USERNAME } from '@/config/channel';
 import { mockApi } from './mock';
 
 const MOCK = import.meta.env.VITE_MOCK_MODE === 'true';
@@ -47,7 +48,7 @@ export async function checkChannel() {
 }
 
 export async function getChannelInfo() {
-  if (MOCK) return { link: 'https://t.me/primeform_channel', username: 'primeform_channel' };
+  if (MOCK) return { link: DEFAULT_CHANNEL_URL, username: DEFAULT_CHANNEL_USERNAME };
   const { data } = await api.get('/auth/channel-info');
   return data;
 }

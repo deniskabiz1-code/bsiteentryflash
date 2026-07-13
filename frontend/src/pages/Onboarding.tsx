@@ -9,6 +9,7 @@ import { useTelegramPhoto } from '@/hooks/useTelegramPhoto';
 import AgeSlider from '@/components/AgeSlider';
 import GoalSelector from '@/components/GoalSelector';
 import UserAvatar from '@/components/UserAvatar';
+import { DEFAULT_CHANNEL_URL, DEFAULT_CHANNEL_USERNAME } from '@/config/channel';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -26,8 +27,8 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [hint, setHint] = useState('');
-  const [channelOpenUrl, setChannelOpenUrl] = useState('https://t.me/primeform_channel');
-  const [channelUsername, setChannelUsername] = useState('primeform_channel');
+  const [channelOpenUrl, setChannelOpenUrl] = useState(DEFAULT_CHANNEL_URL);
+  const [channelUsername, setChannelUsername] = useState(DEFAULT_CHANNEL_USERNAME);
 
   const photoUrl = useTelegramPhoto();
 

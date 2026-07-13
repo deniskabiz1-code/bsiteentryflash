@@ -2,6 +2,7 @@ import { prisma } from '../utils/prisma';
 import { TelegramUser } from '../middleware/validateTelegramAuth';
 
 const BOT_API = 'https://api.telegram.org/bot';
+const DEFAULT_CHANNEL_USERNAME = 'primeformnews';
 
 export interface ChannelCheckResult {
   subscribed: boolean;
@@ -24,7 +25,7 @@ export function getChannelOpenUrl(): string {
       return `https://${invite}`;
     }
   }
-  const username = normalizeUsername(process.env.CHANNEL_USERNAME || 'primeform_channel');
+  const username = normalizeUsername(process.env.CHANNEL_USERNAME || DEFAULT_CHANNEL_USERNAME);
   return `https://t.me/${username}`;
 }
 
@@ -36,7 +37,7 @@ function getChannelChatId(): string {
   if (process.env.CHANNEL_ID) {
     return process.env.CHANNEL_ID;
   }
-  return `@${normalizeUsername(process.env.CHANNEL_USERNAME || 'primeform_channel')}`;
+  return `@${normalizeUsername(process.env.CHANNEL_USERNAME || DEFAULT_CHANNEL_USERNAME)}`;
 }
 
 export async function checkChannelSubscription(telegramId: number): Promise<ChannelCheckResult> {

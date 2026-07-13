@@ -63,7 +63,7 @@ router.get('/channel-check', validateTelegramAuth, async (req: AuthRequest, res:
 });
 
 router.get('/channel-info', (_req, res: Response) => {
-  const username = (process.env.CHANNEL_USERNAME || 'primeform_channel').replace(/^@/, '');
+  const username = (process.env.CHANNEL_USERNAME || 'primeformnews').replace(/^@/, '');
   res.json({
     link: getChannelOpenUrl(),
     username,
