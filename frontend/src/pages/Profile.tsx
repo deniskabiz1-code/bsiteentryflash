@@ -6,6 +6,7 @@ import {
   updateProfile, updateReminders, getSkincareRoutine,
   getLastCheckin, deleteAccount,
 } from '@/api/client';
+import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import FreeAnalysisEntryCard from '@/components/FreeAnalysisEntryCard';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -118,10 +119,11 @@ export default function Profile() {
   };
 
   const fallbackLetter = user?.name || 'P';
+  const remeasureKey = `${editing}-${reminderEnabled}-${lastCheckin?.createdAt ?? 0}-${skincare.length}-${user?.subscriptionActive}`;
 
   return (
-    <div className="page">
-      <div className="page-inner space-y-6">
+    <>
+    <ConditionalScrollPage remeasureKey={remeasureKey}>
         <FreeAnalysisEntryCard />
 
         <section className="text-center pt-2">
@@ -263,7 +265,7 @@ export default function Profile() {
           <Trash2 size={16} />
           Удалить аккаунт
         </button>
-      </div>
+    </ConditionalScrollPage>
 
       <Modal
         open={showDelete}
@@ -310,6 +312,6 @@ export default function Profile() {
           )}
         </div>
       </Modal>
-    </div>
+    </>
   );
 }

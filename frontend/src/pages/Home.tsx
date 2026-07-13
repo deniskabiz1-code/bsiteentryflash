@@ -6,6 +6,7 @@ import SegmentedControl from '@/components/SegmentedControl';
 import { getDailyTasks, toggleTask, getAnalysisHistory } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
+import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import { TaskGroup } from '@/types';
 export default function Home() {
   const { user } = useApp();
@@ -87,6 +88,7 @@ export default function Home() {
     (user?.faceAnalysisCount ?? 0) === 0
     && (user?.freeAnalysisAvailable ?? true);
   const hasAnalysis = (user?.faceAnalysisCount ?? 0) > 0;
+  const remeasureKey = `${hasAnalysis}-${neverDoOpen}-${completedCount}-${tasks.length}-${needsFirstAnalysis}-${score ?? 'x'}`;
 
   if (contentLoading) {
     return (
@@ -97,8 +99,7 @@ export default function Home() {
   }
 
   return (
-    <div className="page">
-      <div className="page-inner space-y-6">
+    <ConditionalScrollPage remeasureKey={remeasureKey}>
         {needsFirstAnalysis && (
           <button
             type="button"
@@ -237,7 +238,6 @@ export default function Home() {
             </p>
           </section>
         )}
-      </div>
-    </div>
+    </ConditionalScrollPage>
   );
 }

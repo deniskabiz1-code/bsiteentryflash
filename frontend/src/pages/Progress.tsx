@@ -1,13 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, ChevronRight, Trash2 } from 'lucide-react';
 
+import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import Modal from '@/components/Modal';
 import MiniBarChart from '@/components/MiniBarChart';
 import SegmentedControl from '@/components/SegmentedControl';
 import { getAnalysisHistory, deleteAnalysis } from '@/api/client';
 import { useTelegram } from '@/hooks/useTelegram';
-import { useConditionalPageScrollLock } from '@/hooks/useConditionalPageScrollLock';
+
 import { Analysis, FaceAnalysisResult } from '@/types';
 import { assetUrl } from '@/utils/assets';
 
@@ -19,7 +20,6 @@ export default function Progress() {
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [period, setPeriod] = useState('Месяц');
-  const contentRef = useRef<HTMLDivElement>(null);
 
   const load = async () => {
     try {
@@ -59,7 +59,6 @@ export default function Progress() {
   const latest = faceAnalyses[0];
   const delta = (latest?.overallScore || 0) - (first?.overallScore || 0);
   const remeasureKey = `${faceAnalyses.length}-${first?.id ?? 0}-${latest?.id ?? 0}-${delta}`;
-  useConditionalPageScrollLock(contentRef, !loading, remeasureKey);
 
   if (loading) {
     return (
@@ -70,8 +69,8 @@ export default function Progress() {
   }
 
   return (
-    <div className="page">
-      <div ref={contentRef} className="page-inner space-y-6">
+    <>
+    <ConditionalScrollPage ready={!loading} remeasureKey={remeasureKey}>
         <section className="text-center pt-2">
           <p className="label-sm mb-3">Текущий балл</p>
           <div className="flex min-h-[40px] items-baseline justify-center gap-0.5">
@@ -190,7 +189,7 @@ export default function Progress() {
             <p className="text-app-faint text-[13px] mt-1">Сделайте первый анализ лица</p>
           </div>
         )}
-      </div>
+    </ConditionalScrollPage>
 
       <Modal open={deleteId !== null} onClose={() => setDeleteId(null)}>
         <div className="space-y-4">
@@ -209,6 +208,6 @@ export default function Progress() {
           </div>
         </div>
       </Modal>
-    </div>
+    </>
   );
 }

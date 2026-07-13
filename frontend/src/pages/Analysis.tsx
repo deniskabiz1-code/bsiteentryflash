@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Scissors, Sparkles } from 'lucide-react';
 
+import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import PhotoUpload from '@/components/PhotoUpload';
 import { analyzeFace } from '@/api/client';
 import { useApp } from '@/context/AppContext';
@@ -189,29 +190,27 @@ export default function Analysis() {
 
   if (noFreeAnalysisLeft) {
     return (
-      <div className="page">
-        <div className="page-inner space-y-6 pt-8">
-          <h1 className="text-[20px] font-bold leading-tight tracking-tight text-center">
-            Бесплатных анализов не осталось
-          </h1>
-          <div className="space-y-2 pt-4">
-            <button
-              type="button"
-              onClick={() => navigate('/free-analysis')}
-              className="btn-accent"
-            >
-              Получить бесплатный анализ
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/profile')}
-              className="btn-dark"
-            >
-              Оформить подписку
-            </button>
-          </div>
+      <ConditionalScrollPage innerClassName="page-inner space-y-6 pt-8" remeasureKey="no-credits">
+        <h1 className="text-[20px] font-bold leading-tight tracking-tight text-center">
+          Бесплатных анализов не осталось
+        </h1>
+        <div className="space-y-2 pt-4">
+          <button
+            type="button"
+            onClick={() => navigate('/free-analysis')}
+            className="btn-accent"
+          >
+            Получить бесплатный анализ
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/profile')}
+            className="btn-dark"
+          >
+            Оформить подписку
+          </button>
         </div>
-      </div>
+      </ConditionalScrollPage>
     );
   }
 
