@@ -42,3 +42,22 @@ services:
         sync: false
       - key: ROBOKASSA_TEST_MODE
         value: "true"
+      - key: REMINDER_TIMEZONE
+        value: Europe/Moscow
+
+  - type: cron
+    name: primeform-reminders
+    runtime: node
+    schedule: "* * * * *"
+    buildCommand: "true"
+    startCommand: >-
+      curl -fsS -X POST "https://${RENDER_SERVICE_URL}/api/cron/reminders"
+      -H "X-Admin-Secret: $ADMIN_SECRET"
+    envVars:
+      - key: ADMIN_SECRET
+        sync: false
+      - key: RENDER_SERVICE_URL
+        fromService:
+          name: primeform-api
+          type: web
+          property: host

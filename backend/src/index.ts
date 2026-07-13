@@ -10,8 +10,10 @@ import tasksRoutes from './routes/tasks';
 import subscriptionRoutes from './routes/subscription';
 import referralRoutes from './routes/referral';
 import userRoutes from './routes/user';
+import cronRoutes from './routes/cron';
 import { backfillTelegramFreeTrials } from './services/freeTrial';
 import { getAiProviderInfo } from './services/openai';
+import { startReminderScheduler } from './services/reminders';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -50,6 +52,7 @@ app.use('/api/tasks', tasksRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/referral', referralRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/cron', cronRoutes);
 
 app.use((err: Error, _req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (err.message?.includes('Неподдерживаемый формат')) {
@@ -67,5 +70,6 @@ app.listen(PORT, () => {
   backfillTelegramFreeTrials().catch((err) => {
     console.error('Free trial backfill failed:', err);
   });
+  startReminderScheduler();
   console.log(`Primeform backend running on port ${PORT}`);
 });

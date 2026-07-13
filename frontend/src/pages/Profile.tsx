@@ -263,14 +263,19 @@ export default function Profile() {
             </button>
           </div>
           {reminderEnabled && (
-            <div className="flex items-center justify-between gap-3">
-              <span className="shrink-0 text-[14px] text-app-muted">Время</span>
-              <input
-                type="time"
-                value={reminderTime}
-                onChange={(e) => handleReminderTime(e.target.value)}
-                className="input-field input-field-time shrink-0"
-              />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <span className="shrink-0 text-[14px] text-app-muted">Время (МСК)</span>
+                <input
+                  type="time"
+                  value={reminderTime}
+                  onChange={(e) => handleReminderTime(e.target.value)}
+                  className="input-field input-field-time shrink-0"
+                />
+              </div>
+              <p className="text-[12px] leading-snug text-app-muted">
+                Бот пришлёт напоминание в Telegram в выбранное время.
+              </p>
             </div>
           )}
         </section>

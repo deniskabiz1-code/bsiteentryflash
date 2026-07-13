@@ -24,8 +24,9 @@ model User {
   referralCredits Int       @default(0)
   referredBy      Int?
   subscriptionEnd DateTime?
-  reminderEnabled Boolean   @default(false)
-  reminderTime    String?   // "HH:mm" format
+  reminderEnabled      Boolean @default(false)
+  reminderTime         String? // "HH:mm" in REMINDER_TIMEZONE
+  reminderLastSentDate String? // "YYYY-MM-DD" dedupe per day
   onboarded       Boolean   @default(false)
   createdAt       DateTime  @default(now())
   analyses        Analysis[]

@@ -44,6 +44,7 @@ router.put('/reminders', validateTelegramAuth, async (req: AuthRequest, res: Res
       data: {
         reminderEnabled: !!enabled,
         reminderTime: time || null,
+        reminderLastSentDate: null,
       },
     });
 
