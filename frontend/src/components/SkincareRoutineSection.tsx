@@ -79,8 +79,8 @@ export default function SkincareRoutineSection({
     <section>
       <div className="mb-3 flex items-center justify-between px-1">
         <h2 className="text-[17px] font-bold">{title}</h2>
-        <span className="pill-gray inline-flex items-center gap-1">
-          <Lock size={12} />
+        <span className="pill-gray inline-flex items-center gap-1 font-semibold text-app-text">
+          <Lock size={12} className="text-app-text" strokeWidth={2.5} />
           По подписке
         </span>
       </div>
