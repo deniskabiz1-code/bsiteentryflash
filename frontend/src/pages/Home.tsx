@@ -7,6 +7,7 @@ import { getDailyTasks, toggleTask, getAnalysisHistory } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
+import { useDocumentScrollLock } from '@/hooks/useDocumentScrollLock';
 import { TaskGroup } from '@/types';
 export default function Home() {
   const { user } = useApp();
@@ -89,6 +90,7 @@ export default function Home() {
     && (user?.freeAnalysisAvailable ?? true);
   const hasAnalysis = (user?.faceAnalysisCount ?? 0) > 0;
   const remeasureKey = `${hasAnalysis}-${neverDoOpen}-${completedCount}-${tasks.length}-${needsFirstAnalysis}-${score ?? 'x'}`;
+  useDocumentScrollLock(contentLoading);
 
   if (contentLoading) {
     return (

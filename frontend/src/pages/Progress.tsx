@@ -7,6 +7,7 @@ import Modal from '@/components/Modal';
 import MiniBarChart from '@/components/MiniBarChart';
 import SegmentedControl from '@/components/SegmentedControl';
 import { getAnalysisHistory, deleteAnalysis } from '@/api/client';
+import { useDocumentScrollLock } from '@/hooks/useDocumentScrollLock';
 import { useTelegram } from '@/hooks/useTelegram';
 
 import { Analysis, FaceAnalysisResult } from '@/types';
@@ -59,6 +60,7 @@ export default function Progress() {
   const latest = faceAnalyses[0];
   const delta = (latest?.overallScore || 0) - (first?.overallScore || 0);
   const remeasureKey = `${faceAnalyses.length}-${first?.id ?? 0}-${latest?.id ?? 0}-${delta}`;
+  useDocumentScrollLock(loading);
 
   if (loading) {
     return (

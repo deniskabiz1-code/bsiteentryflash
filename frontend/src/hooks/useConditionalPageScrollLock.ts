@@ -1,8 +1,8 @@
 import { useEffect, useState, type RefObject } from 'react';
+import { acquirePageFitLock } from '@/lib/pageScrollLock';
 import { setVerticalSwipeLock } from '@/lib/tgWebApp';
 
 const BOTTOM_NAV_PX = 92;
-const LOCK_CLASS = 'pf-page-fit-lock';
 
 function isInteractiveTouchTarget(target: EventTarget | null): boolean {
   return (
@@ -70,10 +70,9 @@ export function useConditionalPageScrollLock(
   useEffect(() => {
     if (!ready || allowScroll) return;
 
-    const html = document.documentElement;
-    html.classList.add(LOCK_CLASS);
     window.scrollTo(0, 0);
     setVerticalSwipeLock(true);
+    const releaseLock = acquirePageFitLock();
 
     const blockScroll = (event: Event) => {
       if (event.type === 'touchmove' && isInteractiveTouchTarget(event.target)) return;
@@ -89,7 +88,7 @@ export function useConditionalPageScrollLock(
     document.addEventListener('scroll', resetScroll, { passive: true });
 
     return () => {
-      html.classList.remove(LOCK_CLASS);
+      releaseLock();
       setVerticalSwipeLock(false);
       document.removeEventListener('touchmove', blockScroll);
       document.removeEventListener('wheel', blockScroll);
