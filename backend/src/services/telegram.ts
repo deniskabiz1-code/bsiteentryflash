@@ -101,19 +101,48 @@ function getChannelCheckHint(apiError?: string): string {
   return 'Добавьте бота администратором в канал';
 }
 
-export async function sendBotMessage(telegramId: number, text: string): Promise<void> {
+export type BotMessageOptions = {
+  /** Inline Mini App button (opens inside Telegram, not browser). Default: true when APP_URL is set. */
+  appButton?: boolean;
+  buttonText?: string;
+};
+
+/** HTTPS URL configured in BotFather as the Mini App / menu button. */
+export function getMiniAppUrl(): string | null {
+  const url = (process.env.APP_URL || process.env.FRONTEND_URL || '').trim();
+  return url || null;
+}
+
+export async function sendBotMessage(
+  telegramId: number,
+  text: string,
+  options: BotMessageOptions = {},
+): Promise<void> {
   const botToken = process.env.BOT_TOKEN;
   if (!botToken) return;
+
+  const appUrl = getMiniAppUrl();
+  const useAppButton = options.appButton ?? Boolean(appUrl);
+  const payload: Record<string, unknown> = {
+    chat_id: telegramId,
+    text,
+    parse_mode: 'HTML',
+  };
+
+  if (useAppButton && appUrl) {
+    payload.reply_markup = {
+      inline_keyboard: [[{
+        text: options.buttonText || 'Открыть Primeform',
+        web_app: { url: appUrl },
+      }]],
+    };
+  }
 
   try {
     await fetch(`${BOT_API}${botToken}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: telegramId,
-        text,
-        parse_mode: 'HTML',
-      }),
+      body: JSON.stringify(payload),
     });
   } catch (err) {
     console.error('Failed to send bot message:', err);

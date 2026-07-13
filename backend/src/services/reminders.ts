@@ -42,16 +42,11 @@ function getLocalDateKey(now = new Date(), timeZone = DEFAULT_TIMEZONE): string 
 }
 
 function buildReminderMessage(): string {
-  const appUrl = (process.env.APP_URL || process.env.FRONTEND_URL || '').trim();
-  const lines = [
+  return [
     '⏰ <b>Напоминание Primeform</b>',
     '',
-    'Время для еженедельного чек-ина — откройте приложение и сделайте анализ лица.',
-  ];
-  if (appUrl) {
-    lines.push('', `<a href="${appUrl}">Открыть Primeform</a>`);
-  }
-  return lines.join('\n');
+    'Время для чек-ина — откройте приложение и обновите анализ лица.',
+  ].join('\n');
 }
 
 export type ReminderRunResult = {
@@ -65,6 +60,7 @@ export async function processDueReminders(): Promise<ReminderRunResult> {
     where: {
       reminderEnabled: true,
       reminderTime: { not: null },
+      onboarded: true,
     },
     select: {
       id: true,
@@ -72,6 +68,11 @@ export async function processDueReminders(): Promise<ReminderRunResult> {
       reminderTime: true,
       reminderTimezone: true,
       reminderLastSentDate: true,
+      _count: {
+        select: {
+          analyses: { where: { type: 'face' } },
+        },
+      },
     },
   });
 
@@ -83,6 +84,7 @@ export async function processDueReminders(): Promise<ReminderRunResult> {
     const timezone = resolveReminderTimezone(user.reminderTimezone);
     const nowHm = getLocalHm(now, timezone);
     const todayKey = getLocalDateKey(now, timezone);
+    const faceAnalysisCount = user._count.analyses;
 
     if (user.reminderTime !== nowHm) {
       skipped += 1;
@@ -92,14 +94,22 @@ export async function processDueReminders(): Promise<ReminderRunResult> {
       skipped += 1;
       continue;
     }
+    if (faceAnalysisCount === 0) {
+      skipped += 1;
+      continue;
+    }
 
-    await sendBotMessage(Number(user.telegramId), buildReminderMessage());
+    await sendBotMessage(
+      Number(user.telegramId),
+      buildReminderMessage(),
+      { buttonText: 'Открыть Primeform' },
+    );
     await prisma.user.update({
       where: { id: user.id },
       data: { reminderLastSentDate: todayKey },
     });
     sent += 1;
-    console.log(`[reminders] Sent to user ${user.id} at ${nowHm} (${timezone})`);
+    console.log(`[reminders] Sent to user ${user.id} at ${nowHm} (${timezone}), analyses=${faceAnalysisCount}`);
   }
 
   if (sent > 0) {

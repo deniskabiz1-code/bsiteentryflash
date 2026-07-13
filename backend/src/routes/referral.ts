@@ -221,7 +221,8 @@ router.post('/admin/approve', async (req: Request, res: Response) => {
       ]);
       sendBotMessage(
         Number(proof.user.telegramId),
-        '✅ <b>Заявка одобрена!</b>\n\nВам начислен +1 анализ. Откройте Primeform и сделайте чек-ин.',
+        '✅ <b>Заявка одобрена!</b>\n\nВам начислен +1 анализ.',
+        { buttonText: 'Сделать анализ' },
       ).catch(() => {});
       res.json({ success: true, message: 'Кредит начислен' });
     } else {
@@ -232,6 +233,7 @@ router.post('/admin/approve', async (req: Request, res: Response) => {
       sendBotMessage(
         Number(proof.user.telegramId),
         '❌ <b>Заявка отклонена</b>\n\nСкриншоты не прошли проверку. Загрузите 5 скриншотов — по одному на каждый комментарий под looksmax-видео.',
+        { appButton: false },
       ).catch(() => {});
       res.json({ success: true, message: 'Заявка отклонена' });
     }
