@@ -33,10 +33,15 @@ export function useConditionalPageScrollLock(
 ) {
   const [allowScroll, setAllowScroll] = useState(true);
   const allowScrollRef = useRef(true);
+  const hadOverflowRef = useRef(false);
 
   useEffect(() => {
     allowScrollRef.current = allowScroll;
   }, [allowScroll]);
+
+  useEffect(() => {
+    hadOverflowRef.current = false;
+  }, [remeasureKey]);
 
   useEffect(() => {
     if (!ready) {
@@ -54,6 +59,13 @@ export function useConditionalPageScrollLock(
       const prev = allowScrollRef.current;
 
       if (overflows) {
+        hadOverflowRef.current = true;
+        setAllowScroll(true);
+        return;
+      }
+
+      // Phone/Telegram: viewport can shrink while touch-scrolling — never re-lock once overflow was seen.
+      if (hadOverflowRef.current) {
         setAllowScroll(true);
         return;
       }
