@@ -69,6 +69,16 @@ html[data-tg] .tg-page-top {
   overflow: hidden;
 }
 
+html.pf-page-fit-lock,
+html.pf-page-fit-lock body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.pf-page-fit-lock #root {
+  overflow: hidden;
+}
+
 html.pf-analysis-upload,
 html.pf-analysis-upload body {
   overflow: hidden;

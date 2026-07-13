@@ -2,12 +2,19 @@ import { useEffect, useState, type RefObject } from 'react';
 import { setVerticalSwipeLock } from '@/lib/tgWebApp';
 
 const BOTTOM_NAV_PX = 92;
+const LOCK_CLASS = 'pf-page-fit-lock';
 
 function isInteractiveTouchTarget(target: EventTarget | null): boolean {
   return (
     target instanceof Element
     && Boolean(target.closest('input, textarea, select, button, label, [data-touch-interactive]'))
   );
+}
+
+function readViewportBottom(): number {
+  const vv = window.visualViewport;
+  if (!vv) return window.innerHeight;
+  return vv.offsetTop + vv.height;
 }
 
 /** Block page scroll only when content fits; never change page layout/CSS. */
@@ -26,11 +33,9 @@ export function useConditionalPageScrollLock(
 
     const measure = () => {
       const content = contentRef.current;
-      const root = document.getElementById('root');
-      if (!content || !root) return;
+      if (!content) return;
 
-      const padTop = parseFloat(getComputedStyle(root).paddingTop) || 0;
-      const available = window.innerHeight - padTop - BOTTOM_NAV_PX;
+      const available = readViewportBottom() - BOTTOM_NAV_PX;
       const bottom = content.getBoundingClientRect().bottom;
       setAllowScroll(bottom > available + 8);
     };
@@ -44,31 +49,51 @@ export function useConditionalPageScrollLock(
 
     scheduleMeasure();
     const observer = new ResizeObserver(scheduleMeasure);
-    if (contentRef.current) observer.observe(contentRef.current);
+    const content = contentRef.current;
+    if (content) {
+      observer.observe(content);
+      const page = content.parentElement;
+      if (page) observer.observe(page);
+    }
     window.addEventListener('resize', scheduleMeasure);
     window.visualViewport?.addEventListener('resize', scheduleMeasure);
+    window.visualViewport?.addEventListener('scroll', scheduleMeasure);
 
     return () => {
       observer.disconnect();
       window.removeEventListener('resize', scheduleMeasure);
       window.visualViewport?.removeEventListener('resize', scheduleMeasure);
+      window.visualViewport?.removeEventListener('scroll', scheduleMeasure);
     };
   }, [ready, remeasureKey, contentRef]);
 
   useEffect(() => {
     if (!ready || allowScroll) return;
 
+    const html = document.documentElement;
+    html.classList.add(LOCK_CLASS);
+    window.scrollTo(0, 0);
     setVerticalSwipeLock(true);
 
     const blockScroll = (event: Event) => {
-      if (isInteractiveTouchTarget(event.target)) return;
+      if (event.type === 'touchmove' && isInteractiveTouchTarget(event.target)) return;
       if (event.cancelable) event.preventDefault();
     };
+
+    const resetScroll = () => {
+      if (window.scrollY !== 0) window.scrollTo(0, 0);
+    };
+
     document.addEventListener('touchmove', blockScroll, { passive: false });
+    document.addEventListener('wheel', blockScroll, { passive: false });
+    document.addEventListener('scroll', resetScroll, { passive: true });
 
     return () => {
+      html.classList.remove(LOCK_CLASS);
       setVerticalSwipeLock(false);
       document.removeEventListener('touchmove', blockScroll);
+      document.removeEventListener('wheel', blockScroll);
+      document.removeEventListener('scroll', resetScroll);
     };
   }, [ready, allowScroll]);
 
