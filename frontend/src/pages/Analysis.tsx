@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Scissors, Sparkles } from 'lucide-react';
 
 import PhotoUpload from '@/components/PhotoUpload';
-import TestCreditCard from '@/components/TestCreditCard';
 import { analyzeFace } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { preparePhotoForUpload } from '@/utils/preparePhoto';
@@ -154,8 +153,10 @@ export default function Analysis() {
       </header>
 
       {isBlockedFromFreeTrial ? (
-        <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden">
-          <TestCreditCard />
+        <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden px-1">
+          <p className="text-center text-[14px] leading-snug text-app-muted">
+            Тестовый кредит и подписка — во вкладке Профиль.
+          </p>
         </div>
       ) : (
         <div className={`card flex min-h-0 h-full flex-col overflow-hidden ${isMandatoryFirstFlow ? '!p-4' : '!p-3'}`}>
@@ -170,9 +171,6 @@ export default function Analysis() {
       )}
 
       <footer className={`min-h-0 shrink-0 overflow-hidden ${isMandatoryFirstFlow ? 'space-y-2 pb-1' : 'space-y-1.5'}`}>
-        {!canAnalyze && !isBlockedFromFreeTrial && (
-          <TestCreditCard />
-        )}
         {error && (
           <p className="text-center text-[13px] font-medium text-red-500 line-clamp-2">{error}</p>
         )}

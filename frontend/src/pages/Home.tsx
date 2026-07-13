@@ -7,8 +7,6 @@ import { getDailyTasks, toggleTask, getAnalysisHistory } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { TaskGroup } from '@/types';
-import TestCreditCard from '@/components/TestCreditCard';
-
 export default function Home() {
   const { user } = useApp();
   const navigate = useNavigate();
@@ -94,8 +92,6 @@ export default function Home() {
   return (
     <div className="page">
       <div className="page-inner space-y-6">
-        <TestCreditCard />
-
         {needsFirstAnalysis && (
           <button
             type="button"
