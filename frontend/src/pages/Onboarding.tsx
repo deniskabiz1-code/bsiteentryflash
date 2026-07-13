@@ -161,7 +161,7 @@ export default function Onboarding() {
             <UserAvatar photoUrl={photoUrl} fallbackLetter={fallbackLetter} size="lg" className="mb-5" />
             <h1 className="heading-md mb-2">Добро пожаловать в Primeform</h1>
             <p className="mb-2 max-w-xs text-[14px] leading-snug text-app-muted">
-              AI-ассистент для улучшения внешности
+              ИИ-ассистент для улучшения внешности
             </p>
             <p className="mb-3 text-[13px] text-app-muted">
               Подпишитесь на канал, чтобы начать

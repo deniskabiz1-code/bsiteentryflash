@@ -132,7 +132,7 @@ export default function Analysis() {
               {greeting}
             </h1>
             <p className="text-[14px] leading-snug text-app-muted">
-              Сделайте селфи — AI бесплатно оценит внешность.
+              Сделайте селфи — ИИ бесплатно оценит внешность.
             </p>
           </div>
         ) : (

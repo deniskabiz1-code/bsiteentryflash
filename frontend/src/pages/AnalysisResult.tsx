@@ -95,7 +95,7 @@ export default function AnalysisResult() {
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <span className="pill-green">Анализ завершён</span>
             {isDemo && (
-              <span className="pill-gray">Демо · OpenAI не подключён</span>
+              <span className="pill-gray">Демо · ИИ не подключён</span>
             )}
           </div>
         </section>

@@ -131,7 +131,7 @@ export default function FreeAnalysis() {
           <section className="card space-y-3">
             <h2 className="text-[17px] font-bold">Тестовый кредит</h2>
             <p className="text-[14px] text-app-muted">
-              Для проверки AI-анализа — разовое начисление +1 кредита.
+              Для проверки ИИ-анализа — разовое начисление +1 кредита.
             </p>
             <TestCreditButton variant="accent" showCredits />
           </section>

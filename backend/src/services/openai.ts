@@ -246,7 +246,7 @@ async function requestVision(
   const response = parseCompletionResponse(raw);
 
   const content = response.choices[0]?.message?.content;
-  if (!content) throw new Error('Пустой ответ от AI');
+  if (!content) throw new Error('Пустой ответ от ИИ');
   return content;
 }
 
@@ -256,7 +256,7 @@ function parseJsonResponse(content: string): Record<string, unknown> {
     return JSON.parse(trimmed);
   } catch {
     const match = trimmed.match(/\{[\s\S]*\}/);
-    if (!match) throw new Error('Ответ AI не содержит JSON');
+    if (!match) throw new Error('Ответ ИИ не содержит JSON');
     return JSON.parse(match[0]);
   }
 }
