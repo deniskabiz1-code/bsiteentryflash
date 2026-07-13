@@ -30,8 +30,15 @@ export default function Analysis() {
   const isMandatoryFirstFlow = isFirstAnalysis && freeAnalysisAvailable;
   const viewportRef = useFirstAnalysisViewportLock(isMandatoryFirstFlow);
 
+  const canAnalyze =
+    Boolean(user?.subscriptionActive) ||
+    (isFirstAnalysis && freeAnalysisAvailable) ||
+    (user?.referralCredits ?? 0) > 0;
+  const noFreeAnalysisLeft = !canAnalyze && !user?.subscriptionActive;
+  const useUploadScrollLock = !isMandatoryFirstFlow && !noFreeAnalysisLeft && !isFirstAnalysis;
+
   useEffect(() => {
-    if (isFirstAnalysis) return;
+    if (!useUploadScrollLock) return;
 
     document.documentElement.classList.add('pf-analysis-upload');
     setVerticalSwipeLock(true);
@@ -48,13 +55,7 @@ export default function Analysis() {
       document.removeEventListener('touchmove', blockScroll);
       document.removeEventListener('wheel', blockScroll);
     };
-  }, [isFirstAnalysis]);
-
-  const canAnalyze =
-    Boolean(user?.subscriptionActive) ||
-    (isFirstAnalysis && freeAnalysisAvailable) ||
-    (user?.referralCredits ?? 0) > 0;
-  const noFreeAnalysisLeft = !canAnalyze && !user?.subscriptionActive;
+  }, [useUploadScrollLock]);
 
   const handleAnalyze = async () => {
     if (!photo) { setError('Загрузите фото'); return; }
@@ -120,11 +121,7 @@ export default function Analysis() {
       }`}
     >
       <header className="min-h-0 shrink-0 overflow-hidden">
-        {noFreeAnalysisLeft ? (
-          <h1 className="text-[20px] font-bold leading-tight tracking-tight">
-            Бесплатных анализов не осталось
-          </h1>
-        ) : isFirstAnalysis ? (
+        {isFirstAnalysis ? (
           <div className="space-y-1.5">
             <span className="pill-green inline-flex">
               <Sparkles size={14} />
@@ -144,10 +141,7 @@ export default function Analysis() {
         )}
       </header>
 
-      {noFreeAnalysisLeft ? (
-        <div className="flex min-h-0 flex-1" />
-      ) : (
-        <div className={`card flex min-h-0 h-full flex-col overflow-hidden ${isMandatoryFirstFlow ? '!p-4' : '!p-3'}`}>
+      <div className={`card flex min-h-0 h-full flex-col overflow-hidden ${isMandatoryFirstFlow ? '!p-4' : '!p-3'}`}>
           <PhotoUpload
             onPhotoSelect={setPhoto}
             label="Сделать селфи"
@@ -156,15 +150,51 @@ export default function Analysis() {
             dense={!isMandatoryFirstFlow}
           />
         </div>
-      )}
 
       <footer className={`min-h-0 shrink-0 overflow-hidden ${isMandatoryFirstFlow ? 'space-y-2 pb-1' : 'space-y-1.5'}`}>
         {error && (
           <p className="text-center text-[13px] font-medium text-red-500 line-clamp-2">{error}</p>
         )}
 
-        {noFreeAnalysisLeft ? (
-          <div className="space-y-2">
+        <button
+          type="button"
+          onClick={handleAnalyze}
+          disabled={!photo || loading || !canAnalyze}
+          className={isMandatoryFirstFlow ? 'btn-accent' : 'btn-dark !py-3.5'}
+        >
+          {analyzeLabel}
+        </button>
+        {user?.subscriptionActive && !isFirstAnalysis && (
+          <button
+            type="button"
+            onClick={() => navigate('/analysis/hairstyle')}
+            className="flex w-full items-center justify-center gap-1.5 py-1 text-[13px] font-semibold text-app-muted"
+          >
+            <Scissors size={15} />
+            Анализ причёски
+          </button>
+        )}
+      </footer>
+    </div>
+  );
+
+  if (isMandatoryFirstFlow) {
+    return createPortal(
+      <div ref={viewportRef} className="bg-app-canvas">
+        {content}
+      </div>,
+      document.body,
+    );
+  }
+
+  if (noFreeAnalysisLeft) {
+    return (
+      <div className="page">
+        <div className="page-inner space-y-6 pt-8">
+          <h1 className="text-[20px] font-bold leading-tight tracking-tight text-center">
+            Бесплатных анализов не осталось
+          </h1>
+          <div className="space-y-2 pt-4">
             <button
               type="button"
               onClick={() => navigate('/free-analysis')}
@@ -180,38 +210,8 @@ export default function Analysis() {
               Оформить подписку
             </button>
           </div>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={handleAnalyze}
-              disabled={!photo || loading || !canAnalyze}
-              className={isMandatoryFirstFlow ? 'btn-accent' : 'btn-dark !py-3.5'}
-            >
-              {analyzeLabel}
-            </button>
-            {user?.subscriptionActive && !isFirstAnalysis && (
-              <button
-                type="button"
-                onClick={() => navigate('/analysis/hairstyle')}
-                className="flex w-full items-center justify-center gap-1.5 py-1 text-[13px] font-semibold text-app-muted"
-              >
-                <Scissors size={15} />
-                Анализ причёски
-              </button>
-            )}
-          </>
-        )}
-      </footer>
-    </div>
-  );
-
-  if (isMandatoryFirstFlow) {
-    return createPortal(
-      <div ref={viewportRef} className="bg-app-canvas">
-        {content}
-      </div>,
-      document.body,
+        </div>
+      </div>
     );
   }
 
