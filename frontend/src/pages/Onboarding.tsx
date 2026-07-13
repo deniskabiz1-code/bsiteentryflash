@@ -14,6 +14,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { applyUser } = useApp();
   const submittingRef = useRef(false);
+  const nameSeededFromTelegram = useRef(false);
   const { user: tgUser, openTelegramLink, haptic } = useTelegram();
 
   const [step, setStep] = useState(0);
@@ -49,10 +50,10 @@ export default function Onboarding() {
   }, []);
 
   useEffect(() => {
-    if (tgUser?.first_name && !name) {
-      setName(tgUser.first_name);
-    }
-  }, [tgUser, name]);
+    if (nameSeededFromTelegram.current || !tgUser?.first_name) return;
+    setName(tgUser.first_name);
+    nameSeededFromTelegram.current = true;
+  }, [tgUser]);
 
   useEffect(() => {
     getChannelInfo()
