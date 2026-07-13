@@ -173,6 +173,19 @@ const FACE_ANALYSIS_PROMPT = `You are an expert aesthetician and facial analyst.
 ]
 }
 
+SCORING RULES (mandatory — follow strictly):
+- Use the full range. Do NOT default every score to the low 70s. Typical overall_score spread: 48–88 depending on the photo.
+- Score skin, jawline, symmetry, and hairstyle INDEPENDENTLY from what you see. They should often differ by 10–25 points (e.g. skin 54, jawline 79, symmetry 71, hairstyle 63).
+- Calibration guide:
+  • 85–95: clearly strong in this area, visibly above average
+  • 72–84: solid / slightly above average
+  • 58–71: average with visible room to improve
+  • 45–57: noticeable issues in this area
+  • below 45: only for severe visible problems
+- overall_score = rounded mean of the four sub-scores, then adjust by at most ±5 if the holistic impression differs.
+- Scores above 82 or below 50 on any metric must match something clearly visible in the photo.
+- Be honest, not flattering. Users need real differentiation between analyses.
+
 All text fields must be in Russian. Be honest but encouraging. Do not include any text outside the JSON object.`;
 
 const HAIRSTYLE_ANALYSIS_PROMPT = `You are an expert barber and facial analyst. Analyze the provided face photos (front and side profile) and return ONLY valid JSON with this exact structure:
@@ -202,10 +215,15 @@ function imageToBase64(filePath: string): string {
   return `data:${mime};base64,${buffer.toString('base64')}`;
 }
 
+type VisionRequestOptions = {
+  temperature?: number;
+};
+
 async function requestVision(
   systemPrompt: string,
   imagePaths: string[],
   useJsonMode: boolean,
+  options: VisionRequestOptions = {},
 ): Promise<string> {
   const config = resolveAiConfig();
   if (!config) throw new Error('AI not configured');
@@ -229,6 +247,9 @@ async function requestVision(
     ],
     max_tokens: 4096,
   };
+  if (options.temperature !== undefined) {
+    body.temperature = options.temperature;
+  }
   if (useJsonMode) {
     body.response_format = { type: 'json_object' };
   }
@@ -264,17 +285,18 @@ function parseJsonResponse(content: string): Record<string, unknown> {
 async function callVision(
   systemPrompt: string,
   imagePaths: string[],
+  options: VisionRequestOptions = {},
 ): Promise<Record<string, unknown>> {
   const config = resolveAiConfig();
   if (!config) throw new Error('AI not configured');
 
   try {
-    const content = await requestVision(systemPrompt, imagePaths, config.jsonMode);
+    const content = await requestVision(systemPrompt, imagePaths, config.jsonMode, options);
     return parseJsonResponse(content);
   } catch (firstErr) {
     if (!config.jsonMode) throw firstErr;
     console.warn('[ai] JSON mode failed, retrying without response_format:', firstErr);
-    const content = await requestVision(systemPrompt, imagePaths, false);
+    const content = await requestVision(systemPrompt, imagePaths, false, options);
     return parseJsonResponse(content);
   }
 }
@@ -287,7 +309,7 @@ export async function analyzeFace(photoPath: string): Promise<AnalysisRunResult>
   }
 
   try {
-    const data = await callVision(FACE_ANALYSIS_PROMPT, [photoPath]);
+    const data = await callVision(FACE_ANALYSIS_PROMPT, [photoPath], { temperature: 0.85 });
     return { data, demo: false };
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);

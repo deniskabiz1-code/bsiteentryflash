@@ -20,8 +20,8 @@ export const MOCK_USER = {
 };
 
 export const MOCK_FACE_RESULT: FaceAnalysisResult = {
-  overall_score: 72,
-  scores: { skin: 68, jawline: 74, symmetry: 71, hairstyle: 75 },
+  overall_score: 64,
+  scores: { skin: 58, jawline: 71, symmetry: 66, hairstyle: 62 },
   skin_type: 'combination',
   puffiness: 'medium',
   problem_zones: [
@@ -52,9 +52,38 @@ const photo = (n: number) =>
   `https://i.pravatar.cc/300?img=${n}`;
 
 export const MOCK_ANALYSES = [
-  { id: 3, type: 'face' as const, photoUrl: photo(12), overallScore: 72, resultJson: MOCK_FACE_RESULT, createdAt: new Date().toISOString() },
-  { id: 2, type: 'face' as const, photoUrl: photo(33), overallScore: 68, resultJson: { ...MOCK_FACE_RESULT, overall_score: 68 }, createdAt: new Date(Date.now() - 7 * 86400000).toISOString() },
-  { id: 1, type: 'face' as const, photoUrl: photo(57), overallScore: 64, resultJson: { ...MOCK_FACE_RESULT, overall_score: 64 }, createdAt: new Date(Date.now() - 21 * 86400000).toISOString() },
+  {
+    id: 3,
+    type: 'face' as const,
+    photoUrl: photo(12),
+    overallScore: 81,
+    resultJson: {
+      ...MOCK_FACE_RESULT,
+      overall_score: 81,
+      scores: { skin: 76, jawline: 88, symmetry: 84, hairstyle: 77 },
+    },
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 2,
+    type: 'face' as const,
+    photoUrl: photo(33),
+    overallScore: 64,
+    resultJson: MOCK_FACE_RESULT,
+    createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+  },
+  {
+    id: 1,
+    type: 'face' as const,
+    photoUrl: photo(57),
+    overallScore: 53,
+    resultJson: {
+      ...MOCK_FACE_RESULT,
+      overall_score: 53,
+      scores: { skin: 49, jawline: 58, symmetry: 55, hairstyle: 51 },
+    },
+    createdAt: new Date(Date.now() - 21 * 86400000).toISOString(),
+  },
 ];
 
 export const MOCK_DAILY_TASKS = {

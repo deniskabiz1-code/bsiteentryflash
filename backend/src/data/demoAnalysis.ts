@@ -1,8 +1,8 @@
 /** Demo payloads when OPENAI_API_KEY is not configured. */
 
 export const DEMO_FACE_RESULT = {
-  overall_score: 72,
-  scores: { skin: 68, jawline: 74, symmetry: 71, hairstyle: 75 },
+  overall_score: 64,
+  scores: { skin: 58, jawline: 71, symmetry: 66, hairstyle: 62 },
   skin_type: 'combination',
   puffiness: 'medium',
   problem_zones: [
