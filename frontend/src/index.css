@@ -227,6 +227,8 @@ html.pf-onboarding #root {
     border-radius: 1rem;
     background-color: #FFFFFF;
     color: #1C1C1E;
+    caret-color: #000000;
+    color-scheme: light;
     border: 1px solid #E5E5EA;
     font-size: 15px;
     transition: border-color 0.15s ease;
@@ -351,10 +353,29 @@ html.pf-onboarding #root {
   .age-slider {
     -webkit-appearance: none;
     appearance: none;
+    width: 100%;
+    height: 28px;
+    border-radius: 9999px;
+    background: transparent;
+    outline: none;
+    touch-action: pan-x;
+    cursor: grab;
+  }
+
+  .age-slider:active {
+    cursor: grabbing;
+  }
+
+  .age-slider::-webkit-slider-runnable-track {
     height: 6px;
     border-radius: 9999px;
     background: #E5E5EA;
-    outline: none;
+  }
+
+  .age-slider::-moz-range-track {
+    height: 6px;
+    border-radius: 9999px;
+    background: #E5E5EA;
   }
 
   .age-slider::-webkit-slider-thumb {
@@ -362,11 +383,16 @@ html.pf-onboarding #root {
     appearance: none;
     width: 28px;
     height: 28px;
+    margin-top: -11px;
     border-radius: 9999px;
     background: #34C759;
     border: 3px solid #FFFFFF;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    cursor: pointer;
+    cursor: grab;
+  }
+
+  .age-slider:active::-webkit-slider-thumb {
+    cursor: grabbing;
   }
 
   .age-slider::-moz-range-thumb {
@@ -376,6 +402,6 @@ html.pf-onboarding #root {
     background: #34C759;
     border: 3px solid #FFFFFF;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    cursor: pointer;
+    cursor: grab;
   }
 }

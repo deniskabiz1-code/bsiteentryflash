@@ -7,8 +7,13 @@ interface AgeSliderProps {
 }
 
 export default function AgeSlider({ value, min = 14, max = 60, compact, onChange }: AgeSliderProps) {
+  const handleChange = (next: string) => {
+    const parsed = parseInt(next, 10);
+    if (!Number.isNaN(parsed)) onChange(parsed);
+  };
+
   return (
-    <div className="w-full text-left">
+    <div className="w-full text-left" data-touch-interactive>
       <div className={`flex items-center justify-between ${compact ? 'mb-2' : 'mb-3'}`}>
         <span className="text-[15px] font-semibold text-app-text">Возраст</span>
         <span className={`font-bold leading-none tabular-nums ${compact ? 'text-[22px]' : 'text-[28px]'}`}>{value}</span>
@@ -17,8 +22,10 @@ export default function AgeSlider({ value, min = 14, max = 60, compact, onChange
         type="range"
         min={min}
         max={max}
+        step={1}
         value={value}
-        onChange={(e) => onChange(parseInt(e.target.value, 10))}
+        onInput={(e) => handleChange(e.currentTarget.value)}
+        onChange={(e) => handleChange(e.target.value)}
         className="age-slider w-full"
         aria-label="Возраст"
       />

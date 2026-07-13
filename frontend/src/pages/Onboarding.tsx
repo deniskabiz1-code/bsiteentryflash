@@ -36,6 +36,13 @@ export default function Onboarding() {
     setVerticalSwipeLock(true);
 
     const blockScroll = (event: Event) => {
+      const target = event.target;
+      if (
+        target instanceof Element
+        && target.closest('input, textarea, select, button, label, [data-touch-interactive]')
+      ) {
+        return;
+      }
       if (event.cancelable) event.preventDefault();
     };
     document.addEventListener('touchmove', blockScroll, { passive: false });
