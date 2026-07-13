@@ -1,11 +1,17 @@
 import { useEffect } from 'react';
-import { initTelegramWebApp, syncTelegramSafeAreaInsets, syncViewportMetrics } from '@/lib/tgWebApp';
+import {
+  ensureTelegramViewportExpanded,
+  initTelegramWebApp,
+  syncTelegramSafeAreaInsets,
+  syncViewportMetrics,
+} from '@/lib/tgWebApp';
 
 export default function TelegramBootstrap() {
   useEffect(() => {
     initTelegramWebApp();
 
     const sync = () => {
+      ensureTelegramViewportExpanded();
       syncTelegramSafeAreaInsets();
       syncViewportMetrics();
     };

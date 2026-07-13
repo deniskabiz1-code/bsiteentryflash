@@ -8,6 +8,9 @@ type SafeAreaInset = {
 type TgWebApp = {
   ready: () => void;
   expand: () => void;
+  requestFullscreen?: () => void;
+  exitFullscreen?: () => void;
+  isFullscreen?: boolean;
   setHeaderColor: (color: string) => void;
   setBackgroundColor: (color: string) => void;
   disableVerticalSwipes?: () => void;
@@ -84,7 +87,12 @@ function resolveContentTopInset(webApp: TgWebApp): number {
   const safe = webApp.safeAreaInset ?? EMPTY_INSET;
   const content = webApp.contentSafeAreaInset ?? EMPTY_INSET;
 
-  // contentSafeAreaInset can under-report on some clients — always reserve header space.
+  // Fullscreen: only status bar + close row (no bot title header).
+  if (webApp.isFullscreen) {
+    return Math.max(content.top, safe.top);
+  }
+
+  // Sheet mode: reserve Telegram header row ("Закрыть" + bot name).
   const withHeader = safe.top + TG_HEADER_BAR_PX;
   return Math.max(content.top, withHeader, TG_MIN_CONTENT_TOP_PX);
 }
@@ -144,7 +152,7 @@ export function readFirstAnalysisFrame(): FirstAnalysisFrame {
   const safe = webApp?.safeAreaInset ?? EMPTY_INSET;
 
   const top = webApp
-    ? Math.max(content.top, safe.top + TG_HEADER_BAR_PX, TG_MIN_CONTENT_TOP_PX)
+    ? resolveContentTopInset(webApp)
     : 0;
   const left = content.left || 0;
   const right = content.right || 0;
@@ -172,19 +180,45 @@ function bindSafeAreaListeners(): void {
 
   const sync = () => {
     syncTelegramSafeAreaInsets();
-    if (!webApp.isExpanded) {
-      try {
-        webApp.expand();
-      } catch {
-        /* ignore */
-      }
-    }
+    ensureTelegramViewportExpanded();
   };
 
   webApp.onEvent('safeAreaChanged', sync);
   webApp.onEvent('contentSafeAreaChanged', sync);
   webApp.onEvent('viewportChanged', sync);
+  webApp.onEvent('fullscreenChanged', sync);
+  webApp.onEvent('fullscreenFailed', () => {
+    window.setTimeout(() => requestAppFullscreen(), 300);
+  });
   safeAreaListenersBound = true;
+}
+
+export function ensureTelegramViewportExpanded(): void {
+  const webApp = getTgWebApp();
+  if (!webApp) return;
+
+  try {
+    if (!webApp.isExpanded) {
+      webApp.expand();
+    }
+  } catch {
+    /* ignore */
+  }
+
+  requestAppFullscreen();
+}
+
+export function requestAppFullscreen(): void {
+  const webApp = getTgWebApp();
+  if (!webApp?.requestFullscreen) return;
+
+  try {
+    if (!webApp.isFullscreen) {
+      webApp.requestFullscreen();
+    }
+  } catch {
+    /* older Telegram clients */
+  }
 }
 
 export function setVerticalSwipeLock(locked: boolean): void {
@@ -233,7 +267,7 @@ export function initTelegramWebApp(): void {
   if (!webApp) return;
 
   webApp.ready();
-  webApp.expand();
+  ensureTelegramViewportExpanded();
   webApp.setHeaderColor('#F5F5F7');
   webApp.setBackgroundColor('#F5F5F7');
   syncTelegramSafeAreaInsets();
