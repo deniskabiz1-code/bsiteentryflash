@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getTgWebApp } from '@/lib/tgWebApp';
 import { DEFAULT_CHANNEL_URL, DEFAULT_CHANNEL_USERNAME } from '@/config/channel';
+import { assetUrl } from '@/utils/assets';
 import { mockApi } from './mock';
 
 const MOCK = import.meta.env.VITE_MOCK_MODE === 'true';
@@ -21,15 +22,19 @@ if (!MOCK) {
   });
 }
 
+function isImageBlob(blob: Blob | null | undefined): blob is Blob {
+  return blob instanceof Blob && blob.size > 0 && blob.type.startsWith('image/');
+}
+
 export async function fetchProfilePhoto(): Promise<Blob | null> {
   if (MOCK) return null;
   try {
     const { data } = await api.get('/auth/profile-photo', {
       responseType: 'blob',
       timeout: 15000,
+      validateStatus: (status) => status === 200,
     });
-    if (data instanceof Blob && data.size > 0) return data;
-    return null;
+    return isImageBlob(data) ? data : null;
   } catch {
     return null;
   }
@@ -98,9 +103,25 @@ export async function fetchAnalysisPhoto(id: number): Promise<Blob | null> {
     const { data } = await api.get(`/analysis/${id}/photo`, {
       responseType: 'blob',
       timeout: 30000,
+      validateStatus: (status) => status === 200,
     });
-    if (data instanceof Blob && data.size > 0) return data;
+    return isImageBlob(data) ? data : null;
+  } catch {
     return null;
+  }
+}
+
+export async function fetchPublicAsset(path: string): Promise<Blob | null> {
+  if (MOCK || !path) return null;
+  try {
+    const url = assetUrl(path);
+    if (!url) return null;
+    const { data } = await axios.get(url, {
+      responseType: 'blob',
+      timeout: 30000,
+      validateStatus: (status) => status === 200,
+    });
+    return isImageBlob(data) ? data : null;
   } catch {
     return null;
   }

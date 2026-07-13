@@ -41,6 +41,7 @@ model Analysis {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   type         String   // "face" | "hairstyle"
   photoUrl     String
+  photoData    Bytes?
   sidePhotoUrl String?
   resultJson   Json
   overallScore Int?

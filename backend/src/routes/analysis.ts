@@ -49,6 +49,24 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+function guessImageMime(filename: string): string {
+  const ext = path.extname(filename).toLowerCase();
+  if (ext === '.png') return 'image/png';
+  if (ext === '.webp') return 'image/webp';
+  if (ext === '.gif') return 'image/gif';
+  return 'image/jpeg';
+}
+
+function readPhotoBytes(filePath: string): Uint8Array | null {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    const bytes = fs.readFileSync(filePath);
+    return bytes.length > 0 ? Uint8Array.from(bytes) : null;
+  } catch {
+    return null;
+  }
+}
+
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadDir),
   filename: (_req, file, cb) => {
@@ -147,11 +165,13 @@ router.post(
       });
       const overallScore = (result.overall_score as number) || 0;
 
+      const photoBytes = readPhotoBytes(req.file.path);
       const analysis = await prisma.analysis.create({
         data: {
           userId: user.id,
           type: 'face',
           photoUrl: `/uploads/${req.file.filename}`,
+          photoData: photoBytes ? (photoBytes as Uint8Array<ArrayBuffer>) : undefined,
           resultJson: result as Prisma.InputJsonValue,
           overallScore,
         },
@@ -219,11 +239,13 @@ router.post(
 
       const { data: result, demo } = await analyzeHairstyle(front.path, side.path);
 
+      const photoBytes = readPhotoBytes(front.path);
       const analysis = await prisma.analysis.create({
         data: {
           userId: user.id,
           type: 'hairstyle',
           photoUrl: `/uploads/${front.filename}`,
+          photoData: photoBytes ? (photoBytes as Uint8Array<ArrayBuffer>) : undefined,
           sidePhotoUrl: `/uploads/${side.filename}`,
           resultJson: result as Prisma.InputJsonValue,
         },
@@ -318,13 +340,21 @@ router.get('/:id/photo', validateTelegramAuth, async (req: AuthRequest, res: Res
       return;
     }
 
+    const mime = guessImageMime(analysis.photoUrl);
     const filePath = path.join(uploadDir, path.basename(analysis.photoUrl));
-    if (!fs.existsSync(filePath)) {
-      res.status(404).json({ error: 'Фото не найдено' });
+    if (fs.existsSync(filePath)) {
+      res.type(mime);
+      res.sendFile(path.resolve(filePath));
       return;
     }
 
-    res.sendFile(path.resolve(filePath));
+    if (analysis.photoData && analysis.photoData.length > 0) {
+      res.type(mime);
+      res.send(Buffer.from(analysis.photoData.buffer, analysis.photoData.byteOffset, analysis.photoData.byteLength));
+      return;
+    }
+
+    res.status(404).json({ error: 'Фото не найдено' });
   } catch (err) {
     console.error('Analysis photo error:', err);
     res.status(500).json({ error: 'Ошибка загрузки фото' });

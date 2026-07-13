@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchAnalysisPhoto } from '@/api/client';
+import { fetchAnalysisPhoto, fetchPublicAsset } from '@/api/client';
+import { getTgWebApp } from '@/lib/tgWebApp';
 import { assetUrl } from '@/utils/assets';
 
 type AnalysisPhotoProps = {
@@ -11,6 +12,15 @@ type AnalysisPhotoProps = {
 
 const MOCK = import.meta.env.VITE_MOCK_MODE === 'true';
 
+function applyBlob(
+  blob: Blob | null,
+  cancelled: boolean,
+  onReady: (url: string) => string,
+): string | null {
+  if (!blob || cancelled) return null;
+  return onReady(URL.createObjectURL(blob));
+}
+
 export default function AnalysisPhoto({
   analysisId,
   photoUrl,
@@ -19,6 +29,26 @@ export default function AnalysisPhoto({
 }: AnalysisPhotoProps) {
   const [src, setSrc] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const [authReady, setAuthReady] = useState(() => Boolean(getTgWebApp()?.initData));
+
+  useEffect(() => {
+    const webApp = getTgWebApp();
+    if (!webApp) return;
+
+    if (webApp.initData) {
+      setAuthReady(true);
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      if (getTgWebApp()?.initData) {
+        setAuthReady(true);
+        window.clearInterval(timer);
+      }
+    }, 100);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let objectUrl: string | null = null;
@@ -35,12 +65,28 @@ export default function AnalysisPhoto({
         return;
       }
 
-      if (!MOCK && analysisId) {
+      if (!MOCK && analysisId && authReady) {
         const blob = await fetchAnalysisPhoto(analysisId);
         if (cancelled) return;
-        if (blob) {
-          objectUrl = URL.createObjectURL(blob);
-          setSrc(objectUrl);
+        const url = applyBlob(blob, cancelled, (nextUrl) => {
+          objectUrl = nextUrl;
+          return nextUrl;
+        });
+        if (url) {
+          setSrc(url);
+          return;
+        }
+      }
+
+      if (photoUrl && !MOCK) {
+        const blob = await fetchPublicAsset(photoUrl);
+        if (cancelled) return;
+        const url = applyBlob(blob, cancelled, (nextUrl) => {
+          objectUrl = nextUrl;
+          return nextUrl;
+        });
+        if (url) {
+          setSrc(url);
           return;
         }
       }
@@ -56,7 +102,7 @@ export default function AnalysisPhoto({
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [analysisId, photoUrl]);
+  }, [analysisId, photoUrl, authReady]);
 
   if (!photoUrl && !analysisId) return null;
 
