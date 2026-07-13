@@ -10,11 +10,9 @@ import { useTelegram } from '@/hooks/useTelegram';
 const TIKTOK_COMMENT_SCREENSHOTS = 5;
 const TIKTOK_BOT_MENTION = '@primeform_app_bot';
 const TIKTOK_COMMENT_EXAMPLES = [
-  'Кто пробовал @primeform_app_bot? норм анализ лица прямо в Telegram',
-  'Для looksmax советую @primeform_app_bot — чек-ин и советы по коже',
-  'Зацените @primeform_app_bot, если хотите объективную оценку внешности',
-  '@primeform_app_bot помог понять, над чем реально работать',
-  'Мини-апп @primeform_app_bot — удобно для еженедельного прогресса',
+  'в @primeform_app_bot бесплатная оценка лица',
+  'загрузил селфи в @primeform_app_bot — норм разбор, бесплатно',
+  'если хотите оценку лица — зайдите в @primeform_app_bot в телеге',
 ];
 
 export default function FreeAnalysis() {
@@ -171,7 +169,7 @@ export default function FreeAnalysis() {
                     </div>
                   </li>
                   <li>
-                    Оставьте 5 разных комментариев под looksmax-видео. В каждом комментарии
+                    Оставьте 5 разных комментариев под видео в TikTok. В каждом комментарии
                     обязательно укажите <span className="font-semibold text-app-text">{TIKTOK_BOT_MENTION}</span>.
                   </li>
                   <li>Сделайте скриншот каждого комментария — на нём должен быть виден текст с {TIKTOK_BOT_MENTION}.</li>

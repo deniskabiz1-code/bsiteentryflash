@@ -232,7 +232,7 @@ router.post('/admin/approve', async (req: Request, res: Response) => {
       });
       sendBotMessage(
         Number(proof.user.telegramId),
-        '❌ <b>Заявка отклонена</b>\n\nСкриншоты не прошли проверку. Нужны 5 скриншотов комментариев под looksmax-видео — в каждом должен быть @primeform_app_bot.',
+        '❌ <b>Заявка отклонена</b>\n\nСкриншоты не прошли проверку. Нужны 5 скриншотов комментариев в TikTok — в каждом должен быть @primeform_app_bot.',
         { appButton: false },
       ).catch(() => {});
       res.json({ success: true, message: 'Заявка отклонена' });
