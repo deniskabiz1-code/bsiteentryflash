@@ -237,7 +237,7 @@ export default function Profile() {
             <div className="space-y-5">
               <input className="input-field" value={name} onChange={(e) => setName(e.target.value)} placeholder="Имя" />
               <AgeSlider
-                value={parseInt(age, 10) || 25}
+                value={parseInt(age, 10) || 14}
                 onChange={(v) => setAge(String(v))}
               />
               <GoalSelector selected={goals} onToggle={toggleGoal} />

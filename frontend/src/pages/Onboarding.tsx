@@ -20,7 +20,7 @@ export default function Onboarding() {
   const [subscribed, setSubscribed] = useState(false);
   const [checking, setChecking] = useState(false);
   const [name, setName] = useState('');
-  const [age, setAge] = useState(25);
+  const [age, setAge] = useState(14);
   const [goals, setGoals] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
