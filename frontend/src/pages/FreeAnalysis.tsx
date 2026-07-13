@@ -146,15 +146,31 @@ export default function FreeAnalysis() {
             </>
           ) : (
             <>
-              <p className="text-[14px] text-app-muted">
-                Оставьте 5 комментариев под looksmax-видео в TikTok и загрузите скриншот
-                каждого комментария отдельно.
-              </p>
+              <div className="rounded-2xl bg-app-track/50 px-4 py-3 space-y-3">
+                <p className="text-[14px] font-semibold">Как получить +1 анализ</p>
+                <ol className="text-[13px] text-app-muted space-y-2 list-decimal pl-4">
+                  <li>
+                    Откройте TikTok и найдите видео через поиск. Подойдут запросы:
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {['looksmax', 'луксмакс', 'луксмаксинг'].map((term) => (
+                        <span
+                          key={term}
+                          className="rounded-full bg-app-surface px-2.5 py-1 text-[12px] font-semibold text-app-text shadow-pill"
+                        >
+                          {term}
+                        </span>
+                      ))}
+                    </div>
+                  </li>
+                  <li>Оставьте 5 разных комментариев под looksmax-видео (не спам — осмысленные).</li>
+                  <li>Сделайте скриншот каждого комментария — чтобы был виден ваш текст.</li>
+                  <li>Загрузите все 5 скриншотов ниже и отправьте на проверку.</li>
+                </ol>
+              </div>
               <ul className="text-[13px] text-app-muted space-y-1 list-disc pl-5">
-                <li>5 скриншотов — по одному на каждый комментарий</li>
-                <li>На скриншоте должен быть виден текст комментария</li>
                 <li>Один бонус за аккаунт после одобрения</li>
                 <li>Решение придёт в Telegram от бота</li>
+                <li>Проверка обычно в течение суток</li>
               </ul>
               <div className="space-y-3">
                 <p className="text-[13px] font-semibold text-app-muted">
