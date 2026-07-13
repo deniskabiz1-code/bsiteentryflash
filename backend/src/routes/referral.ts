@@ -1,9 +1,14 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
 import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegramAuth';
-import { findOrCreateUser } from '../services/telegram';
+import { isAdminAuthorized } from '../middleware/adminAuth';
+import {
+  findOrCreateUser,
+  getPublicApiBaseUrl,
+  notifyAdminReferralProof,
+  sendBotMessage,
+} from '../services/telegram';
 import { prisma } from '../utils/prisma';
 
 const router = Router();
@@ -95,6 +100,15 @@ router.post(
         },
       });
 
+      notifyAdminReferralProof({
+        id: proof.id,
+        imageUrl: proof.imageUrl,
+        username: user.username,
+        telegramId: user.telegramId,
+      }).catch((err) => {
+        console.error('[referral] Admin notify failed:', err);
+      });
+
       res.json({
         success: true,
         proofId: proof.id,
@@ -106,49 +120,96 @@ router.post(
   }
 );
 
-router.post(
-  '/admin/approve',
-  async (req, res: Response) => {
-    const adminSecret = process.env.ADMIN_SECRET;
-    if (!adminSecret || req.headers['x-admin-secret'] !== adminSecret) {
-      res.status(403).json({ error: 'Forbidden' });
+router.get('/admin/pending', async (req: Request, res: Response) => {
+  if (!isAdminAuthorized(req)) {
+    res.status(403).json({ error: 'Forbidden' });
+    return;
+  }
+
+  try {
+    const baseUrl = getPublicApiBaseUrl();
+    const proofs = await prisma.referralProof.findMany({
+      where: { status: 'pending' },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            telegramId: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    res.json({
+      proofs: proofs.map((proof) => ({
+        id: proof.id,
+        imageUrl: proof.imageUrl,
+        imageFullUrl: `${baseUrl}${proof.imageUrl}`,
+        createdAt: proof.createdAt,
+        user: {
+          id: proof.user.id,
+          name: proof.user.name,
+          username: proof.user.username,
+          telegramId: proof.user.telegramId.toString(),
+        },
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Ошибка' });
+  }
+});
+
+router.post('/admin/approve', async (req: Request, res: Response) => {
+  if (!isAdminAuthorized(req)) {
+    res.status(403).json({ error: 'Forbidden' });
+    return;
+  }
+
+  try {
+    const { proofId, action } = req.body;
+    const proof = await prisma.referralProof.findUnique({
+      where: { id: proofId },
+      include: { user: { select: { telegramId: true } } },
+    });
+
+    if (!proof || proof.status !== 'pending') {
+      res.status(404).json({ error: 'Заявка не найдена' });
       return;
     }
 
-    try {
-      const { proofId, action } = req.body;
-      const proof = await prisma.referralProof.findUnique({
-        where: { id: proofId },
-      });
-
-      if (!proof || proof.status !== 'pending') {
-        res.status(404).json({ error: 'Заявка не найдена' });
-        return;
-      }
-
-      if (action === 'approve') {
-        await prisma.$transaction([
-          prisma.referralProof.update({
-            where: { id: proofId },
-            data: { status: 'approved' },
-          }),
-          prisma.user.update({
-            where: { id: proof.userId },
-            data: { referralCredits: { increment: 1 } },
-          }),
-        ]);
-        res.json({ success: true, message: 'Кредит начислен' });
-      } else {
-        await prisma.referralProof.update({
+    if (action === 'approve') {
+      await prisma.$transaction([
+        prisma.referralProof.update({
           where: { id: proofId },
-          data: { status: 'rejected' },
-        });
-        res.json({ success: true, message: 'Заявка отклонена' });
-      }
-    } catch (err) {
-      res.status(500).json({ error: 'Ошибка' });
+          data: { status: 'approved' },
+        }),
+        prisma.user.update({
+          where: { id: proof.userId },
+          data: { referralCredits: { increment: 1 } },
+        }),
+      ]);
+      sendBotMessage(
+        Number(proof.user.telegramId),
+        '✅ <b>Заявка одобрена!</b>\n\nВам начислен +1 анализ. Откройте Primeform и сделайте чек-ин.',
+      ).catch(() => {});
+      res.json({ success: true, message: 'Кредит начислен' });
+    } else {
+      await prisma.referralProof.update({
+        where: { id: proofId },
+        data: { status: 'rejected' },
+      });
+      sendBotMessage(
+        Number(proof.user.telegramId),
+        '❌ <b>Заявка отклонена</b>\n\nСкриншот не прошёл проверку. Убедитесь, что видны 5 комментариев под looksmax-видео, и отправьте снова.',
+      ).catch(() => {});
+      res.json({ success: true, message: 'Заявка отклонена' });
     }
+  } catch (err) {
+    res.status(500).json({ error: 'Ошибка' });
   }
-);
+});
 
 export default router;

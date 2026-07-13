@@ -120,6 +120,68 @@ export async function sendBotMessage(telegramId: number, text: string): Promise<
   }
 }
 
+export async function sendBotPhoto(
+  telegramId: number,
+  photoUrl: string,
+  caption?: string,
+): Promise<void> {
+  const botToken = process.env.BOT_TOKEN;
+  if (!botToken) return;
+
+  try {
+    await fetch(`${BOT_API}${botToken}/sendPhoto`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: telegramId,
+        photo: photoUrl,
+        caption,
+        parse_mode: 'HTML',
+      }),
+    });
+  } catch (err) {
+    console.error('Failed to send bot photo:', err);
+  }
+}
+
+export function getPublicApiBaseUrl(): string {
+  const explicit = process.env.API_PUBLIC_URL?.trim()
+    || process.env.RENDER_EXTERNAL_URL?.trim();
+  if (explicit) {
+    return explicit.replace(/\/$/, '');
+  }
+  const port = process.env.PORT || '3001';
+  return `http://localhost:${port}`;
+}
+
+export async function notifyAdminReferralProof(proof: {
+  id: number;
+  imageUrl: string;
+  username: string | null;
+  telegramId: bigint;
+}): Promise<void> {
+  const adminId = process.env.ADMIN_TELEGRAM_ID?.trim();
+  if (!adminId) return;
+
+  const baseUrl = getPublicApiBaseUrl();
+  const imageFullUrl = `${baseUrl}${proof.imageUrl}`;
+  const userLabel = proof.username ? `@${proof.username}` : `ID ${proof.telegramId}`;
+  const caption = [
+    '📸 <b>Новая заявка TikTok</b>',
+    '',
+    `Пользователь: ${userLabel}`,
+    `Заявка #${proof.id}`,
+    '',
+    'Одобрить:',
+    `<code>node backend/scripts/referral-admin.mjs approve ${proof.id}</code>`,
+    '',
+    'Отклонить:',
+    `<code>node backend/scripts/referral-admin.mjs reject ${proof.id}</code>`,
+  ].join('\n');
+
+  await sendBotPhoto(Number(adminId), imageFullUrl, caption);
+}
+
 function generateReferralCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';

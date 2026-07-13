@@ -12,6 +12,7 @@ import AnalysisResult from '@/pages/AnalysisResult';
 import HairstyleAnalysis from '@/pages/HairstyleAnalysis';
 import Progress from '@/pages/Progress';
 import Profile from '@/pages/Profile';
+import FreeAnalysis from '@/pages/FreeAnalysis';
 
 function AppRoutes() {
   const { user, loading } = useApp();
@@ -21,6 +22,7 @@ function AppRoutes() {
     location.pathname === '/analysis'
     && (user?.faceAnalysisCount ?? 0) === 0
     && (user?.freeAnalysisAvailable ?? true);
+  const hideNavOnOverlayPage = location.pathname === '/free-analysis';
 
   if (loading) return <LoadingScreen />;
 
@@ -55,9 +57,10 @@ function AppRoutes() {
         <Route path="/analysis/hairstyle" element={<HairstyleAnalysis />} />
         <Route path="/progress" element={<Progress />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/free-analysis" element={<FreeAnalysis />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {!overlayActive && !hideNavOnAnalysisUpload && <BottomNav />}
+      {!overlayActive && !hideNavOnAnalysisUpload && !hideNavOnOverlayPage && <BottomNav />}
     </>
   );
 }

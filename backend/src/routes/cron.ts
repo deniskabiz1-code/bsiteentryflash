@@ -1,21 +1,11 @@
 import { Router, Request, Response } from 'express';
+import { isAdminAuthorized } from '../middleware/adminAuth';
 import { processDueReminders } from '../services/reminders';
 
 const router = Router();
 
-function isAuthorized(req: Request): boolean {
-  const expected = process.env.ADMIN_SECRET?.trim();
-  if (!expected) return false;
-
-  const header =
-    (req.headers['x-admin-secret'] as string | undefined)
-    || (req.headers.authorization as string | undefined)?.replace(/^Bearer\s+/i, '');
-
-  return Boolean(header && header === expected);
-}
-
 router.post('/reminders', async (req: Request, res: Response) => {
-  if (!isAuthorized(req)) {
+  if (!isAdminAuthorized(req)) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }

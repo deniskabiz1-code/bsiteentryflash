@@ -58,6 +58,7 @@ export default function Analysis() {
     Boolean(user?.subscriptionActive) ||
     (isFirstAnalysis && freeAnalysisAvailable) ||
     (user?.referralCredits ?? 0) > 0;
+  const hasNoAnalysesLeft = !canAnalyze && !user?.subscriptionActive;
 
   const handleAnalyze = async () => {
     if (!photo) { setError('Загрузите фото'); return; }
@@ -145,6 +146,15 @@ export default function Analysis() {
               Сделайте селфи — AI бесплатно оценит внешность.
             </p>
           </div>
+        ) : hasNoAnalysesLeft ? (
+          <div className="space-y-1.5">
+            <h1 className="text-[20px] font-bold leading-tight tracking-tight">
+              Нет доступных анализов
+            </h1>
+            <p className="text-[14px] leading-snug text-app-muted">
+              Получите бесплатный кредит или оформите подписку.
+            </p>
+          </div>
         ) : (
           <h1 className="text-[20px] font-bold leading-tight tracking-tight">
             Анализ лица
@@ -155,7 +165,13 @@ export default function Analysis() {
       {isBlockedFromFreeTrial ? (
         <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden px-1">
           <p className="text-center text-[14px] leading-snug text-app-muted">
-            Тестовый кредит и подписка — во вкладке Профиль.
+            Бесплатный анализ на этот аккаунт уже использован. Получите кредит или оформите подписку.
+          </p>
+        </div>
+      ) : hasNoAnalysesLeft ? (
+        <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden px-1">
+          <p className="text-center text-[14px] leading-snug text-app-muted">
+            Поделитесь реферальной ссылкой, отправьте TikTok-скриншот или оформите подписку.
           </p>
         </div>
       ) : (
@@ -175,21 +191,21 @@ export default function Analysis() {
           <p className="text-center text-[13px] font-medium text-red-500 line-clamp-2">{error}</p>
         )}
 
-        {isBlockedFromFreeTrial ? (
+        {isBlockedFromFreeTrial || hasNoAnalysesLeft ? (
           <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => navigate('/free-analysis')}
+              className="btn-accent"
+            >
+              Как получить бесплатный анализ
+            </button>
             <button
               type="button"
               onClick={() => navigate('/profile')}
               className="btn-dark"
             >
               Оформить подписку
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="btn-light"
-            >
-              На главную
             </button>
           </div>
         ) : (

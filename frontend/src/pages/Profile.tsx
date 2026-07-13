@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Bell, Share2, Copy, Trash2, Upload } from 'lucide-react';
+import { Bell, Trash2 } from 'lucide-react';
 import Modal from '@/components/Modal';
-import SegmentedControl from '@/components/SegmentedControl';
 import {
-  createPayment, getReferralInfo, submitReferralProof,
+  createPayment,
   updateProfile, updateReminders, getSkincareRoutine,
   getLastCheckin, deleteAccount,
 } from '@/api/client';
-import TestCreditCard from '@/components/TestCreditCard';
+import FreeAnalysisEntryCard from '@/components/FreeAnalysisEntryCard';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useTelegramPhoto } from '@/hooks/useTelegramPhoto';
@@ -27,7 +26,6 @@ export default function Profile() {
   const [name, setName] = useState(user?.name || '');
   const [age, setAge] = useState(String(user?.age || ''));
   const [goals, setGoals] = useState<string[]>(user?.goals || []);
-  const [referral, setReferral] = useState<{ referralLink: string; referralCredits: number } | null>(null);
   const [skincare, setSkincare] = useState<{ step: string; product_type: string; tip: string }[]>([]);
   const [lastCheckin, setLastCheckin] = useState<{ photoUrl: string; overallScore: number; createdAt: string } | null>(null);
   const [reminderEnabled, setReminderEnabled] = useState(user?.reminderEnabled || false);
@@ -36,7 +34,6 @@ export default function Profile() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
-  const [referralTab, setReferralTab] = useState('Ссылка');
   const [loading, setLoading] = useState(false);
 
   const deviceTimezone = getDeviceTimezone();
@@ -52,7 +49,6 @@ export default function Profile() {
       getSkincareRoutine().then((d) => setSkincare(d.routine || [])).catch(() => {});
     }
     getLastCheckin().then((d) => setLastCheckin(d.checkin)).catch(() => {});
-    getReferralInfo().then(setReferral).catch(() => {});
   }, [user]);
 
   const handleSubscribe = async () => {
@@ -90,25 +86,6 @@ export default function Profile() {
     if (reminderEnabled) await updateReminders(true, time, deviceTimezone);
   };
 
-  const copyReferralLink = () => {
-    if (referral?.referralLink) {
-      navigator.clipboard.writeText(referral.referralLink);
-      haptic('success');
-    }
-  };
-
-  const handleProofUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      await submitReferralProof(file);
-      haptic('success');
-      alert('Скриншот отправлен на проверку');
-    } catch {
-      haptic('error');
-    }
-  };
-
   const handleDeleteAccount = async () => {
     setDeleting(true);
     setDeleteError('');
@@ -137,7 +114,7 @@ export default function Profile() {
   return (
     <div className="page">
       <div className="page-inner space-y-6">
-        <TestCreditCard />
+        <FreeAnalysisEntryCard />
 
         <section className="text-center pt-2">
           <UserAvatar
@@ -195,39 +172,6 @@ export default function Profile() {
           <button type="button" onClick={handleSubscribe} className="btn-dark">
             {user?.subscriptionActive ? 'Продлить подписку' : 'Оформить подписку'}
           </button>
-        </section>
-
-        <section className="card space-y-4">
-          <h2 className="text-[17px] font-bold flex items-center gap-2">
-            <Share2 size={18} />
-            Реферальная программа
-          </h2>
-          <p className="text-[14px] text-app-muted">
-            Кредиты: <span className="font-bold text-brand-greenDark">{referral?.referralCredits ?? user?.referralCredits ?? 0}</span>
-          </p>
-          <SegmentedControl
-            options={['Ссылка', 'TikTok']}
-            value={referralTab}
-            onChange={setReferralTab}
-          />
-          {referralTab === 'Ссылка' ? (
-            <>
-              <p className="text-[14px] text-app-muted">Поделитесь ссылкой — вы оба получите +1 анализ</p>
-              <button type="button" onClick={copyReferralLink} className="btn-light flex items-center justify-center gap-2">
-                <Copy size={16} />
-                Копировать ссылку
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="text-[14px] text-app-muted">5 комментариев под looksmax-видео + скриншот</p>
-              <label className="btn-light flex items-center justify-center gap-2 cursor-pointer">
-                <Upload size={16} />
-                Загрузить скриншот
-                <input type="file" accept="image/*" className="hidden" onChange={handleProofUpload} />
-              </label>
-            </>
-          )}
         </section>
 
         <section className="card space-y-4">
