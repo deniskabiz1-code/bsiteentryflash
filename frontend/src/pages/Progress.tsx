@@ -74,7 +74,12 @@ export default function Progress() {
       <div ref={contentRef} className="page-inner space-y-6">
         <section className="text-center pt-2">
           <p className="label-sm mb-3">Текущий балл</p>
-          <p className="heading-xl">{latest?.overallScore ?? '—'}<span className="text-[20px] text-app-muted font-semibold">/100</span></p>
+          <div className="flex min-h-[40px] items-baseline justify-center gap-0.5">
+            <span className="font-display text-[34px] font-bold leading-none tracking-tight text-app-text">
+              {latest?.overallScore ?? '—'}
+            </span>
+            <span className="text-[20px] font-semibold text-app-muted">/100</span>
+          </div>
           {delta !== 0 && (
             <div className="mt-4 flex justify-center">
               <span className={`pill-green ${delta < 0 ? '!bg-red-50 !text-red-600' : ''}`}>

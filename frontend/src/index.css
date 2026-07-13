@@ -124,14 +124,6 @@ html.pf-onboarding #root {
   overflow: hidden;
 }
 
-html.pf-progress-lock,
-html.pf-progress-lock body {
-  overflow: hidden;
-  overscroll-behavior: none;
-  height: 100%;
-  width: 100%;
-}
-
 @layer components {
   .page {
     min-height: 100vh;

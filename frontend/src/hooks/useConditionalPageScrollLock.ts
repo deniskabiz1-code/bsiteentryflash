@@ -2,7 +2,6 @@ import { useEffect, useState, type RefObject } from 'react';
 import { setVerticalSwipeLock } from '@/lib/tgWebApp';
 
 const BOTTOM_NAV_PX = 92;
-const HTML_CLASS = 'pf-progress-lock';
 
 function isInteractiveTouchTarget(target: EventTarget | null): boolean {
   return (
@@ -11,18 +10,17 @@ function isInteractiveTouchTarget(target: EventTarget | null): boolean {
   );
 }
 
-/** Lock page scroll until content exceeds the viewport; then allow normal scrolling. */
+/** Block page scroll only when content fits; never change page layout/CSS. */
 export function useConditionalPageScrollLock(
   contentRef: RefObject<HTMLElement | null>,
   ready: boolean,
   remeasureKey: string | number,
-  htmlClass = HTML_CLASS,
 ) {
-  const [allowScroll, setAllowScroll] = useState(false);
+  const [allowScroll, setAllowScroll] = useState(true);
 
   useEffect(() => {
     if (!ready) {
-      setAllowScroll(false);
+      setAllowScroll(true);
       return;
     }
 
@@ -33,9 +31,8 @@ export function useConditionalPageScrollLock(
 
       const padTop = parseFloat(getComputedStyle(root).paddingTop) || 0;
       const available = window.innerHeight - padTop - BOTTOM_NAV_PX;
-      const top = content.getBoundingClientRect().top;
-      const needed = top + content.offsetHeight;
-      setAllowScroll(needed > available + 8);
+      const bottom = content.getBoundingClientRect().bottom;
+      setAllowScroll(bottom > available + 8);
     };
 
     const scheduleMeasure = () => {
@@ -61,7 +58,6 @@ export function useConditionalPageScrollLock(
   useEffect(() => {
     if (!ready || allowScroll) return;
 
-    document.documentElement.classList.add(htmlClass);
     setVerticalSwipeLock(true);
 
     const blockScroll = (event: Event) => {
@@ -69,15 +65,12 @@ export function useConditionalPageScrollLock(
       if (event.cancelable) event.preventDefault();
     };
     document.addEventListener('touchmove', blockScroll, { passive: false });
-    document.addEventListener('wheel', blockScroll, { passive: false });
 
     return () => {
-      document.documentElement.classList.remove(htmlClass);
       setVerticalSwipeLock(false);
       document.removeEventListener('touchmove', blockScroll);
-      document.removeEventListener('wheel', blockScroll);
     };
-  }, [ready, allowScroll, htmlClass]);
+  }, [ready, allowScroll]);
 
   return allowScroll;
 }
