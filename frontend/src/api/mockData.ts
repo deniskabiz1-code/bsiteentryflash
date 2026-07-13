@@ -13,6 +13,7 @@ export const MOCK_USER = {
   subscriptionEnd: new Date(Date.now() + 30 * 86400000).toISOString(),
   reminderEnabled: true,
   reminderTime: '09:00',
+  reminderTimezone: 'Europe/Moscow',
   onboarded: true,
   faceAnalysisCount: 3,
   freeAnalysisAvailable: false,

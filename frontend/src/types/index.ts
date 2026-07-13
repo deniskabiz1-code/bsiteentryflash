@@ -11,6 +11,7 @@ export interface User {
   subscriptionEnd: string | null;
   reminderEnabled: boolean;
   reminderTime: string | null;
+  reminderTimezone: string | null;
   onboarded: boolean;
   faceAnalysisCount: number;
   freeAnalysisAvailable: boolean;

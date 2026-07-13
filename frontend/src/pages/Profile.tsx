@@ -16,6 +16,7 @@ import GoalSelector from '@/components/GoalSelector';
 import UserAvatar from '@/components/UserAvatar';
 import { GOAL_LABELS } from '@/types';
 import { assetUrl } from '@/utils/assets';
+import { getDeviceTimezone, formatTimezoneLabel } from '@/utils/timezone';
 
 export default function Profile() {
   const { user, refreshUser } = useApp();
@@ -38,6 +39,14 @@ export default function Profile() {
   const [referralTab, setReferralTab] = useState('Ссылка');
   const [loading, setLoading] = useState(false);
 
+  const deviceTimezone = getDeviceTimezone();
+  const reminderTimezoneLabel = formatTimezoneLabel(deviceTimezone);
+
+  useEffect(() => {
+    if (!user?.reminderEnabled) return;
+    if (user.reminderTimezone === deviceTimezone) return;
+    updateReminders(true, user.reminderTime || '09:00', deviceTimezone).catch(() => {});
+  }, [user?.reminderEnabled, user?.reminderTime, user?.reminderTimezone, deviceTimezone]);
 
   useEffect(() => {
     if (user?.subscriptionActive) {
@@ -73,13 +82,13 @@ export default function Profile() {
   const handleReminderToggle = async () => {
     const newVal = !reminderEnabled;
     setReminderEnabled(newVal);
-    await updateReminders(newVal, reminderTime);
+    await updateReminders(newVal, reminderTime, deviceTimezone);
     haptic('light');
   };
 
   const handleReminderTime = async (time: string) => {
     setReminderTime(time);
-    if (reminderEnabled) await updateReminders(true, time);
+    if (reminderEnabled) await updateReminders(true, time, deviceTimezone);
   };
 
   const copyReferralLink = () => {
@@ -265,7 +274,7 @@ export default function Profile() {
           {reminderEnabled && (
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
-                <span className="shrink-0 text-[14px] text-app-muted">Время (МСК)</span>
+                <span className="shrink-0 text-[14px] text-app-muted">Время · {reminderTimezoneLabel}</span>
                 <input
                   type="time"
                   value={reminderTime}
@@ -274,7 +283,7 @@ export default function Profile() {
                 />
               </div>
               <p className="text-[12px] leading-snug text-app-muted">
-                Бот пришлёт напоминание в Telegram в выбранное время.
+                Бот пришлёт напоминание в Telegram в выбранное локальное время устройства.
               </p>
             </div>
           )}

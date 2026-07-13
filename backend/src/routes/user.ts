@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegramAuth';
 import { findOrCreateUser, isSubscriptionActive } from '../services/telegram';
 import { serializeUser } from '../services/userProfile';
+import { resolveReminderTimezone } from '../services/reminders';
 import { prisma } from '../utils/prisma';
 
 export function isTestCreditsEnabled(): boolean {
@@ -36,14 +37,19 @@ router.put('/profile', validateTelegramAuth, async (req: AuthRequest, res: Respo
 
 router.put('/reminders', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { enabled, time } = req.body;
+    const { enabled, time, timezone } = req.body;
     const user = await findOrCreateUser(req.telegramUser!);
+    const reminderTimezone =
+      typeof timezone === 'string' && timezone.trim()
+        ? resolveReminderTimezone(timezone)
+        : user.reminderTimezone || resolveReminderTimezone(null);
 
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: {
         reminderEnabled: !!enabled,
         reminderTime: time || null,
+        reminderTimezone: !!enabled ? reminderTimezone : user.reminderTimezone,
         reminderLastSentDate: null,
       },
     });
@@ -51,6 +57,7 @@ router.put('/reminders', validateTelegramAuth, async (req: AuthRequest, res: Res
     res.json({
       reminderEnabled: updated.reminderEnabled,
       reminderTime: updated.reminderTime,
+      reminderTimezone: updated.reminderTimezone,
     });
   } catch (err) {
     res.status(500).json({ error: 'Ошибка' });

@@ -6,11 +6,20 @@ const TICK_MS = 60_000;
 
 let schedulerStarted = false;
 
-function getTimezone(): string {
-  return process.env.REMINDER_TIMEZONE?.trim() || DEFAULT_TIMEZONE;
+export function resolveReminderTimezone(userTz?: string | null): string {
+  const candidate = userTz?.trim();
+  if (!candidate) {
+    return process.env.REMINDER_TIMEZONE?.trim() || DEFAULT_TIMEZONE;
+  }
+  try {
+    Intl.DateTimeFormat('en-US', { timeZone: candidate });
+    return candidate;
+  } catch {
+    return process.env.REMINDER_TIMEZONE?.trim() || DEFAULT_TIMEZONE;
+  }
 }
 
-function getLocalHm(now = new Date(), timeZone = getTimezone()): string {
+function getLocalHm(now = new Date(), timeZone = DEFAULT_TIMEZONE): string {
   const parts = new Intl.DateTimeFormat('en-GB', {
     timeZone,
     hour: '2-digit',
@@ -23,7 +32,7 @@ function getLocalHm(now = new Date(), timeZone = getTimezone()): string {
   return `${hour}:${minute}`;
 }
 
-function getLocalDateKey(now = new Date(), timeZone = getTimezone()): string {
+function getLocalDateKey(now = new Date(), timeZone = DEFAULT_TIMEZONE): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',
@@ -49,15 +58,9 @@ export type ReminderRunResult = {
   checked: number;
   sent: number;
   skipped: number;
-  time: string;
-  timezone: string;
 };
 
 export async function processDueReminders(): Promise<ReminderRunResult> {
-  const timezone = getTimezone();
-  const nowHm = getLocalHm(new Date(), timezone);
-  const todayKey = getLocalDateKey(new Date(), timezone);
-
   const users = await prisma.user.findMany({
     where: {
       reminderEnabled: true,
@@ -67,14 +70,20 @@ export async function processDueReminders(): Promise<ReminderRunResult> {
       id: true,
       telegramId: true,
       reminderTime: true,
+      reminderTimezone: true,
       reminderLastSentDate: true,
     },
   });
 
+  const now = new Date();
   let sent = 0;
   let skipped = 0;
 
   for (const user of users) {
+    const timezone = resolveReminderTimezone(user.reminderTimezone);
+    const nowHm = getLocalHm(now, timezone);
+    const todayKey = getLocalDateKey(now, timezone);
+
     if (user.reminderTime !== nowHm) {
       skipped += 1;
       continue;
@@ -90,19 +99,14 @@ export async function processDueReminders(): Promise<ReminderRunResult> {
       data: { reminderLastSentDate: todayKey },
     });
     sent += 1;
+    console.log(`[reminders] Sent to user ${user.id} at ${nowHm} (${timezone})`);
   }
 
   if (sent > 0) {
-    console.log(`[reminders] Sent ${sent} reminder(s) at ${nowHm} (${timezone})`);
+    console.log(`[reminders] Batch complete: ${sent} sent, ${skipped} skipped`);
   }
 
-  return {
-    checked: users.length,
-    sent,
-    skipped,
-    time: nowHm,
-    timezone,
-  };
+  return { checked: users.length, sent, skipped };
 }
 
 export function startReminderScheduler(): void {
@@ -119,5 +123,5 @@ export function startReminderScheduler(): void {
 
   tick();
   setInterval(tick, TICK_MS);
-  console.log(`[reminders] Scheduler started (every ${TICK_MS / 1000}s, tz=${getTimezone()})`);
+  console.log(`[reminders] Scheduler started (every ${TICK_MS / 1000}s, per-user timezone)`);
 }

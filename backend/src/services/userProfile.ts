@@ -27,6 +27,7 @@ export async function serializeUser(user: User) {
     subscriptionEnd: user.subscriptionEnd,
     reminderEnabled: user.reminderEnabled,
     reminderTime: user.reminderTime,
+    reminderTimezone: user.reminderTimezone,
     onboarded: user.onboarded,
     faceAnalysisCount,
     freeAnalysisAvailable,

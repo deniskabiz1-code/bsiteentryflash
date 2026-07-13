@@ -132,9 +132,18 @@ export const mockApi = {
     return { user };
   },
 
-  updateReminders: async (enabled: boolean, time?: string) => {
-    user = { ...user, reminderEnabled: enabled, reminderTime: time || user.reminderTime };
-    return { reminderEnabled: enabled, reminderTime: time };
+  updateReminders: async (enabled: boolean, time?: string, timezone?: string) => {
+    user = {
+      ...user,
+      reminderEnabled: enabled,
+      reminderTime: time || user.reminderTime,
+      reminderTimezone: timezone || user.reminderTimezone,
+    };
+    return {
+      reminderEnabled: enabled,
+      reminderTime: time || user.reminderTime,
+      reminderTimezone: timezone || user.reminderTimezone,
+    };
   },
 
   getSkincareRoutine: async () => ({

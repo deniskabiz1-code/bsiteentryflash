@@ -152,9 +152,9 @@ export async function updateProfile(payload: {
   return data;
 }
 
-export async function updateReminders(enabled: boolean, time?: string) {
-  if (MOCK) return mockApi.updateReminders(enabled, time);
-  const { data } = await api.put('/user/reminders', { enabled, time });
+export async function updateReminders(enabled: boolean, time?: string, timezone?: string) {
+  if (MOCK) return mockApi.updateReminders(enabled, time, timezone);
+  const { data } = await api.put('/user/reminders', { enabled, time, timezone });
   return data;
 }
 
