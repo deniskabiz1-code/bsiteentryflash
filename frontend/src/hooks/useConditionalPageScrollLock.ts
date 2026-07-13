@@ -33,19 +33,28 @@ export function useConditionalPageScrollLock(
 
       const padTop = parseFloat(getComputedStyle(root).paddingTop) || 0;
       const available = window.innerHeight - padTop - BOTTOM_NAV_PX;
-      setAllowScroll(content.scrollHeight > available + 4);
+      const top = content.getBoundingClientRect().top;
+      const needed = top + content.offsetHeight;
+      setAllowScroll(needed > available + 8);
     };
 
-    measure();
-    const observer = new ResizeObserver(measure);
+    const scheduleMeasure = () => {
+      requestAnimationFrame(() => {
+        measure();
+        requestAnimationFrame(measure);
+      });
+    };
+
+    scheduleMeasure();
+    const observer = new ResizeObserver(scheduleMeasure);
     if (contentRef.current) observer.observe(contentRef.current);
-    window.addEventListener('resize', measure);
-    window.visualViewport?.addEventListener('resize', measure);
+    window.addEventListener('resize', scheduleMeasure);
+    window.visualViewport?.addEventListener('resize', scheduleMeasure);
 
     return () => {
       observer.disconnect();
-      window.removeEventListener('resize', measure);
-      window.visualViewport?.removeEventListener('resize', measure);
+      window.removeEventListener('resize', scheduleMeasure);
+      window.visualViewport?.removeEventListener('resize', scheduleMeasure);
     };
   }, [ready, remeasureKey, contentRef]);
 

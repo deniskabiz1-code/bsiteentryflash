@@ -59,7 +59,7 @@ export default function Progress() {
   const latest = faceAnalyses[0];
   const delta = (latest?.overallScore || 0) - (first?.overallScore || 0);
   const remeasureKey = `${faceAnalyses.length}-${first?.id ?? 0}-${latest?.id ?? 0}-${delta}`;
-  const allowScroll = useConditionalPageScrollLock(contentRef, !loading, remeasureKey);
+  useConditionalPageScrollLock(contentRef, !loading, remeasureKey);
 
   if (loading) {
     return (
@@ -70,12 +70,9 @@ export default function Progress() {
   }
 
   return (
-    <div className={`page ${allowScroll ? '' : 'progress-lock-page'}`}>
-      <div
-        ref={contentRef}
-        className={`page-inner ${allowScroll ? 'space-y-6' : 'progress-lock-inner'}`}
-      >
-        <section className={`text-center pt-2 ${allowScroll ? '' : 'progress-lock-fixed'}`}>
+    <div className="page">
+      <div ref={contentRef} className="page-inner space-y-6">
+        <section className="text-center pt-2">
           <p className="label-sm mb-3">Текущий балл</p>
           <p className="heading-xl">{latest?.overallScore ?? '—'}<span className="text-[20px] text-app-muted font-semibold">/100</span></p>
           {delta !== 0 && (
@@ -87,16 +84,12 @@ export default function Progress() {
           )}
         </section>
 
-        <button
-          type="button"
-          onClick={() => navigate('/analysis')}
-          className={`btn-dark flex items-center justify-center gap-2 ${allowScroll ? '' : 'progress-lock-fixed'}`}
-        >
+        <button type="button" onClick={() => navigate('/analysis')} className="btn-dark flex items-center justify-center gap-2">
           <Camera size={18} />
           Еженедельный чек-ин
         </button>
 
-        <div className={`btn-row ${allowScroll ? '' : 'progress-lock-fixed'}`}>
+        <div className="btn-row">
           <div className="card flex-1 text-center !py-4">
             <p className="text-[28px] font-bold">{faceAnalyses.length}</p>
             <p className="text-[13px] text-app-muted mt-1">Чек-инов</p>
@@ -108,7 +101,7 @@ export default function Progress() {
         </div>
 
         {faceAnalyses.length > 0 && (
-          <section className={`card-green ${allowScroll ? '' : 'progress-lock-fixed'}`}>
+          <section className="card-green">
             <p className="label-sm mb-1">Динамика</p>
             <p className="text-[28px] font-bold tracking-tight mb-4">{latest?.overallScore ?? 0} баллов</p>
             <MiniBarChart values={chartValues.slice(-10)} />
@@ -123,7 +116,7 @@ export default function Progress() {
         )}
 
         {first && latest && first.id !== latest.id && (
-          <section className={`card ${allowScroll ? '' : 'progress-lock-fixed'}`}>
+          <section className="card">
             <h2 className="text-[17px] font-bold mb-4">До / После</h2>
             <div className="flex items-center gap-3">
               <div className="flex-1 text-center">
@@ -144,7 +137,7 @@ export default function Progress() {
         )}
 
         {faceAnalyses.length > 0 ? (
-          <section className={allowScroll ? '' : 'progress-lock-fixed'}>
+          <section>
             <h2 className="text-[17px] font-bold mb-3 px-1">История</h2>
             <div className="card !p-0 overflow-hidden">
               {faceAnalyses.map((a) => (
@@ -187,7 +180,7 @@ export default function Progress() {
             </div>
           </section>
         ) : (
-          <div className={`card text-center ${allowScroll ? 'py-12' : 'progress-lock-fill py-8'}`}>
+          <div className="card text-center py-12">
             <p className="text-app-muted text-[15px]">Пока нет чек-инов</p>
             <p className="text-app-faint text-[13px] mt-1">Сделайте первый анализ лица</p>
           </div>
