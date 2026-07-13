@@ -16,7 +16,7 @@ import GoalSelector from '@/components/GoalSelector';
 import UserAvatar from '@/components/UserAvatar';
 import { GOAL_LABELS } from '@/types';
 import { assetUrl } from '@/utils/assets';
-import { getDeviceTimezone, formatTimezoneLabel } from '@/utils/timezone';
+import { getDeviceTimezone } from '@/utils/timezone';
 
 export default function Profile() {
   const { user, refreshUser } = useApp();
@@ -40,7 +40,6 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
 
   const deviceTimezone = getDeviceTimezone();
-  const reminderTimezoneLabel = formatTimezoneLabel(deviceTimezone);
 
   useEffect(() => {
     if (!user?.reminderEnabled) return;
@@ -274,7 +273,7 @@ export default function Profile() {
           {reminderEnabled && (
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
-                <span className="shrink-0 text-[14px] text-app-muted">Время · {reminderTimezoneLabel}</span>
+                <span className="shrink-0 text-[14px] text-app-muted">Время</span>
                 <input
                   type="time"
                   value={reminderTime}
@@ -283,7 +282,7 @@ export default function Profile() {
                 />
               </div>
               <p className="text-[12px] leading-snug text-app-muted">
-                Бот пришлёт напоминание в Telegram в выбранное локальное время устройства.
+                Бот пришлёт напоминание в Telegram в выбранное время.
               </p>
             </div>
           )}
