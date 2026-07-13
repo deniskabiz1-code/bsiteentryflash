@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { createPayment, getAnalysis } from '@/api/client';
+import SkincareRoutineSection from '@/components/SkincareRoutineSection';
+import { useApp } from '@/context/AppContext';
+import { useTelegram } from '@/hooks/useTelegram';
 import { SCORE_LABELS, SKIN_TYPE_LABELS, PUFFINESS_LABELS } from '@/types';
-import { getAnalysis } from '@/api/client';
 import { toAnalysisResultView, type AnalysisResultView } from '@/utils/analysisView';
 import { assetUrl } from '@/utils/assets';
 
@@ -9,6 +12,8 @@ export default function AnalysisResult() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useApp();
+  const { openLink, haptic } = useTelegram();
   const stateAnalysis = location.state?.analysis as AnalysisResultView | undefined;
 
   const [result, setResult] = useState<AnalysisResultView | null>(
@@ -59,8 +64,18 @@ export default function AnalysisResult() {
     );
   }
 
+  const handleSubscribe = async () => {
+    try {
+      const data = await createPayment();
+      openLink(data.paymentUrl);
+    } catch {
+      haptic('error');
+    }
+  };
+
   const overall = result.overall_score || 0;
   const isDemo = Boolean(result.demo);
+  const subscribed = Boolean(user?.subscriptionActive);
   const scores = result.scores || {};
   const formattedDate = result.createdAt
     ? new Date(result.createdAt).toLocaleDateString('ru-RU', {
@@ -170,20 +185,11 @@ export default function AnalysisResult() {
           </section>
         )}
 
-        {result.skincare_routine?.length > 0 && (
-          <section>
-            <h2 className="text-[17px] font-bold mb-3 px-1">Уход за кожей</h2>
-            <div className="card !p-0 overflow-hidden">
-              {result.skincare_routine.map((item, i) => (
-                <div key={i} className="px-5 py-4 border-b border-app-border last:border-0">
-                  <p className="font-semibold text-[15px]">{item.step}</p>
-                  <p className="text-[14px] text-app-muted mt-1">{item.product_type}</p>
-                  <p className="text-[13px] text-app-faint mt-1">{item.tip}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        <SkincareRoutineSection
+          routine={subscribed ? (result.skincare_routine ?? []) : []}
+          subscribed={subscribed}
+          onSubscribe={subscribed ? undefined : handleSubscribe}
+        />
 
         <div className="btn-row pb-4">
           <button type="button" onClick={() => navigate('/progress')} className="btn-light">

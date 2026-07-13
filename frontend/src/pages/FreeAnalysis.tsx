@@ -258,7 +258,10 @@ export default function FreeAnalysis() {
         <section className="card space-y-3">
           <h2 className="text-[17px] font-bold">Подписка</h2>
           <p className="text-[14px] text-app-muted">
-            400 ₽/мес — безлимитный анализ, причёска и персональный уход.
+            400 ₽/мес — безлимитный анализ, причёска и рутина ухода с товарами Wildberries.
+          </p>
+          <p className="text-[13px] text-app-faint">
+            В подписке — персональная подборка с артикулами WB: гель, SPF, крем, ретинол и др.
           </p>
           <button type="button" onClick={handleSubscribe} className="btn-dark">
             {user?.subscriptionActive ? 'Продлить подписку' : 'Оформить подписку'}

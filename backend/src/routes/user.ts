@@ -3,6 +3,7 @@ import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegra
 import { findOrCreateUser, isSubscriptionActive } from '../services/telegram';
 import { serializeUser } from '../services/userProfile';
 import { resolveReminderTimezone } from '../services/reminders';
+import { enrichSkincareRoutine, getSkincarePreviewProducts } from '../data/wildberriesSkincare';
 import { prisma } from '../utils/prisma';
 
 export function isTestCreditsEnabled(): boolean {
@@ -76,6 +77,14 @@ router.put('/reminders', validateTelegramAuth, async (req: AuthRequest, res: Res
   }
 });
 
+router.get('/skincare-preview', validateTelegramAuth, async (_req: AuthRequest, res: Response) => {
+  try {
+    res.json({ products: getSkincarePreviewProducts(4) });
+  } catch (err) {
+    res.status(500).json({ error: 'Ошибка' });
+  }
+});
+
 router.get('/skincare', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
   try {
     const user = await findOrCreateUser(req.telegramUser!);
@@ -96,7 +105,8 @@ router.get('/skincare', validateTelegramAuth, async (req: AuthRequest, res: Resp
     }
 
     const result = lastFace.resultJson as Record<string, unknown>;
-    res.json({ routine: result.skincare_routine || [] });
+    const routine = Array.isArray(result.skincare_routine) ? result.skincare_routine : [];
+    res.json({ routine: enrichSkincareRoutine(routine as { step: string; product_type: string; tip: string }[]) });
   } catch (err) {
     res.status(500).json({ error: 'Ошибка' });
   }

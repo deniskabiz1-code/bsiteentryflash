@@ -166,6 +166,12 @@ export async function getSkincareRoutine() {
   return data;
 }
 
+export async function getSkincarePreview() {
+  if (MOCK) return mockApi.getSkincarePreview();
+  const { data } = await api.get('/user/skincare-preview');
+  return data;
+}
+
 export async function getLastCheckin() {
   if (MOCK) return mockApi.getLastCheckin();
   const { data } = await api.get('/user/last-checkin');

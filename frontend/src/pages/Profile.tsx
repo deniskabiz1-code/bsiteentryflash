@@ -3,11 +3,13 @@ import { Bell, Trash2 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import {
   createPayment,
-  updateProfile, updateReminders, getSkincareRoutine,
+  updateProfile, updateReminders, getSkincareRoutine, getSkincarePreview,
   getLastCheckin, deleteAccount,
 } from '@/api/client';
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import FreeAnalysisEntryCard from '@/components/FreeAnalysisEntryCard';
+import SkincareRoutineSection from '@/components/SkincareRoutineSection';
+import type { EnrichedSkincareStep, WildberriesProduct } from '@/data/wildberriesSkincare';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useTelegramPhoto } from '@/hooks/useTelegramPhoto';
@@ -27,7 +29,8 @@ export default function Profile() {
   const [name, setName] = useState(user?.name || '');
   const [age, setAge] = useState(String(user?.age || ''));
   const [goals, setGoals] = useState<string[]>(user?.goals || []);
-  const [skincare, setSkincare] = useState<{ step: string; product_type: string; tip: string }[]>([]);
+  const [skincare, setSkincare] = useState<EnrichedSkincareStep[]>([]);
+  const [skincarePreview, setSkincarePreview] = useState<WildberriesProduct[]>([]);
   const [lastCheckin, setLastCheckin] = useState<{ photoUrl: string; overallScore: number; createdAt: string } | null>(null);
   const [reminderEnabled, setReminderEnabled] = useState(user?.reminderEnabled || false);
   const [reminderTime, setReminderTime] = useState(user?.reminderTime || '09:00');
@@ -47,8 +50,11 @@ export default function Profile() {
   }, [user?.reminderEnabled, user?.reminderTime, user?.reminderTimezone, deviceTimezone]);
 
   useEffect(() => {
+    getSkincarePreview().then((d) => setSkincarePreview(d.products || [])).catch(() => {});
     if (user?.subscriptionActive) {
       getSkincareRoutine().then((d) => setSkincare(d.routine || [])).catch(() => {});
+    } else {
+      setSkincare([]);
     }
     getLastCheckin().then((d) => setLastCheckin(d.checkin)).catch(() => {});
   }, [user]);
@@ -151,20 +157,13 @@ export default function Profile() {
           </section>
         )}
 
-        {user?.subscriptionActive && skincare.length > 0 && (
-          <section>
-            <h2 className="text-[17px] font-bold mb-3 px-1">Мой уход за кожей</h2>
-            <div className="card !p-0 overflow-hidden">
-              {skincare.map((item, i) => (
-                <div key={i} className="px-5 py-4 border-b border-app-border last:border-0">
-                  <p className="font-semibold text-[15px]">{item.step}</p>
-                  <p className="text-[14px] text-app-muted mt-1">{item.product_type}</p>
-                  <p className="text-[13px] text-app-faint mt-1">{item.tip}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        <SkincareRoutineSection
+          title="Мой уход за кожей"
+          routine={skincare}
+          subscribed={Boolean(user?.subscriptionActive)}
+          previewProducts={skincarePreview}
+          onSubscribe={user?.subscriptionActive ? undefined : handleSubscribe}
+        />
 
         <section className="card space-y-4">
           <div className="flex items-center justify-between">
@@ -178,7 +177,12 @@ export default function Profile() {
               До {new Date(user.subscriptionEnd).toLocaleDateString('ru-RU')}
             </p>
           )}
-          <p className="text-[14px] text-app-muted">400 ₽/мес — безлимитный анализ, причёска, уход</p>
+          <ul className="space-y-2 text-[14px] text-app-muted">
+            <li>· Безлимитный анализ лица и причёски</li>
+            <li>· Персональная рутина ухода с товарами Wildberries</li>
+            <li>· Подборка с артикулами WB — сразу видно, что покупать</li>
+          </ul>
+          <p className="text-[14px] font-semibold text-app-text">400 ₽/мес</p>
           <button type="button" onClick={handleSubscribe} className="btn-dark">
             {user?.subscriptionActive ? 'Продлить подписку' : 'Оформить подписку'}
           </button>
