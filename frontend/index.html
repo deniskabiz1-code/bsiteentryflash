@@ -12,9 +12,13 @@
         document.documentElement.dataset.tg = '1';
         var safe = wa.safeAreaInset || {};
         var content = wa.contentSafeAreaInset || {};
-        var top = wa.isFullscreen
-          ? Math.max(content.top || 0, safe.top || 0)
-          : Math.max(content.top || 0, (safe.top || 0) + 56, 120);
+        var platform = (wa.platform || '').toLowerCase();
+        var isDesktop = platform === 'tdesktop' || platform === 'macos' || platform === 'web' || platform === 'weba';
+        var top = isDesktop
+          ? Math.max(content.top || 0, safe.top || 0, 8)
+          : wa.isFullscreen
+            ? Math.max(content.top || 0, safe.top || 0)
+            : Math.max(content.top || 0, (safe.top || 0) + 56, 120);
         document.documentElement.style.setProperty('--tg-content-safe-area-inset-top', top + 'px');
         document.documentElement.style.setProperty('--tg-content-safe-area-inset-bottom', (content.bottom || 0) + 'px');
         document.documentElement.style.setProperty('--tg-content-safe-area-inset-left', (content.left || 0) + 'px');
@@ -22,7 +26,7 @@
         wa.ready();
         wa.expand();
         try {
-          if (wa.requestFullscreen && !wa.isFullscreen) {
+          if (!isDesktop && wa.requestFullscreen && !wa.isFullscreen) {
             wa.requestFullscreen();
           }
         } catch (e) {}

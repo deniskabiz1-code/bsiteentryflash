@@ -34,6 +34,21 @@ html[data-tg] #root {
   padding-left: var(--tg-content-safe-area-inset-left, 0px);
 }
 
+/* Telegram Desktop: center the phone-width UI in side panel / floating window */
+html[data-tg-desktop] #root {
+  width: 100%;
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 0.75rem;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+html[data-tg-desktop] body {
+  background-color: #F5F5F7;
+}
+
 html[data-tg] .tg-page-top {
   padding-top: 0.5rem;
 }

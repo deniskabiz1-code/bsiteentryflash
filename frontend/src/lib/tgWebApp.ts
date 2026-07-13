@@ -82,10 +82,24 @@ const EMPTY_INSET: SafeAreaInset = { top: 0, bottom: 0, left: 0, right: 0 };
 const TG_HEADER_BAR_PX = 56;
 /** Minimum top offset on phones (status bar + header). */
 const TG_MIN_CONTENT_TOP_PX = 120;
+const DESKTOP_PLATFORMS = new Set(['tdesktop', 'macos', 'web', 'weba', 'unigram']);
+
+export function isTelegramDesktop(webApp = getTgWebApp()): boolean {
+  const platform = webApp?.platform?.toLowerCase() ?? '';
+  if (platform && DESKTOP_PLATFORMS.has(platform)) {
+    return true;
+  }
+  return platform.includes('desktop');
+}
 
 function resolveContentTopInset(webApp: TgWebApp): number {
   const safe = webApp.safeAreaInset ?? EMPTY_INSET;
   const content = webApp.contentSafeAreaInset ?? EMPTY_INSET;
+
+  // Telegram Desktop / macOS client: no mobile header chrome.
+  if (isTelegramDesktop(webApp)) {
+    return Math.max(content.top, safe.top, 8);
+  }
 
   // Fullscreen: only status bar + close row (no bot title header).
   if (webApp.isFullscreen) {
@@ -95,6 +109,13 @@ function resolveContentTopInset(webApp: TgWebApp): number {
   // Sheet mode: reserve Telegram header row ("Закрыть" + bot name).
   const withHeader = safe.top + TG_HEADER_BAR_PX;
   return Math.max(content.top, withHeader, TG_MIN_CONTENT_TOP_PX);
+}
+
+function resolveHorizontalInset(value: number, webApp: TgWebApp): number {
+  if (isTelegramDesktop(webApp)) {
+    return 0;
+  }
+  return value;
 }
 
 export function syncTelegramSafeAreaInsets(): void {
@@ -111,19 +132,27 @@ export function syncTelegramSafeAreaInsets(): void {
   }
 
   root.dataset.tg = '1';
+  if (isTelegramDesktop(webApp)) {
+    root.dataset.tgDesktop = '1';
+  } else {
+    delete root.dataset.tgDesktop;
+  }
 
   const safe = webApp.safeAreaInset ?? EMPTY_INSET;
   const content = webApp.contentSafeAreaInset ?? EMPTY_INSET;
   const contentTop = resolveContentTopInset(webApp);
+  const contentLeft = resolveHorizontalInset(content.left, webApp);
+  const contentRight = resolveHorizontalInset(content.right, webApp);
+  const contentBottom = isTelegramDesktop(webApp) ? Math.min(content.bottom, 8) : content.bottom;
 
   root.style.setProperty('--tg-safe-area-inset-top', `${safe.top}px`);
   root.style.setProperty('--tg-safe-area-inset-bottom', `${safe.bottom}px`);
   root.style.setProperty('--tg-safe-area-inset-left', `${safe.left}px`);
   root.style.setProperty('--tg-safe-area-inset-right', `${safe.right}px`);
   root.style.setProperty('--tg-content-safe-area-inset-top', `${contentTop}px`);
-  root.style.setProperty('--tg-content-safe-area-inset-bottom', `${content.bottom}px`);
-  root.style.setProperty('--tg-content-safe-area-inset-left', `${content.left}px`);
-  root.style.setProperty('--tg-content-safe-area-inset-right', `${content.right}px`);
+  root.style.setProperty('--tg-content-safe-area-inset-bottom', `${contentBottom}px`);
+  root.style.setProperty('--tg-content-safe-area-inset-left', `${contentLeft}px`);
+  root.style.setProperty('--tg-content-safe-area-inset-right', `${contentRight}px`);
   syncViewportMetrics();
 }
 
@@ -211,6 +240,8 @@ export function ensureTelegramViewportExpanded(): void {
 export function requestAppFullscreen(): void {
   const webApp = getTgWebApp();
   if (!webApp?.requestFullscreen) return;
+  // Fullscreen API breaks layout in Telegram Desktop floating windows.
+  if (isTelegramDesktop(webApp)) return;
 
   try {
     if (!webApp.isFullscreen) {
