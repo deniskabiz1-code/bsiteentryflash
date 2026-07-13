@@ -3,13 +3,13 @@ import { Bell, Trash2 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import {
   createPayment,
-  updateProfile, updateReminders, getSkincareRoutine, getSkincarePreview,
+  updateProfile, updateReminders, getSkincareRoutine,
   getLastCheckin, deleteAccount,
 } from '@/api/client';
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import FreeAnalysisEntryCard from '@/components/FreeAnalysisEntryCard';
 import SkincareRoutineSection from '@/components/SkincareRoutineSection';
-import type { EnrichedSkincareStep, WildberriesProduct } from '@/data/wildberriesSkincare';
+import type { EnrichedSkincareStep } from '@/data/wildberriesSkincare';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useTelegramPhoto } from '@/hooks/useTelegramPhoto';
@@ -30,7 +30,6 @@ export default function Profile() {
   const [age, setAge] = useState(String(user?.age || ''));
   const [goals, setGoals] = useState<string[]>(user?.goals || []);
   const [skincare, setSkincare] = useState<EnrichedSkincareStep[]>([]);
-  const [skincarePreview, setSkincarePreview] = useState<WildberriesProduct[]>([]);
   const [lastCheckin, setLastCheckin] = useState<{ photoUrl: string; overallScore: number; createdAt: string } | null>(null);
   const [reminderEnabled, setReminderEnabled] = useState(user?.reminderEnabled || false);
   const [reminderTime, setReminderTime] = useState(user?.reminderTime || '09:00');
@@ -50,7 +49,6 @@ export default function Profile() {
   }, [user?.reminderEnabled, user?.reminderTime, user?.reminderTimezone, deviceTimezone]);
 
   useEffect(() => {
-    getSkincarePreview().then((d) => setSkincarePreview(d.products || [])).catch(() => {});
     if (user?.subscriptionActive) {
       getSkincareRoutine().then((d) => setSkincare(d.routine || [])).catch(() => {});
     } else {
@@ -161,7 +159,6 @@ export default function Profile() {
           title="Мой уход за кожей"
           routine={skincare}
           subscribed={Boolean(user?.subscriptionActive)}
-          previewProducts={skincarePreview}
           onSubscribe={user?.subscriptionActive ? undefined : handleSubscribe}
         />
 
@@ -179,8 +176,7 @@ export default function Profile() {
           )}
           <ul className="space-y-2 text-[14px] text-app-muted">
             <li>· Безлимитный анализ лица и причёски</li>
-            <li>· Персональная рутина ухода с товарами Wildberries</li>
-            <li>· Подборка с артикулами WB — сразу видно, что покупать</li>
+            <li>· Персональная рутина ухода с подборкой Wildberries</li>
           </ul>
           <p className="text-[14px] font-semibold text-app-text">400 ₽/мес</p>
           <button type="button" onClick={handleSubscribe} className="btn-dark">

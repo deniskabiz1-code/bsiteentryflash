@@ -1,4 +1,4 @@
-import { enrichSkincareRoutine, getSkincarePreviewProducts } from '@/data/wildberriesSkincare';
+import { enrichSkincareRoutine } from '@/data/wildberriesSkincare';
 import {
   MOCK_USER,
   MOCK_FACE_RESULT,
@@ -149,10 +149,6 @@ export const mockApi = {
 
   getSkincareRoutine: async () => ({
     routine: enrichSkincareRoutine(MOCK_FACE_RESULT.skincare_routine),
-  }),
-
-  getSkincarePreview: async () => ({
-    products: getSkincarePreviewProducts(4),
   }),
 
   getLastCheckin: async () => ({

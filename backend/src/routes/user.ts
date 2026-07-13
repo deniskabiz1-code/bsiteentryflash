@@ -3,7 +3,7 @@ import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegra
 import { findOrCreateUser, isSubscriptionActive } from '../services/telegram';
 import { serializeUser } from '../services/userProfile';
 import { resolveReminderTimezone } from '../services/reminders';
-import { enrichSkincareRoutine, getSkincarePreviewProducts } from '../data/wildberriesSkincare';
+import { enrichSkincareRoutine } from '../data/wildberriesSkincare';
 import { prisma } from '../utils/prisma';
 
 export function isTestCreditsEnabled(): boolean {
@@ -72,14 +72,6 @@ router.put('/reminders', validateTelegramAuth, async (req: AuthRequest, res: Res
       reminderTime: updated.reminderTime,
       reminderTimezone: updated.reminderTimezone,
     });
-  } catch (err) {
-    res.status(500).json({ error: 'Ошибка' });
-  }
-});
-
-router.get('/skincare-preview', validateTelegramAuth, async (_req: AuthRequest, res: Response) => {
-  try {
-    res.json({ products: getSkincarePreviewProducts(4) });
   } catch (err) {
     res.status(500).json({ error: 'Ошибка' });
   }

@@ -15,6 +15,34 @@ import { prisma } from '../utils/prisma';
 
 const router = Router();
 
+function sanitizeFaceResultForClient<T extends Record<string, unknown>>(
+  result: T,
+  subscribed: boolean,
+): T {
+  if (subscribed || !('skincare_routine' in result)) return result;
+  const { skincare_routine: _removed, ...rest } = result;
+  return rest as T;
+}
+
+function sanitizeAnalysisRecord(
+  analysis: {
+    id: number;
+    type: string;
+    photoUrl: string;
+    overallScore: number | null;
+    resultJson: unknown;
+    createdAt: Date;
+  },
+  subscribed: boolean,
+) {
+  if (analysis.type !== 'face' || subscribed) return analysis;
+  const resultJson = analysis.resultJson as Record<string, unknown>;
+  return {
+    ...analysis,
+    resultJson: sanitizeFaceResultForClient(resultJson, false),
+  };
+}
+
 const uploadDir = process.env.UPLOAD_DIR || './uploads';
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -123,10 +151,16 @@ router.post(
         await markTelegramFreeTrialUsed(user.telegramId);
       }
 
+      const subscribed = isSubscriptionActive(user.subscriptionEnd);
+      const clientResult = sanitizeFaceResultForClient(
+        result as Record<string, unknown>,
+        subscribed,
+      );
+
       res.json({
         analysis: {
           id: analysis.id,
-          ...result,
+          ...clientResult,
           photoUrl: analysis.photoUrl,
           demo,
         },
@@ -246,7 +280,10 @@ router.get('/history', validateTelegramAuth, async (req: AuthRequest, res: Respo
       },
     });
 
-    res.json({ analyses });
+    const subscribed = isSubscriptionActive(user.subscriptionEnd);
+    res.json({
+      analyses: analyses.map((a) => sanitizeAnalysisRecord(a, subscribed)),
+    });
   } catch (err) {
     console.error('History error:', err);
     res.status(500).json({ error: 'Ошибка загрузки истории' });
@@ -265,7 +302,8 @@ router.get('/:id', validateTelegramAuth, async (req: AuthRequest, res: Response)
       return;
     }
 
-    res.json({ analysis });
+    const subscribed = isSubscriptionActive(user.subscriptionEnd);
+    res.json({ analysis: sanitizeAnalysisRecord(analysis, subscribed) });
   } catch (err) {
     res.status(500).json({ error: 'Ошибка загрузки анализа' });
   }

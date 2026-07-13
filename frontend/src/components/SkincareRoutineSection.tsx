@@ -1,13 +1,18 @@
 import { Lock } from 'lucide-react';
 import WildberriesProductCard from '@/components/WildberriesProductCard';
-import type { EnrichedSkincareStep, SkincareRoutineStep, WildberriesProduct } from '@/data/wildberriesSkincare';
-import { enrichSkincareRoutine, getSkincarePreviewProducts } from '@/data/wildberriesSkincare';
+import type { EnrichedSkincareStep, SkincareRoutineStep } from '@/data/wildberriesSkincare';
+import { enrichSkincareRoutine } from '@/data/wildberriesSkincare';
+
+const LOCKED_STEPS = [
+  'Утро и вечер — пошаговая рутина',
+  'Товары Wildberries под ваш тип кожи',
+  'Артикулы и ссылки после анализа',
+];
 
 type SkincareRoutineSectionProps = {
   title?: string;
   routine?: SkincareRoutineStep[] | EnrichedSkincareStep[];
   subscribed: boolean;
-  previewProducts?: WildberriesProduct[];
   onSubscribe?: () => void;
   emptyMessage?: string;
 };
@@ -20,11 +25,9 @@ export default function SkincareRoutineSection({
   title = 'Уход за кожей',
   routine = [],
   subscribed,
-  previewProducts,
   onSubscribe,
   emptyMessage = 'Сделайте анализ лица — персональная рутина появится здесь',
 }: SkincareRoutineSectionProps) {
-  const preview = previewProducts ?? getSkincarePreviewProducts(4);
   const enrichedRoutine = subscribed
     ? (routine.length > 0 && isEnriched(routine[0])
         ? (routine as EnrichedSkincareStep[])
@@ -81,21 +84,13 @@ export default function SkincareRoutineSection({
       </div>
       <div className="card space-y-4">
         <p className="text-[14px] leading-relaxed text-app-muted">
-          В подписку входит персональная рутина ухода и подборка товаров с Wildberries под ваш тип кожи.
+          Персональная рутина и подборка с Wildberries — только по подписке, после анализа лица.
         </p>
-        <div className="rounded-2xl border border-app-border overflow-hidden">
-          <p className="bg-app-track/60 px-4 py-2.5 text-[12px] font-semibold uppercase tracking-wide text-app-muted">
-            Примеры из подборки
-          </p>
-          {preview.map((product, i) => (
-            <div key={product.id} className={i > 0 ? 'border-t border-app-border' : ''}>
-              <WildberriesProductCard product={product} compact />
-            </div>
+        <ul className="space-y-2 rounded-2xl bg-app-track/50 px-4 py-3">
+          {LOCKED_STEPS.map((line) => (
+            <li key={line} className="text-[13px] text-app-muted">· {line}</li>
           ))}
-        </div>
-        <p className="text-[12px] leading-snug text-app-faint">
-          + ещё {Math.max(0, 5 - preview.length)} товара в полной рутине после анализа
-        </p>
+        </ul>
         {onSubscribe && (
           <button type="button" onClick={onSubscribe} className="btn-dark">
             Оформить подписку — 400 ₽/мес

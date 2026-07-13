@@ -2,7 +2,6 @@ import { Router, Response, Request } from 'express';
 import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegramAuth';
 import { findOrCreateUser, isSubscriptionActive, sendBotMessage } from '../services/telegram';
 import { generatePaymentUrl, verifyWebhookSignature, getSubscriptionDays } from '../services/robokassa';
-import { getSkincarePreviewProducts } from '../data/wildberriesSkincare';
 import { prisma } from '../utils/prisma';
 
 const router = Router();
@@ -14,7 +13,6 @@ router.get('/status', validateTelegramAuth, async (req: AuthRequest, res: Respon
       active: isSubscriptionActive(user.subscriptionEnd),
       subscriptionEnd: user.subscriptionEnd,
       price: 400,
-      skincarePreview: getSkincarePreviewProducts(3),
     });
   } catch (err) {
     res.status(500).json({ error: 'Ошибка' });
