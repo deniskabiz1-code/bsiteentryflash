@@ -10,9 +10,7 @@ import { useTelegram } from '@/hooks/useTelegram';
 const TIKTOK_COMMENT_SCREENSHOTS = 5;
 const TIKTOK_BOT_MENTION = '@primeform_app_bot';
 const TIKTOK_COMMENT_EXAMPLES = [
-  'в @primeform_app_bot бесплатная оценка лица',
-  'загрузил селфи в @primeform_app_bot — норм разбор, бесплатно',
-  'если хотите оценку лица — зайдите в @primeform_app_bot в телеге',
+  '@primeform_app_bot лучший бот для луксмаксинга',
 ];
 
 export default function FreeAnalysis() {
