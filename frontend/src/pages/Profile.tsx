@@ -188,7 +188,7 @@ export default function Profile() {
           )}
           <ul className="space-y-2 text-[14px] text-app-muted">
             <li>· Безлимитный анализ лица и причёски</li>
-            <li>· Персональная рутина ухода с подборкой Wildberries</li>
+            <li>· Персональная рутина ухода с подборкой WB и Ozon</li>
           </ul>
           <p className="text-[14px] font-semibold text-app-text">400 ₽/мес</p>
           <button type="button" onClick={handleSubscribe} className="btn-dark">

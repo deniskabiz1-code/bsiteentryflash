@@ -1,6 +1,6 @@
 import { ExternalLink } from 'lucide-react';
 import type { WildberriesProduct } from '@/data/wildberriesSkincare';
-import { wildberriesProductUrl } from '@/data/wildberriesSkincare';
+import { skincareProductUrl } from '@/data/wildberriesSkincare';
 import { useTelegram } from '@/hooks/useTelegram';
 
 type WildberriesProductCardProps = {
@@ -30,7 +30,7 @@ function ProductDetails({
           <p className="mt-1 text-[13px] leading-snug text-app-faint">{product.description}</p>
         )}
         <p className="mt-2 inline-flex rounded-full bg-app-track px-2.5 py-1 text-[11px] font-semibold text-app-muted">
-          WB · {product.id}
+          {product.store === 'ozon' ? 'OZON' : 'WB'} · {product.id}
         </p>
       </div>
       {showLink && <ExternalLink size={16} className="mt-0.5 shrink-0 text-app-muted" />}
@@ -57,7 +57,7 @@ export default function WildberriesProductCard({
   return (
     <button
       type="button"
-      onClick={() => openLink(wildberriesProductUrl(product.id))}
+      onClick={() => openLink(skincareProductUrl(product))}
       className={`${className} transition-colors active:bg-app-canvas`}
     >
       <ProductDetails product={product} compact={compact} showLink />

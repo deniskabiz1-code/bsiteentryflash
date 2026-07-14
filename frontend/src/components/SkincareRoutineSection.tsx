@@ -7,7 +7,12 @@ import {
   SKINCARE_PRODUCT_CATALOG,
 } from '@/data/wildberriesSkincare';
 
-const LOCKED_PLACEHOLDERS = ['SPF и защита от солнца', 'Увлажняющий крем', 'Вечерний уход'];
+const LOCKED_PLACEHOLDERS = [
+  'Пенка для умывания',
+  'Сыворотка с азелаиновой кислотой',
+  'Крем от прыщей',
+  'Сыворотка витамин C',
+];
 
 type SkincareRoutineSectionProps = {
   title?: string;
@@ -44,7 +49,7 @@ export default function SkincareRoutineSection({
           <span className="pill-green">Подписка</span>
         </div>
         <p className="mb-3 px-1 text-[13px] leading-snug text-app-muted">
-          Персональная рутина с товарами Wildberries — нажмите, чтобы открыть карточку.
+          Персональная рутина с товарами WB и Ozon — нажмите, чтобы открыть карточку.
         </p>
         <div className="card !p-0 overflow-hidden">
           {enrichedRoutine.map((item, i) => (
@@ -86,7 +91,7 @@ export default function SkincareRoutineSection({
       </div>
       <div className="card space-y-4">
         <p className="text-[14px] leading-relaxed text-app-muted">
-          Пример из подборки Wildberries. Полная рутина с артикулами и ссылками — только по подписке.
+          Пример из подборки WB и Ozon. Полная рутина с артикулами и ссылками — только по подписке.
         </p>
         <div className="rounded-2xl border border-app-border overflow-hidden">
           <p className="bg-app-track/60 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-app-muted">
@@ -104,7 +109,7 @@ export default function SkincareRoutineSection({
                 <p className="text-[14px] font-medium text-app-muted/80 blur-[3px] select-none">
                   {label}
                 </p>
-                <p className="mt-1 text-[11px] text-app-faint">Артикул WB · •••••••</p>
+                <p className="mt-1 text-[11px] text-app-faint">Артикул · •••••••</p>
               </div>
               <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-app-track px-2 py-1 text-[10px] font-semibold text-app-muted">
                 <Lock size={10} />
