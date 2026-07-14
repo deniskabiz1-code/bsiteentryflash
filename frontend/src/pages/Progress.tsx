@@ -13,6 +13,7 @@ import { useTelegram } from '@/hooks/useTelegram';
 import { Analysis } from '@/types';
 import AnalysisPhoto from '@/components/AnalysisPhoto';
 import { ChartPeriod, scoresForPeriod } from '@/utils/progressChart';
+import { formatScoreWithBalls } from '@/utils/russianPlural';
 
 export default function Progress() {
   const navigate = useNavigate();
@@ -112,7 +113,9 @@ export default function Progress() {
         {faceAnalyses.length > 0 && (
           <section className="card-green">
             <p className="label-sm mb-1">Динамика</p>
-            <p className="text-[28px] font-bold tracking-tight mb-4">{latest?.overallScore ?? 0} баллов</p>
+            <p className="text-[28px] font-bold tracking-tight mb-4">
+              {formatScoreWithBalls(latest?.overallScore ?? 0)}
+            </p>
             <MiniBarChart points={chartSeries.points} />
             <div className="mt-4">
               <SegmentedControl

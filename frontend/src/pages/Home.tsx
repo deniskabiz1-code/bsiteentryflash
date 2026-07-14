@@ -10,6 +10,7 @@ import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import { useDocumentScrollLock } from '@/hooks/useDocumentScrollLock';
 import { Analysis, TaskGroup } from '@/types';
 import { ChartPeriod, scoresForPeriod } from '@/utils/progressChart';
+import { pluralizeBalls } from '@/utils/russianPlural';
 export default function Home() {
   const { user } = useApp();
   const navigate = useNavigate();
@@ -161,7 +162,12 @@ export default function Home() {
               <p className="label-sm mb-1">Твой рост</p>
               <p className="mb-4 text-[28px] font-bold tracking-tight">
                 {score ?? '—'}
-                <span className="text-lg font-semibold text-app-muted"> баллов</span>
+                {score != null && (
+                  <span className="text-lg font-semibold text-app-muted">
+                    {' '}
+                    {pluralizeBalls(score)}
+                  </span>
+                )}
               </p>
               <MiniBarChart points={chartSeries.points} />
               <div className="mt-4">
