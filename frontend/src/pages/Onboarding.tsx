@@ -16,6 +16,7 @@ export default function Onboarding() {
   const { applyUser } = useApp();
   const submittingRef = useRef(false);
   const nameSeededFromTelegram = useRef(false);
+  const openedChannelRef = useRef(false);
   const { user: tgUser, openTelegramLink, haptic } = useTelegram();
 
   const [step, setStep] = useState(0);
@@ -87,8 +88,18 @@ export default function Onboarding() {
         setError(data.error || 'Подпишитесь на канал, чтобы продолжить');
         setHint(data.hint || '');
       }
-    } catch {
-      setError('Ошибка проверки подписки');
+    } catch (err: unknown) {
+      const res = (err as { response?: { status?: number; data?: { error?: string; hint?: string } } })?.response;
+      if (res?.status === 401) {
+        setError('Сессия устарела');
+        setHint('Закройте приложение и откройте Primeform снова из бота в Telegram');
+      } else if (res?.data?.error) {
+        setError(res.data.error);
+        setHint(res.data.hint || '');
+      } else {
+        setError('Не удалось связаться с сервером');
+        setHint('Проверьте интернет и попробуйте снова');
+      }
     } finally {
       setChecking(false);
     }
@@ -96,7 +107,9 @@ export default function Onboarding() {
 
   useEffect(() => {
     const onActivated = () => {
-      if (step === 0) checkSubscription();
+      if (step === 0 && openedChannelRef.current) {
+        checkSubscription();
+      }
     };
     const webApp = getTgWebApp();
     if (!webApp) return;
@@ -105,6 +118,7 @@ export default function Onboarding() {
   }, [step, checkSubscription]);
 
   const openChannel = () => {
+    openedChannelRef.current = true;
     openTelegramLink(channelOpenUrl, channelUsername);
   };
 
@@ -206,7 +220,15 @@ export default function Onboarding() {
               <button type="button" onClick={openChannel} className="btn-dark">
                 Подписаться на @{channelUsername}
               </button>
-              <button type="button" onClick={checkSubscription} disabled={checking} className="btn-light">
+              <button
+                type="button"
+                onClick={() => {
+                  openedChannelRef.current = true;
+                  checkSubscription();
+                }}
+                disabled={checking}
+                className="btn-light"
+              >
                 {checking ? 'Проверяем...' : subscribed ? '✓ Подписка подтверждена' : 'Я подписался — проверить'}
               </button>
             </>
