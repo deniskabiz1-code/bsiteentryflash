@@ -3,6 +3,7 @@ import { Camera, Upload, X } from 'lucide-react';
 
 interface PhotoUploadProps {
   onPhotoSelect: (file: File) => void;
+  onPhotoClear?: () => void;
   preview?: string | null;
   label?: string;
   tips?: string[];
@@ -13,6 +14,7 @@ interface PhotoUploadProps {
 
 export default function PhotoUpload({
   onPhotoSelect,
+  onPhotoClear,
   preview,
   label = 'Загрузить фото',
   tips,
@@ -32,6 +34,7 @@ export default function PhotoUpload({
   const clear = () => {
     setLocalPreview(null);
     if (inputRef.current) inputRef.current.value = '';
+    onPhotoClear?.();
   };
 
   const openGallery = () => {
@@ -44,11 +47,21 @@ export default function PhotoUpload({
 
   if (localPreview) {
     return (
-      <div className={`relative overflow-hidden rounded-3xl shadow-card ${compact ? (fill ? 'first-analysis-photo-fill' : 'h-56') : ''}`}>
+      <div
+        className={`relative overflow-hidden rounded-3xl shadow-card ${
+          compact
+            ? fill
+              ? 'flex h-full min-h-0 max-h-full flex-1 flex-col'
+              : 'h-56'
+            : ''
+        }`}
+      >
         <img
           src={localPreview}
           alt="Preview"
-          className={`w-full object-cover ${compact ? 'h-full' : 'aspect-[3/4]'}`}
+          className={`w-full object-cover object-center ${
+            compact && fill ? 'min-h-0 flex-1' : compact ? 'h-full' : 'aspect-[3/4]'
+          }`}
         />
         <button
           type="button"

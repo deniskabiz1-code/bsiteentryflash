@@ -62,6 +62,12 @@ html[data-tg] .tg-page-top {
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 0.75rem;
   overflow: hidden;
+  min-height: 0;
+}
+
+.first-analysis-grid > *:nth-child(2) {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .first-analysis-photo-fill {
@@ -116,8 +122,20 @@ html.pf-analysis-upload #root > * {
   min-height: 0;
   height: 100%;
   overflow: hidden;
-  padding-bottom: 5.75rem;
+  padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
+}
+
+.analysis-upload-footer {
+  position: relative;
+  z-index: 20;
+  padding-top: 0.25rem;
+  background: linear-gradient(
+    to top,
+    #f5f5f7 70%,
+    rgba(245, 245, 247, 0.92) 85%,
+    rgba(245, 245, 247, 0)
+  );
 }
 
 .analysis-upload-page.page {

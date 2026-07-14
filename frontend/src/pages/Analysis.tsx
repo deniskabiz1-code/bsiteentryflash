@@ -140,16 +140,17 @@ export default function Analysis() {
         )}
       </header>
 
-      <div className="card flex min-h-0 h-full flex-col overflow-hidden !p-4">
+      <div className="card flex h-full min-h-0 min-w-0 flex-col overflow-hidden !p-4">
           <PhotoUpload
             onPhotoSelect={setPhoto}
+            onPhotoClear={() => setPhoto(null)}
             label="Сделать селфи"
             compact
             fill
           />
         </div>
 
-      <footer className="min-h-0 shrink-0 space-y-2 overflow-hidden pb-1">
+      <footer className="analysis-upload-footer shrink-0 space-y-2">
         {error && (
           <p className="text-center text-[13px] font-medium text-red-500 line-clamp-2">{error}</p>
         )}
