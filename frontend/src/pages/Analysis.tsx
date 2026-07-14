@@ -117,9 +117,7 @@ export default function Analysis() {
 
   const content = (
     <div
-      className={`page-inner first-analysis-grid h-full px-5 ${
-        isMandatoryFirstFlow ? 'py-3' : 'analysis-upload-dense py-2'
-      }`}
+      className="page-inner first-analysis-grid h-full px-5 py-3"
     >
       <header className="min-h-0 shrink-0 overflow-hidden">
         {isFirstAnalysis ? (
@@ -142,17 +140,16 @@ export default function Analysis() {
         )}
       </header>
 
-      <div className={`card flex min-h-0 h-full flex-col overflow-hidden ${isMandatoryFirstFlow ? '!p-4' : '!p-3'}`}>
+      <div className="card flex min-h-0 h-full flex-col overflow-hidden !p-4">
           <PhotoUpload
             onPhotoSelect={setPhoto}
             label="Сделать селфи"
             compact
             fill
-            dense={!isMandatoryFirstFlow}
           />
         </div>
 
-      <footer className={`min-h-0 shrink-0 overflow-hidden ${isMandatoryFirstFlow ? 'space-y-2 pb-1' : 'space-y-1.5'}`}>
+      <footer className="min-h-0 shrink-0 space-y-2 overflow-hidden pb-1">
         {error && (
           <p className="text-center text-[13px] font-medium text-red-500 line-clamp-2">{error}</p>
         )}
@@ -161,7 +158,7 @@ export default function Analysis() {
           type="button"
           onClick={handleAnalyze}
           disabled={!photo || loading || !canAnalyze}
-          className={isMandatoryFirstFlow ? 'btn-accent' : 'btn-dark !py-3.5'}
+          className={isMandatoryFirstFlow ? 'btn-accent' : 'btn-dark'}
         >
           {analyzeLabel}
         </button>

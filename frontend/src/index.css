@@ -100,11 +100,21 @@ html.pf-analysis-upload #root {
   overflow: hidden;
 }
 
-.analysis-upload-page {
+html.pf-analysis-upload #root > * {
   display: flex;
-  flex: 1;
+  flex: 1 1 auto;
   flex-direction: column;
   min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.analysis-upload-page {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
   overflow: hidden;
   padding-bottom: 5.75rem;
   box-sizing: border-box;
@@ -115,12 +125,17 @@ html.pf-analysis-upload #root {
 }
 
 .analysis-upload-page .page-inner {
-  flex: 1;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
   min-height: 0;
+  height: 100%;
 }
 
-.analysis-upload-dense.first-analysis-grid {
-  gap: 0.5rem;
+.analysis-upload-page .first-analysis-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
 }
 
 html.pf-onboarding,
