@@ -1,26 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Scissors, Sparkles } from 'lucide-react';
 
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import PhotoUpload from '@/components/PhotoUpload';
-import { analyzeFace, updatePersonalizedAnalysis } from '@/api/client';
+import { analyzeFace } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { preparePhotoForUpload } from '@/utils/preparePhoto';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useFirstAnalysisViewportLock } from '@/hooks/useFirstAnalysisViewportLock';
+import { usePersonalizedAnalysisToggle } from '@/hooks/usePersonalizedAnalysisToggle';
 
 export default function Analysis() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, refreshUser, applyUser } = useApp();
+  const { user, refreshUser } = useApp();
   const { haptic } = useTelegram();
+  const { enabled: personalizedAnalysis, toggle: handlePersonalizedToggle } = usePersonalizedAnalysisToggle();
 
   const [photo, setPhoto] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [personalizedAnalysis, setPersonalizedAnalysis] = useState(user?.personalizedAnalysis ?? true);
 
   const justOnboarded = Boolean(
     (location.state as { welcome?: boolean; firstAnalysis?: boolean } | null)?.firstAnalysis
@@ -28,23 +29,6 @@ export default function Analysis() {
   );
   const isFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
   const showPersonalizedToggle = !isFirstAnalysis;
-
-  useEffect(() => {
-    setPersonalizedAnalysis(user?.personalizedAnalysis ?? true);
-  }, [user?.personalizedAnalysis]);
-
-  const handlePersonalizedToggle = async () => {
-    const newVal = !personalizedAnalysis;
-    setPersonalizedAnalysis(newVal);
-    try {
-      const data = await updatePersonalizedAnalysis(newVal);
-      if (data.user) applyUser(data.user);
-      haptic('light');
-    } catch {
-      setPersonalizedAnalysis(!newVal);
-      haptic('error');
-    }
-  };
   const freeAnalysisAvailable = user?.freeAnalysisAvailable ?? isFirstAnalysis;
   const isMandatoryFirstFlow = isFirstAnalysis && freeAnalysisAvailable;
   const viewportRef = useFirstAnalysisViewportLock(isMandatoryFirstFlow);
@@ -62,7 +46,7 @@ export default function Analysis() {
     setError('');
     try {
       const prepared = await preparePhotoForUpload(photo);
-      const data = await analyzeFace(prepared);
+      const data = await analyzeFace(prepared, personalizedAnalysis);
       haptic('success');
       await refreshUser();
       const analysisId = data.analysis?.id;

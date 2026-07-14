@@ -3,7 +3,7 @@ import { Bell, Trash2 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import {
   createPayment,
-  updateProfile, updateReminders, updatePersonalizedAnalysis, getSkincareRoutine,
+  updateProfile, updateReminders, getSkincareRoutine,
   getLastCheckin, deleteAccount,
 } from '@/api/client';
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
@@ -19,6 +19,7 @@ import UserAvatar from '@/components/UserAvatar';
 import { GOAL_LABELS } from '@/types';
 import AnalysisPhoto from '@/components/AnalysisPhoto';
 import { getDeviceTimezone } from '@/utils/timezone';
+import { usePersonalizedAnalysisToggle } from '@/hooks/usePersonalizedAnalysisToggle';
 
 export default function Profile() {
   const { user, refreshUser, applyUser } = useApp();
@@ -38,7 +39,7 @@ export default function Profile() {
   } | null>(null);
   const [reminderEnabled, setReminderEnabled] = useState(user?.reminderEnabled || false);
   const [reminderTime, setReminderTime] = useState(user?.reminderTime || '09:00');
-  const [personalizedAnalysis, setPersonalizedAnalysis] = useState(user?.personalizedAnalysis ?? true);
+  const { enabled: personalizedAnalysis, toggle: handlePersonalizedToggle } = usePersonalizedAnalysisToggle();
   const [showDelete, setShowDelete] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -90,23 +91,6 @@ export default function Profile() {
       haptic('error');
     } finally {
       setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    setPersonalizedAnalysis(user?.personalizedAnalysis ?? true);
-  }, [user?.personalizedAnalysis]);
-
-  const handlePersonalizedToggle = async () => {
-    const newVal = !personalizedAnalysis;
-    setPersonalizedAnalysis(newVal);
-    try {
-      const data = await updatePersonalizedAnalysis(newVal);
-      if (data.user) applyUser(data.user);
-      haptic('light');
-    } catch {
-      setPersonalizedAnalysis(!newVal);
-      haptic('error');
     }
   };
 

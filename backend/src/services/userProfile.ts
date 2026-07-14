@@ -28,7 +28,7 @@ export async function serializeUser(user: User) {
     reminderEnabled: user.reminderEnabled,
     reminderTime: user.reminderTime,
     reminderTimezone: user.reminderTimezone,
-    personalizedAnalysis: user.personalizedAnalysis ?? true,
+    personalizedAnalysis: user.personalizedAnalysis === false ? false : true,
     onboarded: user.onboarded,
     faceAnalysisCount,
     freeAnalysisAvailable,

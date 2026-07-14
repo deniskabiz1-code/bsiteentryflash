@@ -1,6 +1,10 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { fetchMe } from '@/api/client';
 import { User } from '@/types';
+import {
+  resolvePersonalizedAnalysis,
+  writePersonalizedAnalysisPreference,
+} from '@/utils/personalizedAnalysis';
 
 interface AppContextType {
   user: User | null;
@@ -33,7 +37,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       setError(null);
       const data = await fetchMe();
-      setUser(data.user);
+      const personalizedAnalysis = resolvePersonalizedAnalysis(data.user?.personalizedAnalysis);
+      writePersonalizedAnalysisPreference(personalizedAnalysis);
+      setUser({ ...data.user, personalizedAnalysis });
       setChannelSubscribed(data.channelSubscribed);
       setTestCreditsEnabled(Boolean(data.testCreditsEnabled));
     } catch (err) {

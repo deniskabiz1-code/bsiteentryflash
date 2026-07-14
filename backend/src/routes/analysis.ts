@@ -17,6 +17,7 @@ import {
 } from '../services/openai';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
+import { wantsPersonalizedAnalysis } from '../utils/booleanSetting';
 
 const router = Router();
 
@@ -158,7 +159,12 @@ router.post(
         return;
       }
 
-      const priorFace = user.personalizedAnalysis
+      const usePersonalized = wantsPersonalizedAnalysis(
+        user.personalizedAnalysis,
+        req.body?.personalized,
+      );
+
+      const priorFace = usePersonalized
         ? await prisma.analysis.findMany({
             where: { userId: user.id, type: 'face' },
             orderBy: { createdAt: 'desc' },
@@ -168,9 +174,9 @@ router.post(
         : [];
 
       const { data: result, demo } = await analyzeFace(req.file.path, {
-        name: user.personalizedAnalysis ? user.name : null,
-        age: user.personalizedAnalysis ? user.age : null,
-        goals: user.personalizedAnalysis ? user.goals : [],
+        name: usePersonalized ? user.name : null,
+        age: usePersonalized ? user.age : null,
+        goals: usePersonalized ? user.goals : [],
         previousAnalyses: priorFace.map((a) =>
           toFaceHistoryEntry(a.createdAt, a.overallScore, a.resultJson),
         ),

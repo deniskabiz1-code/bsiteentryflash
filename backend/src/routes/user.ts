@@ -5,6 +5,7 @@ import { serializeUser } from '../services/userProfile';
 import { resolveReminderTimezone } from '../services/reminders';
 import { enrichSkincareRoutine } from '../data/wildberriesSkincare';
 import { prisma } from '../utils/prisma';
+import { parseBooleanSetting } from '../utils/booleanSetting';
 
 export function isTestCreditsEnabled(): boolean {
   return process.env.ENABLE_TEST_CREDITS !== 'false';
@@ -14,7 +15,7 @@ const router = Router();
 
 router.put('/profile', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { name, age, goals } = req.body;
+    const { name, age, goals, personalizedAnalysis, enabled } = req.body;
     const user = await findOrCreateUser(req.telegramUser!);
 
     const data: Record<string, unknown> = {};
@@ -29,6 +30,12 @@ router.put('/profile', validateTelegramAuth, async (req: AuthRequest, res: Respo
     }
     if (Array.isArray(goals)) {
       data.goals = goals;
+    }
+    const personalized = parseBooleanSetting(
+      personalizedAnalysis !== undefined ? personalizedAnalysis : enabled,
+    );
+    if (personalized !== null) {
+      data.personalizedAnalysis = personalized;
     }
 
     if (Object.keys(data).length === 0) {
@@ -50,19 +57,25 @@ router.put('/profile', validateTelegramAuth, async (req: AuthRequest, res: Respo
 
 router.put('/personalized-analysis', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const { enabled } = req.body;
+    const enabled = parseBooleanSetting(req.body?.enabled ?? req.body?.personalizedAnalysis);
+    if (enabled === null) {
+      res.status(400).json({ error: 'Укажите enabled: true или false' });
+      return;
+    }
+
     const user = await findOrCreateUser(req.telegramUser!);
 
     const updated = await prisma.user.update({
       where: { id: user.id },
-      data: { personalizedAnalysis: !!enabled },
+      data: { personalizedAnalysis: enabled },
     });
 
     res.json({
-      personalizedAnalysis: updated.personalizedAnalysis,
+      personalizedAnalysis: updated.personalizedAnalysis === false ? false : true,
       user: await serializeUser(updated),
     });
   } catch (err) {
+    console.error('Personalized analysis update error:', err);
     res.status(500).json({ error: 'Ошибка' });
   }
 });

@@ -68,10 +68,11 @@ export async function completeOnboarding(payload: {
   return data;
 }
 
-export async function analyzeFace(photo: File) {
+export async function analyzeFace(photo: File, personalized = true) {
   if (MOCK) return mockApi.analyzeFace(photo);
   const form = new FormData();
   form.append('photo', photo);
+  form.append('personalized', personalized ? 'true' : 'false');
   const { data } = await api.post('/analysis/face', form);
   return data;
 }
