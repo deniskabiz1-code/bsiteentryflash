@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, ChevronRight, Trash2 } from 'lucide-react';
 
@@ -10,8 +10,9 @@ import { getAnalysisHistory, deleteAnalysis } from '@/api/client';
 import { useDocumentScrollLock } from '@/hooks/useDocumentScrollLock';
 import { useTelegram } from '@/hooks/useTelegram';
 
-import { Analysis, FaceAnalysisResult } from '@/types';
+import { Analysis } from '@/types';
 import AnalysisPhoto from '@/components/AnalysisPhoto';
+import { chartHint, ChartPeriod, scoresForPeriod } from '@/utils/progressChart';
 
 export default function Progress() {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ export default function Progress() {
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [period, setPeriod] = useState('Месяц');
+  const [period, setPeriod] = useState<ChartPeriod>('Месяц');
 
   const load = async () => {
     try {
@@ -37,8 +38,14 @@ export default function Progress() {
   useEffect(() => { load(); }, []);
 
   const faceAnalyses = analyses;
-  const chartValues = [...faceAnalyses].reverse().map((a) => a.overallScore || 0);
-  while (chartValues.length < 10) chartValues.unshift(chartValues[0] || 50);
+  const chartSeries = useMemo(
+    () => scoresForPeriod(faceAnalyses, period),
+    [faceAnalyses, period],
+  );
+  const chartHintText = useMemo(
+    () => chartHint(chartSeries.values.length, chartSeries.usedFallback, period),
+    [chartSeries, period],
+  );
 
   const openAnalysis = (analysis: Analysis) => {
     haptic('light');
@@ -110,12 +117,12 @@ export default function Progress() {
           <section className="card-green">
             <p className="label-sm mb-1">Динамика</p>
             <p className="text-[28px] font-bold tracking-tight mb-4">{latest?.overallScore ?? 0} баллов</p>
-            <MiniBarChart values={chartValues.slice(-10)} />
+            <MiniBarChart values={chartSeries.values} hint={chartHintText} />
             <div className="mt-4">
               <SegmentedControl
                 options={['День', 'Неделя', 'Месяц', 'Год']}
                 value={period}
-                onChange={setPeriod}
+                onChange={(value) => setPeriod(value as ChartPeriod)}
               />
             </div>
           </section>

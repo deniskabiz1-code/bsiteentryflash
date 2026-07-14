@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 import MiniBarChart from '@/components/MiniBarChart';
@@ -8,7 +8,8 @@ import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import { useDocumentScrollLock } from '@/hooks/useDocumentScrollLock';
-import { TaskGroup } from '@/types';
+import { Analysis, TaskGroup } from '@/types';
+import { chartHint, ChartPeriod, scoresForPeriod } from '@/utils/progressChart';
 export default function Home() {
   const { user } = useApp();
   const navigate = useNavigate();
@@ -21,9 +22,18 @@ export default function Home() {
   const [neverDoOpen, setNeverDoOpen] = useState(false);
   const [contentLoading, setContentLoading] = useState(true);
   const [score, setScore] = useState<number | null>(null);
-  const [chartValues, setChartValues] = useState<number[]>([52, 55, 58, 60, 63, 65, 68, 70, 71, 72]);
-  const [period, setPeriod] = useState('Месяц');
+  const [faceAnalyses, setFaceAnalyses] = useState<Analysis[]>([]);
+  const [period, setPeriod] = useState<ChartPeriod>('Месяц');
   const [weeklyDelta, setWeeklyDelta] = useState(0);
+
+  const chartSeries = useMemo(
+    () => scoresForPeriod(faceAnalyses, period),
+    [faceAnalyses, period],
+  );
+  const chartHintText = useMemo(
+    () => chartHint(chartSeries.values.length, chartSeries.usedFallback, period),
+    [chartSeries, period],
+  );
 
   const load = async () => {
     try {
@@ -44,13 +54,15 @@ export default function Home() {
         setNeverDo([]);
       }
       if (face.length > 0) {
+        setFaceAnalyses(face);
         setScore(face[0].overallScore);
-        const vals = [...face].reverse().map((a: { overallScore: number }) => a.overallScore || 0);
-        while (vals.length < 10) vals.unshift(vals[0] || 50);
-        setChartValues(vals.slice(-10));
         if (face.length >= 2) {
           setWeeklyDelta((face[0].overallScore || 0) - (face[1].overallScore || 0));
+        } else {
+          setWeeklyDelta(0);
         }
+      } else {
+        setFaceAnalyses([]);
       }
     } catch (err) {
       console.error(err);
@@ -155,12 +167,15 @@ export default function Home() {
                 {score ?? '—'}
                 <span className="text-lg font-semibold text-app-muted"> баллов</span>
               </p>
-              <MiniBarChart values={chartValues} />
+              <MiniBarChart
+                values={chartSeries.values}
+                hint={chartHintText}
+              />
               <div className="mt-4">
                 <SegmentedControl
                   options={['День', 'Неделя', 'Месяц', 'Год']}
                   value={period}
-                  onChange={setPeriod}
+                  onChange={(value) => setPeriod(value as ChartPeriod)}
                 />
               </div>
             </>
