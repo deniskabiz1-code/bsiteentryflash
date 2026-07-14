@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Scissors, Sparkles } from 'lucide-react';
 
+import AnalysisPhotoDisclaimer from '@/components/AnalysisPhotoDisclaimer';
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import PhotoUpload from '@/components/PhotoUpload';
 import { analyzeFace } from '@/api/client';
@@ -189,6 +190,7 @@ export default function Analysis() {
             <p className="text-[14px] leading-snug text-app-muted">
               Сделайте селфи — ИИ бесплатно оценит внешность.
             </p>
+            <AnalysisPhotoDisclaimer compact className="pt-1" />
           </div>
         </header>
 
@@ -218,9 +220,12 @@ export default function Analysis() {
       innerClassName="page-inner space-y-4 pt-2"
       remeasureKey={photo ? 'preview' : 'empty'}
     >
-      <h1 className="text-[20px] font-bold leading-tight tracking-tight">
-        Анализ лица
-      </h1>
+      <div className="space-y-2">
+        <h1 className="text-[20px] font-bold leading-tight tracking-tight">
+          Анализ лица
+        </h1>
+        <AnalysisPhotoDisclaimer />
+      </div>
 
       {personalizedToggle}
 

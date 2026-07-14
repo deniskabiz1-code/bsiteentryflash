@@ -6,6 +6,7 @@ import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { SCORE_LABELS, SKIN_TYPE_LABELS, PUFFINESS_LABELS } from '@/types';
 import AnalysisPhoto from '@/components/AnalysisPhoto';
+import AnalysisPhotoDisclaimer from '@/components/AnalysisPhotoDisclaimer';
 import { toAnalysisResultView, type AnalysisResultView } from '@/utils/analysisView';
 
 export default function AnalysisResult() {
@@ -129,6 +130,7 @@ export default function AnalysisResult() {
               </span>
             )}
           </div>
+          <AnalysisPhotoDisclaimer className="mt-4 px-2 text-center" />
         </section>
 
         {progress?.has_previous && progress.summary && (
