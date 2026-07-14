@@ -66,6 +66,8 @@ export default function Analysis() {
         setError('Ошибка связи с сервером. Проверьте интернет и повторите.');
       } else if (ax.response.status === 403) {
         setError(msg || 'Бесплатный анализ уже использован');
+      } else if (ax.response.status === 503) {
+        setError(msg || 'ИИ временно недоступен — попробуйте позже');
       } else if (ax.response.status === 401) {
         setError('Сессия Telegram устарела — закройте и снова откройте приложение');
       } else {

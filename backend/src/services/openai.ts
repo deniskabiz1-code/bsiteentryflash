@@ -58,7 +58,7 @@ function resolveAiConfig(): AiConfig | null {
   const provider = resolveProviderLabel(baseURL);
   const defaultModel = baseURL ? 'gpt-5.5' : 'gpt-4o';
   const model = process.env.OPENAI_MODEL?.trim() || defaultModel;
-  const jsonMode = process.env.OPENAI_JSON_MODE !== 'false';
+  const jsonMode = resolveJsonMode(baseURL);
   const visionRaw = process.env.OPENAI_VISION_DETAIL?.trim().toLowerCase();
   const visionDetail =
     visionRaw === 'low' || visionRaw === 'auto' || visionRaw === 'high'
@@ -85,9 +85,45 @@ export function isOpenAiConfigured(): boolean {
   return Boolean(process.env.OPENAI_API_KEY?.trim());
 }
 
+function resolveJsonMode(baseURL?: string): boolean {
+  const raw = process.env.OPENAI_JSON_MODE?.trim().toLowerCase();
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  // Custom OpenAI-compatible proxies often reject response_format.
+  return !baseURL;
+}
+
 function shouldUseDemoAnalysis(): boolean {
   if (process.env.USE_DEMO_ANALYSIS === 'true') return true;
   return !isOpenAiConfigured();
+}
+
+function shouldFallbackToDemoOnError(): boolean {
+  return process.env.AI_FALLBACK_DEMO === 'true';
+}
+
+function modelUsesCompletionTokens(model: string): boolean {
+  const m = model.toLowerCase();
+  return /(^|[-/])(o\d|gpt-5)/.test(m);
+}
+
+function modelSupportsReasoning(model: string): boolean {
+  const m = model.toLowerCase();
+  return /(^|[-/])(o\d|gpt-5)/.test(m);
+}
+
+export function toUserFacingAiError(detail: string): string {
+  const lower = detail.toLowerCase();
+  if (lower.includes('timeout')) {
+    return 'ИИ слишком долго отвечает — попробуйте ещё раз через минуту';
+  }
+  if (lower.includes('html') || lower.includes('openai_base_url')) {
+    return 'Ошибка настройки ИИ на сервере';
+  }
+  if (lower.includes('api key') || lower.includes('authentication') || lower.includes('401')) {
+    return 'ИИ временно недоступен — проверьте ключ API на сервере';
+  }
+  return 'ИИ временно недоступен — попробуйте позже';
 }
 
 export type AnalysisRunResult = {
@@ -95,7 +131,8 @@ export type AnalysisRunResult = {
   demo: boolean;
 };
 
-const AI_REQUEST_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 55_000);
+const AI_REQUEST_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 90_000);
+const AI_RETRY_TIMEOUT_MS = Number(process.env.OPENAI_RETRY_TIMEOUT_MS || 45_000);
 
 function getOpenAI(): OpenAI {
   const config = resolveAiConfig();
@@ -244,10 +281,19 @@ type VisionRequestOptions = {
   temperature?: number;
 };
 
+type VisionStrategy = {
+  label: string;
+  jsonMode: boolean;
+  visionDetail: 'low' | 'high' | 'auto';
+  useReasoning: boolean;
+  useTemperature: boolean;
+  timeoutMs: number;
+};
+
 async function requestVision(
   systemPrompt: string,
   imagePaths: string[],
-  useJsonMode: boolean,
+  strategy: VisionStrategy,
   options: VisionRequestOptions = {},
   userText = 'Проанализируй это фото и верни JSON.',
 ): Promise<string> {
@@ -256,7 +302,7 @@ async function requestVision(
 
   const imageContents = imagePaths.map((p) => ({
     type: 'image_url' as const,
-    image_url: { url: imageToBase64(p), detail: config.visionDetail },
+    image_url: { url: imageToBase64(p), detail: strategy.visionDetail },
   }));
 
   const body: Record<string, unknown> = {
@@ -271,24 +317,37 @@ async function requestVision(
         ],
       },
     ],
-    max_tokens: 4096,
   };
-  if (options.temperature !== undefined) {
+
+  if (modelUsesCompletionTokens(config.model)) {
+    body.max_completion_tokens = 4096;
+  } else {
+    body.max_tokens = 4096;
+  }
+
+  if (strategy.useTemperature && options.temperature !== undefined) {
     body.temperature = options.temperature;
   }
-  if (useJsonMode) {
+  if (strategy.jsonMode) {
     body.response_format = { type: 'json_object' };
   }
-  if (config.reasoningEffort) {
+  if (strategy.useReasoning && config.reasoningEffort && modelSupportsReasoning(config.model)) {
     body.reasoning_effort = config.reasoningEffort;
   }
 
+  const client = new OpenAI({
+    apiKey: config.apiKey,
+    baseURL: config.baseURL,
+    timeout: strategy.timeoutMs,
+    maxRetries: 0,
+  });
+
   const raw = await withTimeout(
-    getOpenAI().chat.completions.create(
+    client.chat.completions.create(
       body as unknown as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming,
     ),
-    AI_REQUEST_TIMEOUT_MS,
-    'AI vision request',
+    strategy.timeoutMs,
+    `AI vision (${strategy.label})`,
   );
   const response = parseCompletionResponse(raw);
 
@@ -308,6 +367,44 @@ function parseJsonResponse(content: string): Record<string, unknown> {
   }
 }
 
+function buildVisionStrategies(config: AiConfig): VisionStrategy[] {
+  const detail = config.visionDetail;
+  const strategies: VisionStrategy[] = [];
+
+  if (config.jsonMode) {
+    strategies.push({
+      label: 'json-low',
+      jsonMode: true,
+      visionDetail: 'low',
+      useReasoning: false,
+      useTemperature: true,
+      timeoutMs: AI_REQUEST_TIMEOUT_MS,
+    });
+  }
+
+  strategies.push({
+    label: config.jsonMode ? 'plain-low' : 'plain',
+    jsonMode: false,
+    visionDetail: 'low',
+    useReasoning: false,
+    useTemperature: true,
+    timeoutMs: AI_RETRY_TIMEOUT_MS,
+  });
+
+  if (detail === 'high' || detail === 'auto') {
+    strategies.push({
+      label: 'plain-high',
+      jsonMode: false,
+      visionDetail: detail,
+      useReasoning: false,
+      useTemperature: true,
+      timeoutMs: AI_RETRY_TIMEOUT_MS,
+    });
+  }
+
+  return strategies;
+}
+
 async function callVision(
   systemPrompt: string,
   imagePaths: string[],
@@ -317,15 +414,28 @@ async function callVision(
   const config = resolveAiConfig();
   if (!config) throw new Error('AI not configured');
 
-  try {
-    const content = await requestVision(systemPrompt, imagePaths, config.jsonMode, options, userText);
-    return parseJsonResponse(content);
-  } catch (firstErr) {
-    if (!config.jsonMode) throw firstErr;
-    console.warn('[ai] JSON mode failed, retrying without response_format:', firstErr);
-    const content = await requestVision(systemPrompt, imagePaths, false, options, userText);
-    return parseJsonResponse(content);
+  const strategies = buildVisionStrategies(config);
+  const errors: string[] = [];
+
+  for (const strategy of strategies) {
+    try {
+      const content = await requestVision(
+        systemPrompt,
+        imagePaths,
+        strategy,
+        options,
+        userText,
+      );
+      console.log(`[ai] Vision success via ${strategy.label}`);
+      return parseJsonResponse(content);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      console.warn(`[ai] Vision failed (${strategy.label}):`, detail);
+      errors.push(`${strategy.label}: ${detail}`);
+    }
   }
+
+  throw new Error(errors.join(' | '));
 }
 
 function buildDemoProgress(context?: FaceAnalysisUserContext): Record<string, unknown> {
@@ -385,9 +495,13 @@ export async function analyzeFace(
     return { data, demo: false };
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
-    console.error('[ai] Face analysis failed, using demo data:', detail);
-    await demoDelay();
-    return { data: { ...DEMO_FACE_RESULT }, demo: true };
+    console.error('[ai] Face analysis failed:', detail);
+    if (shouldFallbackToDemoOnError()) {
+      console.warn('[ai] AI_FALLBACK_DEMO=true — returning demo face result');
+      await demoDelay();
+      return { data: { ...DEMO_FACE_RESULT, ...buildDemoProgress(context) }, demo: true };
+    }
+    throw new Error(toUserFacingAiError(detail));
   }
 }
 
@@ -405,9 +519,13 @@ export async function analyzeHairstyle(
     const data = await callVision(HAIRSTYLE_ANALYSIS_PROMPT, [frontPath, sidePath]);
     return { data, demo: false };
   } catch (err) {
-    console.error('[ai] Hairstyle analysis failed, using demo data:', err);
-    await demoDelay();
-    return { data: { ...DEMO_HAIRSTYLE_RESULT }, demo: true };
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error('[ai] Hairstyle analysis failed:', detail);
+    if (shouldFallbackToDemoOnError()) {
+      await demoDelay();
+      return { data: { ...DEMO_HAIRSTYLE_RESULT }, demo: true };
+    }
+    throw new Error(toUserFacingAiError(detail));
   }
 }
 

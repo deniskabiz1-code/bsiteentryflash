@@ -231,8 +231,15 @@ router.post(
       console.error('Face analysis error:', err);
       if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       const message = err instanceof Error ? err.message : 'Ошибка анализа лица';
-      const status = message.includes('Неподдерживаемый формат') ? 400 : 500;
-      res.status(status).json({ error: message.includes('Неподдерживаемый') ? message : 'Ошибка анализа лица' });
+      if (message.includes('Неподдерживаемый формат')) {
+        res.status(400).json({ error: message });
+        return;
+      }
+      if (message.startsWith('ИИ ')) {
+        res.status(503).json({ error: message });
+        return;
+      }
+      res.status(500).json({ error: 'Ошибка анализа лица' });
     }
   }
 );
