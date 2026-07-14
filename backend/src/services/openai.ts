@@ -15,6 +15,7 @@ import {
   normalizeSkincareRoutine,
   type SkincareAnalysisContext,
 } from '../data/wildberriesSkincare';
+import { enrichAnalysisInsights } from './analysisInsights';
 
 let openai: OpenAI | null = null;
 let cachedConfigKey = '';
@@ -202,6 +203,14 @@ const FACE_ANALYSIS_PROMPT = `You are an expert aesthetician and facial analyst.
 "symmetry": <integer 0-100>,
 "hairstyle": <integer 0-100>
 },
+"summary": "<2-3 sentences in Russian: honest personalized overview of what you see in THIS photo — mention skin, strongest feature, and main area to improve>",
+"strengths": ["<2-4 specific visible positives in Russian>"],
+"priority_focus": "<single clearest priority for the next 2 weeks with a concrete action, Russian>",
+"quick_wins": [
+{ "action": "<habit or grooming step doable this week, Russian>", "impact": "<what it improves, Russian>" }
+],
+"photo_feedback": "<how lighting, camera angle, and distance affect this analysis + tip for the next selfie, Russian>",
+"hair_notes": "<1-2 sentences about hairstyle: what works, what to change at the barber, Russian>",
 "skin_type": "dry" | "oily" | "combination" | "normal",
 "puffiness": "low" | "medium" | "high",
 "problem_zones": [
@@ -251,7 +260,16 @@ CONTINUITY RULES (when prior analyses are provided in the user message):
 - progress_vs_last: fill honestly. overall_delta and metric_deltas must match your scoring vs the last entry in history.
 - If no real change is visible, say so in summary and keep deltas near 0.
 
-When no prior analyses are provided: set has_previous to false, overall_delta and all metric_deltas to 0, summary to "".
+When no prior analyses are provided: set has_previous to false, overall_delta and all metric_deltas to 0, progress_vs_last.summary to "".
+
+INSIGHT RULES (make the analysis useful, not just scores):
+- summary, strengths, priority_focus, quick_wins, photo_feedback, and hair_notes are mandatory and must be specific to THIS photo.
+- strengths: real positives only — do not invent compliments.
+- priority_focus: target the weakest metric OR the most visible problem; include a measurable action.
+- quick_wins: 2-3 items — mix lifestyle (сон, вода, соль) and grooming; at least one about photo conditions.
+- photo_feedback: always mention lighting and camera angle honestly if they limit accuracy.
+- improvement_tips: 3-5 tips — each must reference a visible issue from problem_zones or scores, not generic advice.
+- problem_zones: at least 2 zones with concrete descriptions.
 
 All text fields must be in Russian. Be honest but encouraging. Do not include any text outside the JSON object.`;
 
@@ -273,10 +291,10 @@ function normalizeFaceAnalysisResult(
       : undefined,
   };
 
-  return {
+  return enrichAnalysisInsights({
     ...data,
     skincare_routine: normalizeSkincareRoutine(data.skincare_routine, context),
-  };
+  });
 }
 
 const HAIRSTYLE_ANALYSIS_PROMPT = `You are an expert barber and facial analyst. Analyze the provided face photos (front and side profile) and return ONLY valid JSON with this exact structure:

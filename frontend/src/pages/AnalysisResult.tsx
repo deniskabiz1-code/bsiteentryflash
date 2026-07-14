@@ -5,6 +5,7 @@ import SkincareRoutineSection from '@/components/SkincareRoutineSection';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { SCORE_LABELS, SKIN_TYPE_LABELS, PUFFINESS_LABELS } from '@/types';
+import { scoreBarTone, scoreInsightLabel, scoreInsightTone } from '@/utils/scoreInsight';
 import AnalysisPhoto from '@/components/AnalysisPhoto';
 import AnalysisPhotoDisclaimer from '@/components/AnalysisPhotoDisclaimer';
 import { toAnalysisResultView, type AnalysisResultView } from '@/utils/analysisView';
@@ -133,6 +134,20 @@ export default function AnalysisResult() {
           <AnalysisPhotoDisclaimer className="mt-4 px-2 text-center" />
         </section>
 
+        {result.summary && (
+          <section className="card-green">
+            <p className="label-sm mb-2">Главное по фото</p>
+            <p className="text-[15px] leading-relaxed">{result.summary}</p>
+          </section>
+        )}
+
+        {result.priority_focus && (
+          <section className="card border-2 border-brand-green/30 bg-brand-green/5">
+            <p className="label-sm mb-2 text-brand-greenDark">Приоритет на 2 недели</p>
+            <p className="text-[15px] font-semibold leading-relaxed">{result.priority_focus}</p>
+          </section>
+        )}
+
         {progress?.has_previous && progress.summary && (
           <section className="card-green">
             <p className="label-sm mb-2">Динамика с прошлого анализа</p>
@@ -142,19 +157,33 @@ export default function AnalysisResult() {
 
         <section className="card-green">
           <p className="label-sm mb-3">По параметрам</p>
-          <div className="space-y-0">
+          <div className="space-y-4">
             {Object.entries(scores).map(([key, value]) => {
+              const score = value as number;
               const delta = metricDeltas?.[key as keyof typeof metricDeltas];
               return (
-                <div key={key} className="list-row">
-                  <span className="text-[15px] text-app-text">{SCORE_LABELS[key]}</span>
-                  <div className="flex items-center gap-2">
-                    {typeof delta === 'number' && delta !== 0 && (
-                      <span className={`text-[12px] font-semibold ${delta >= 0 ? 'text-brand-greenDark' : 'text-red-500'}`}>
-                        {formatDelta(delta)}
-                      </span>
-                    )}
-                    <span className="text-[15px] font-bold text-brand-greenDark">{value as number}</span>
+                <div key={key}>
+                  <div className="flex items-center justify-between gap-3 mb-1.5">
+                    <div>
+                      <p className="text-[15px] font-semibold text-app-text">{SCORE_LABELS[key]}</p>
+                      <p className={`text-[12px] font-medium ${scoreInsightTone(score)}`}>
+                        {scoreInsightLabel(score)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {typeof delta === 'number' && delta !== 0 && (
+                        <span className={`text-[12px] font-semibold ${delta >= 0 ? 'text-brand-greenDark' : 'text-red-500'}`}>
+                          {formatDelta(delta)}
+                        </span>
+                      )}
+                      <span className="text-[15px] font-bold text-brand-greenDark">{score}</span>
+                    </div>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-app-track overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${scoreBarTone(score)}`}
+                      style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
+                    />
                   </div>
                 </div>
               );
@@ -162,16 +191,53 @@ export default function AnalysisResult() {
           </div>
         </section>
 
-        <section className="card space-y-0">
-          <div className="list-row">
+        {result.strengths && result.strengths.length > 0 && (
+          <section>
+            <h2 className="text-[17px] font-bold mb-3 px-1">Сильные стороны</h2>
+            <div className="card space-y-2.5">
+              {result.strengths.map((item, i) => (
+                <p key={i} className="text-[14px] leading-relaxed text-app-text">✓ {item}</p>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section className="card space-y-3">
+          <div className="list-row !py-0">
             <span className="text-[15px] text-app-muted">Тип кожи</span>
             <span className="text-[15px] font-semibold">{SKIN_TYPE_LABELS[result.skin_type]}</span>
           </div>
-          <div className="list-row">
+          <div className="list-row !py-0">
             <span className="text-[15px] text-app-muted">Отёчность</span>
             <span className="text-[15px] font-semibold">{PUFFINESS_LABELS[result.puffiness]}</span>
           </div>
+          {result.hair_notes && (
+            <div className="rounded-2xl bg-app-canvas px-4 py-3">
+              <p className="text-[12px] font-semibold text-app-muted mb-1">Причёска</p>
+              <p className="text-[14px] leading-relaxed">{result.hair_notes}</p>
+            </div>
+          )}
+          {result.photo_feedback && (
+            <div className="rounded-2xl bg-app-canvas px-4 py-3">
+              <p className="text-[12px] font-semibold text-app-muted mb-1">Качество фото</p>
+              <p className="text-[14px] leading-relaxed">{result.photo_feedback}</p>
+            </div>
+          )}
         </section>
+
+        {result.quick_wins && result.quick_wins.length > 0 && (
+          <section>
+            <h2 className="text-[17px] font-bold mb-3 px-1">Быстрые шаги</h2>
+            <div className="space-y-3">
+              {result.quick_wins.map((win, i) => (
+                <div key={i} className="card">
+                  <p className="font-semibold text-[15px] leading-snug">{win.action}</p>
+                  <p className="text-[13px] text-brand-greenDark font-medium mt-2">{win.impact}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {result.problem_zones?.length > 0 && (
           <section>

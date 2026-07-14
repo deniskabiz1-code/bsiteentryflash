@@ -18,6 +18,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 import { wantsPersonalizedAnalysis } from '../utils/booleanSetting';
+import { enrichAnalysisInsights } from '../services/analysisInsights';
 
 const router = Router();
 
@@ -41,11 +42,11 @@ function sanitizeAnalysisRecord(
   },
   subscribed: boolean,
 ) {
-  if (analysis.type !== 'face' || subscribed) return analysis;
-  const resultJson = analysis.resultJson as Record<string, unknown>;
+  if (analysis.type !== 'face') return analysis;
+  const resultJson = enrichAnalysisInsights(analysis.resultJson as Record<string, unknown>);
   return {
     ...analysis,
-    resultJson: sanitizeFaceResultForClient(resultJson, false),
+    resultJson: sanitizeFaceResultForClient(resultJson, subscribed),
   };
 }
 

@@ -22,6 +22,19 @@ export const MOCK_USER = {
 
 export const MOCK_FACE_RESULT: FaceAnalysisResult = {
   overall_score: 64,
+  summary:
+    'Комбинированная кожа с жирной Т-зоной. Линия челюсти — сильная сторона, кожа и причёска тянут балл вниз.',
+  strengths: [
+    'Линия челюсти выглядит чётко (71/100)',
+    'Симметрия в хорошем балансе (66/100)',
+  ],
+  priority_focus: 'На 2 недели: кожа — очищение Т-зоны + SPF каждый день.',
+  quick_wins: [
+    { action: '2 л воды и меньше соли после 18:00', impact: 'Меньше отёков под глазами' },
+    { action: 'Селфи у окна, камера на уровне глаз', impact: 'Стабильнее баллы' },
+  ],
+  photo_feedback: 'Свет плоский — на следующем фото встаньте к окну лицом.',
+  hair_notes: 'Текстурный кроп с объёмом сверху подтянет оценку причёски.',
   scores: { skin: 58, jawline: 71, symmetry: 66, hairstyle: 62 },
   skin_type: 'combination',
   puffiness: 'medium',
