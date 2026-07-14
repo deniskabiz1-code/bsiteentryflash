@@ -210,7 +210,14 @@ const FACE_ANALYSIS_PROMPT = `You are an expert aesthetician and facial analyst.
 { "action": "<habit or grooming step doable this week, Russian>", "impact": "<what it improves, Russian>" }
 ],
 "photo_feedback": "<how lighting, camera angle, and distance affect this analysis + tip for the next selfie, Russian>",
-"hair_notes": "<1-2 sentences about hairstyle: what works, what to change at the barber, Russian>",
+"hair_notes": "<1-2 sentences about current hairstyle: what works, what to change, Russian>",
+"face_shape": "oval" | "square" | "round" | "heart" | "oblong",
+"best_haircuts": [
+{ "name": "<haircut name in Russian>", "description": "<why it fits THIS person's face shape, jawline, and proportions — specific, Russian>" },
+{ "name": "<Russian>", "description": "<Russian>" },
+{ "name": "<Russian>", "description": "<Russian>" }
+],
+"haircuts_to_avoid": ["<haircut/style to avoid for this face, Russian>"],
 "skin_type": "dry" | "oily" | "combination" | "normal",
 "puffiness": "low" | "medium" | "high",
 "problem_zones": [
@@ -270,6 +277,9 @@ INSIGHT RULES (make the analysis useful, not just scores):
 - photo_feedback: always mention lighting and camera angle honestly if they limit accuracy.
 - improvement_tips: 3-5 tips — each must reference a visible issue from problem_zones or scores, not generic advice.
 - problem_zones: at least 2 zones with concrete descriptions.
+- face_shape: infer from visible bone structure (forehead, cheekbones, jaw, face length).
+- best_haircuts: exactly 3 options — each must explain why it suits THIS face shape and current hairstyle score; reference jawline/symmetry when relevant.
+- haircuts_to_avoid: 2-3 styles that would work poorly for this face shape.
 
 All text fields must be in Russian. Be honest but encouraging. Do not include any text outside the JSON object.`;
 

@@ -26,6 +26,9 @@ export interface FaceAnalysisResult {
   quick_wins?: { action: string; impact: string }[];
   photo_feedback?: string;
   hair_notes?: string;
+  face_shape?: string;
+  best_haircuts?: { name: string; description: string }[];
+  haircuts_to_avoid?: string[];
   scores: {
     skin: number;
     jawline: number;

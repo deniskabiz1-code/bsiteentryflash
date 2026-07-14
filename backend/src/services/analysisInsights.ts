@@ -6,6 +6,52 @@ const SCORE_LABELS: Record<string, string> = {
 };
 
 type QuickWin = { action: string; impact: string };
+type HaircutPick = { name: string; description: string };
+
+const VALID_FACE_SHAPES = new Set(['oval', 'square', 'round', 'heart', 'oblong']);
+
+const HAIRCUTS_BY_FACE_SHAPE: Record<string, { best: HaircutPick[]; avoid: string[] }> = {
+  oval: {
+    best: [
+      { name: 'Текстурированный кроп', description: 'Подчёркивает скулы и линию челюсти — универсален для овала' },
+      { name: 'Фейд с чёлкой', description: 'Смягчает пропорции и добавляет объём сверху' },
+      { name: 'Сайд-парт', description: 'Классика, которая не перегружает овальное лицо' },
+    ],
+    avoid: ['Длинные волосы без объёма', 'Прямая густая чёлка до бровей'],
+  },
+  square: {
+    best: [
+      { name: 'Кроп с текстурой сверху', description: 'Смягчает угловатую челюсть, добавляет высоту' },
+      { name: 'Высокий фейд', description: 'Удлиняет лицо и убирает лишнюю массивность по бокам' },
+      { name: 'Ёжик с затуханием', description: 'Балансирует широкую челюсть и подчёркивает скулы' },
+    ],
+    avoid: ['Ровный бой с акцентом на ширину', 'Чёлка в лоб до бровей'],
+  },
+  round: {
+    best: [
+      { name: 'Помпадур / объём сверху', description: 'Визуально вытягивает круглое лицо' },
+      { name: 'Низкий фейд с длиной сверху', description: 'Создаёт вертикаль и структуру' },
+      { name: 'Квифф', description: 'Добавляет высоту и делает лицо более вытянутым' },
+    ],
+    avoid: ['Округлая форма без объёма сверху', 'Длинные волосы по бокам'],
+  },
+  heart: {
+    best: [
+      { name: 'Средняя длина с объёмом у подбородка', description: 'Балансирует широкий лоб и узкий подбородок' },
+      { name: 'Текстурированный кроп без чёлки', description: 'Не акцентирует верхнюю часть лица' },
+      { name: 'Сайд-свип', description: 'Смещает фокус с лба на скулы' },
+    ],
+    avoid: ['Высокий объём на макушке', 'Густая прямая чёлка'],
+  },
+  oblong: {
+    best: [
+      { name: 'Кроп с чёлкой', description: 'Визуально укорачивает вытянутое лицо' },
+      { name: 'Средний фейд с боковым пробором', description: 'Добавляет ширину и смягчает длину' },
+      { name: 'Текстурный кроп без высоты', description: 'Не удлиняет лицо дополнительно' },
+    ],
+    avoid: ['Высокий помпадур', 'Длинные волосы с центральным пробором'],
+  },
+};
 
 function asString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
@@ -132,7 +178,46 @@ function normalizeQuickWins(raw: unknown, data: Record<string, unknown>): QuickW
   return wins.length > 0 ? wins.slice(0, 4) : buildFallbackQuickWins(data);
 }
 
+function resolveFaceShape(data: Record<string, unknown>): string {
+  const raw = asString(data.face_shape)?.toLowerCase();
+  if (raw && VALID_FACE_SHAPES.has(raw)) return raw;
+  return 'oval';
+}
+
+function normalizeHaircuts(raw: unknown): HaircutPick[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const record = item as Record<string, unknown>;
+      const name = asString(record.name);
+      const description = asString(record.description);
+      if (!name || !description) return null;
+      return { name, description };
+    })
+    .filter((item): item is HaircutPick => Boolean(item))
+    .slice(0, 3);
+}
+
+function buildFallbackHaircuts(data: Record<string, unknown>): {
+  face_shape: string;
+  best_haircuts: HaircutPick[];
+  haircuts_to_avoid: string[];
+} {
+  const face_shape = resolveFaceShape(data);
+  const preset = HAIRCUTS_BY_FACE_SHAPE[face_shape] ?? HAIRCUTS_BY_FACE_SHAPE.oval;
+  return {
+    face_shape,
+    best_haircuts: preset.best,
+    haircuts_to_avoid: preset.avoid,
+  };
+}
+
 export function enrichAnalysisInsights(data: Record<string, unknown>): Record<string, unknown> {
+  const haircutFallback = buildFallbackHaircuts(data);
+  const best_haircuts = normalizeHaircuts(data.best_haircuts);
+  const haircuts_to_avoid = asStringArray(data.haircuts_to_avoid);
+
   return {
     ...data,
     summary: asString(data.summary) ?? buildFallbackSummary(data),
@@ -144,5 +229,9 @@ export function enrichAnalysisInsights(data: Record<string, unknown>): Record<st
     quick_wins: normalizeQuickWins(data.quick_wins, data),
     photo_feedback: asString(data.photo_feedback) ?? buildFallbackPhotoFeedback(),
     hair_notes: asString(data.hair_notes) ?? buildFallbackHairNotes(data.scores),
+    face_shape: resolveFaceShape(data),
+    best_haircuts: best_haircuts.length > 0 ? best_haircuts : haircutFallback.best_haircuts,
+    haircuts_to_avoid:
+      haircuts_to_avoid.length > 0 ? haircuts_to_avoid.slice(0, 3) : haircutFallback.haircuts_to_avoid,
   };
 }

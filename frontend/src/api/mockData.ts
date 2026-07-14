@@ -35,6 +35,13 @@ export const MOCK_FACE_RESULT: FaceAnalysisResult = {
   ],
   photo_feedback: 'Свет плоский — на следующем фото встаньте к окну лицом.',
   hair_notes: 'Текстурный кроп с объёмом сверху подтянет оценку причёски.',
+  face_shape: 'oval',
+  best_haircuts: [
+    { name: 'Текстурированный кроп', description: 'Подчёркивает линию челюсти' },
+    { name: 'Фейд с текстурой', description: 'Добавляет объём сверху' },
+    { name: 'Сайд-парт', description: 'Классика для овального лица' },
+  ],
+  haircuts_to_avoid: ['Длинные волосы без объёма', 'Прямая чёлка до бровей'],
   scores: { skin: 58, jawline: 71, symmetry: 66, hairstyle: 62 },
   skin_type: 'combination',
   puffiness: 'medium',

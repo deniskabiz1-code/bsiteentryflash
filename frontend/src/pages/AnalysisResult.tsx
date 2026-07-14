@@ -4,7 +4,7 @@ import { createPayment, getAnalysis } from '@/api/client';
 import SkincareRoutineSection from '@/components/SkincareRoutineSection';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
-import { SCORE_LABELS, SKIN_TYPE_LABELS, PUFFINESS_LABELS } from '@/types';
+import { SCORE_LABELS, SKIN_TYPE_LABELS, PUFFINESS_LABELS, FACE_SHAPE_LABELS } from '@/types';
 import { scoreBarTone, scoreInsightLabel, scoreInsightTone } from '@/utils/scoreInsight';
 import AnalysisPhoto from '@/components/AnalysisPhoto';
 import AnalysisPhotoDisclaimer from '@/components/AnalysisPhotoDisclaimer';
@@ -211,12 +211,6 @@ export default function AnalysisResult() {
             <span className="text-[15px] text-app-muted">Отёчность</span>
             <span className="text-[15px] font-semibold">{PUFFINESS_LABELS[result.puffiness]}</span>
           </div>
-          {result.hair_notes && (
-            <div className="rounded-2xl bg-app-canvas px-4 py-3">
-              <p className="text-[12px] font-semibold text-app-muted mb-1">Причёска</p>
-              <p className="text-[14px] leading-relaxed">{result.hair_notes}</p>
-            </div>
-          )}
           {result.photo_feedback && (
             <div className="rounded-2xl bg-app-canvas px-4 py-3">
               <p className="text-[12px] font-semibold text-app-muted mb-1">Качество фото</p>
@@ -224,6 +218,38 @@ export default function AnalysisResult() {
             </div>
           )}
         </section>
+
+        {(result.best_haircuts?.length ?? 0) > 0 && (
+          <section>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
+              <h2 className="text-[17px] font-bold">Лучшие стрижки для вас</h2>
+              {result.face_shape && (
+                <span className="pill-gray text-[12px]">
+                  {FACE_SHAPE_LABELS[result.face_shape] || result.face_shape}
+                </span>
+              )}
+            </div>
+            {result.hair_notes && (
+              <p className="mb-3 px-1 text-[14px] leading-relaxed text-app-muted">{result.hair_notes}</p>
+            )}
+            <div className="space-y-3">
+              {result.best_haircuts!.map((cut, i) => (
+                <div key={i} className="card">
+                  <p className="font-semibold text-[15px]">{cut.name}</p>
+                  <p className="mt-1 text-[14px] leading-relaxed text-app-muted">{cut.description}</p>
+                </div>
+              ))}
+            </div>
+            {result.haircuts_to_avoid && result.haircuts_to_avoid.length > 0 && (
+              <div className="card mt-3">
+                <p className="text-[14px] font-bold mb-2">Чего избегать</p>
+                {result.haircuts_to_avoid.map((item, i) => (
+                  <p key={i} className="py-1 text-[14px] text-red-500">✕ {item}</p>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {result.quick_wins && result.quick_wins.length > 0 && (
           <section>
