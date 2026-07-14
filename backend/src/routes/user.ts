@@ -55,6 +55,36 @@ router.put('/profile', validateTelegramAuth, async (req: AuthRequest, res: Respo
   }
 });
 
+router.put('/dark-theme', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const enabled = parseBooleanSetting(req.body?.enabled ?? req.body?.darkTheme);
+    if (enabled === null) {
+      res.status(400).json({ error: 'Укажите enabled: true или false' });
+      return;
+    }
+
+    const user = await findOrCreateUser(req.telegramUser!);
+
+    if (enabled && !isSubscriptionActive(user.subscriptionEnd)) {
+      res.status(403).json({ error: 'Тёмная тема доступна по подписке' });
+      return;
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { darkTheme: enabled },
+    });
+
+    res.json({
+      darkTheme: updated.darkTheme === true,
+      user: await serializeUser(updated),
+    });
+  } catch (err) {
+    console.error('Dark theme update error:', err);
+    res.status(500).json({ error: 'Ошибка' });
+  }
+});
+
 router.put('/personalized-analysis', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
   try {
     const enabled = parseBooleanSetting(req.body?.enabled ?? req.body?.personalizedAnalysis);

@@ -202,6 +202,12 @@ export async function updatePersonalizedAnalysis(enabled: boolean) {
   return data;
 }
 
+export async function updateDarkTheme(enabled: boolean) {
+  if (MOCK) return mockApi.updateDarkTheme(enabled);
+  const { data } = await api.put('/user/dark-theme', { enabled });
+  return data;
+}
+
 export async function getSkincareRoutine() {
   if (MOCK) return mockApi.getSkincareRoutine();
   const { data } = await api.get('/user/skincare');

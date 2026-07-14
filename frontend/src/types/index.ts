@@ -13,6 +13,7 @@ export interface User {
   reminderTime: string | null;
   reminderTimezone: string | null;
   personalizedAnalysis: boolean;
+  darkTheme: boolean;
   onboarded: boolean;
   faceAnalysisCount: number;
   freeAnalysisAvailable: boolean;

@@ -5,19 +5,19 @@ module.exports = {
     extend: {
       colors: {
         app: {
-          canvas: '#F5F5F7',
-          surface: '#FFFFFF',
-          text: '#1C1C1E',
-          muted: '#8E8E93',
-          faint: '#AEAEB2',
-          border: '#E5E5EA',
-          track: '#EBEBED',
+          canvas: 'var(--app-canvas)',
+          surface: 'var(--app-surface)',
+          text: 'var(--app-text)',
+          muted: 'var(--app-muted)',
+          faint: 'var(--app-faint)',
+          border: 'var(--app-border)',
+          track: 'var(--app-track)',
         },
         brand: {
-          green: '#34C759',
-          greenDark: '#248A3D',
-          greenLight: '#EAF9EE',
-          greenTint: '#F3FBF5',
+          green: 'var(--brand-green)',
+          greenDark: 'var(--brand-green-dark)',
+          greenLight: 'var(--brand-green-light)',
+          greenTint: 'var(--brand-green-tint)',
         },
 
       },

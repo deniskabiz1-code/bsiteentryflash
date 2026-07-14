@@ -152,6 +152,14 @@ export const mockApi = {
     return { personalizedAnalysis: enabled, user };
   },
 
+  updateDarkTheme: async (enabled: boolean) => {
+    if (enabled && !user.subscriptionActive) {
+      throw new Error('Доступно по подписке');
+    }
+    user = { ...user, darkTheme: enabled && user.subscriptionActive };
+    return { darkTheme: user.darkTheme, user };
+  },
+
   getSkincareRoutine: async () => ({
     routine: enrichSkincareRoutine(MOCK_FACE_RESULT.skincare_routine),
   }),

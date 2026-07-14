@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Bell, Settings, Trash2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Bell, Lock, Moon, Settings, Trash2 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import {
   createPayment,
@@ -20,6 +20,7 @@ import { GOAL_LABELS } from '@/types';
 import AnalysisPhoto from '@/components/AnalysisPhoto';
 import { getDeviceTimezone } from '@/utils/timezone';
 import { usePersonalizedAnalysisToggle } from '@/hooks/usePersonalizedAnalysisToggle';
+import { useDarkThemeToggle } from '@/hooks/useDarkThemeToggle';
 
 export default function Profile() {
   const { user, refreshUser, applyUser } = useApp();
@@ -39,7 +40,22 @@ export default function Profile() {
   } | null>(null);
   const [reminderEnabled, setReminderEnabled] = useState(user?.reminderEnabled || false);
   const [reminderTime, setReminderTime] = useState(user?.reminderTime || '09:00');
+
+  const handleSubscribe = useCallback(async () => {
+    try {
+      const data = await createPayment();
+      openLink(data.paymentUrl);
+    } catch {
+      haptic('error');
+    }
+  }, [openLink, haptic]);
+
   const { enabled: personalizedAnalysis, toggle: handlePersonalizedToggle } = usePersonalizedAnalysisToggle();
+  const {
+    enabled: darkTheme,
+    subscribed: darkThemeSubscribed,
+    toggle: handleDarkThemeToggle,
+  } = useDarkThemeToggle(handleSubscribe);
   const [showDelete, setShowDelete] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -63,15 +79,6 @@ export default function Profile() {
     }
     getLastCheckin().then((d) => setLastCheckin(d.checkin)).catch(() => {});
   }, [user]);
-
-  const handleSubscribe = async () => {
-    try {
-      const data = await createPayment();
-      openLink(data.paymentUrl);
-    } catch {
-      haptic('error');
-    }
-  };
 
   const handleSaveProfile = async () => {
     setLoading(true);
@@ -130,7 +137,7 @@ export default function Profile() {
   };
 
   const fallbackLetter = user?.name || 'P';
-  const remeasureKey = `${editing}-${reminderEnabled}-${personalizedAnalysis}-${lastCheckin?.createdAt ?? 0}-${skincare.length}-${user?.subscriptionActive}`;
+  const remeasureKey = `${editing}-${reminderEnabled}-${personalizedAnalysis}-${darkTheme}-${lastCheckin?.createdAt ?? 0}-${skincare.length}-${user?.subscriptionActive}`;
 
   return (
     <>
@@ -189,6 +196,7 @@ export default function Profile() {
           <ul className="space-y-2 text-[14px] text-app-muted">
             <li>· Безлимитный анализ лица и причёски</li>
             <li>· Персональная рутина ухода с подборкой WB и Ozon</li>
+            <li>· Тёмная тема интерфейса</li>
           </ul>
           <p className="text-[14px] font-semibold text-app-text">400 ₽/мес</p>
           <button type="button" onClick={handleSubscribe} className="btn-dark">
@@ -290,6 +298,41 @@ export default function Profile() {
               </div>
             </div>
           )}
+
+          <div className="border-t border-app-border" />
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[15px] font-semibold flex items-center gap-2">
+                <Moon size={16} />
+                Тёмная тема
+                {!darkThemeSubscribed && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-app-track px-2 py-0.5 text-[10px] font-semibold text-app-muted">
+                    <Lock size={10} />
+                    Подписка
+                  </span>
+                )}
+              </p>
+              <p className="text-[12px] leading-snug text-app-muted mt-1">
+                {darkThemeSubscribed
+                  ? 'Комфортный тёмный интерфейс для вечернего использования'
+                  : 'Оформите подписку, чтобы включить тёмную тему'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDarkThemeToggle}
+              className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${
+                darkTheme && darkThemeSubscribed ? 'bg-brand-green' : 'bg-app-border'
+              } ${!darkThemeSubscribed ? 'opacity-60' : ''}`}
+            >
+              <div
+                className={`w-6 h-6 bg-white rounded-full absolute top-0.5 shadow-pill transition-transform ${
+                  darkTheme && darkThemeSubscribed ? 'translate-x-5' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
+          </div>
         </section>
 
         <section className="card space-y-0">

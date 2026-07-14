@@ -5,6 +5,11 @@ import {
   resolvePersonalizedAnalysis,
   writePersonalizedAnalysisPreference,
 } from '@/utils/personalizedAnalysis';
+import {
+  applyTheme,
+  resolveDarkTheme,
+  writeDarkThemePreference,
+} from '@/utils/theme';
 
 interface AppContextType {
   user: User | null;
@@ -39,7 +44,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const data = await fetchMe();
       const personalizedAnalysis = resolvePersonalizedAnalysis(data.user?.personalizedAnalysis);
       writePersonalizedAnalysisPreference(personalizedAnalysis);
-      setUser({ ...data.user, personalizedAnalysis });
+      const darkTheme = resolveDarkTheme(
+        data.user?.darkTheme,
+        Boolean(data.user?.subscriptionActive),
+      );
+      writeDarkThemePreference(darkTheme);
+      applyTheme(darkTheme);
+      setUser({ ...data.user, personalizedAnalysis, darkTheme });
       setChannelSubscribed(data.channelSubscribed);
       setTestCreditsEnabled(Boolean(data.testCreditsEnabled));
     } catch (err) {
@@ -51,7 +62,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const applyUser = useCallback((nextUser: User) => {
-    setUser(nextUser);
+    const darkTheme = resolveDarkTheme(
+      nextUser.darkTheme,
+      Boolean(nextUser.subscriptionActive),
+    );
+    writeDarkThemePreference(darkTheme);
+    applyTheme(darkTheme);
+    setUser({ ...nextUser, darkTheme });
     setLoading(false);
     setError(null);
   }, []);
