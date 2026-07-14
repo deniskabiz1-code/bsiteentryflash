@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Scissors, Sparkles } from 'lucide-react';
 
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import PhotoUpload from '@/components/PhotoUpload';
-import { analyzeFace } from '@/api/client';
+import { analyzeFace, updatePersonalizedAnalysis } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { preparePhotoForUpload } from '@/utils/preparePhoto';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -14,18 +14,37 @@ import { useFirstAnalysisViewportLock } from '@/hooks/useFirstAnalysisViewportLo
 export default function Analysis() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, refreshUser } = useApp();
+  const { user, refreshUser, applyUser } = useApp();
   const { haptic } = useTelegram();
 
   const [photo, setPhoto] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [personalizedAnalysis, setPersonalizedAnalysis] = useState(user?.personalizedAnalysis ?? true);
 
   const justOnboarded = Boolean(
     (location.state as { welcome?: boolean; firstAnalysis?: boolean } | null)?.firstAnalysis
     || (location.state as { welcome?: boolean } | null)?.welcome
   );
   const isFirstAnalysis = (user?.faceAnalysisCount ?? 0) === 0;
+  const showPersonalizedToggle = !isFirstAnalysis;
+
+  useEffect(() => {
+    setPersonalizedAnalysis(user?.personalizedAnalysis ?? true);
+  }, [user?.personalizedAnalysis]);
+
+  const handlePersonalizedToggle = async () => {
+    const newVal = !personalizedAnalysis;
+    setPersonalizedAnalysis(newVal);
+    try {
+      const data = await updatePersonalizedAnalysis(newVal);
+      if (data.user) applyUser(data.user);
+      haptic('light');
+    } catch {
+      setPersonalizedAnalysis(!newVal);
+      haptic('error');
+    }
+  };
   const freeAnalysisAvailable = user?.freeAnalysisAvailable ?? isFirstAnalysis;
   const isMandatoryFirstFlow = isFirstAnalysis && freeAnalysisAvailable;
   const viewportRef = useFirstAnalysisViewportLock(isMandatoryFirstFlow);
@@ -105,6 +124,24 @@ export default function Analysis() {
       {analyzeLabel}
     </button>
   );
+
+  const personalizedToggle = showPersonalizedToggle ? (
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-app-border bg-white px-4 py-3">
+      <div className="min-w-0">
+        <p className="text-[14px] font-semibold">Учитывать прошлые анализы</p>
+        <p className="text-[12px] leading-snug text-app-muted mt-0.5">
+          Сравнение с предыдущими фото и динамика прогресса
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={handlePersonalizedToggle}
+        className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${personalizedAnalysis ? 'bg-brand-green' : 'bg-app-border'}`}
+      >
+        <div className={`w-6 h-6 bg-white rounded-full absolute top-0.5 shadow-pill transition-transform ${personalizedAnalysis ? 'translate-x-5' : 'translate-x-0.5'}`} />
+      </button>
+    </div>
+  ) : null;
 
   const hairstyleLink = user?.subscriptionActive && !isFirstAnalysis ? (
     <button
@@ -200,6 +237,8 @@ export default function Analysis() {
       <h1 className="text-[20px] font-bold leading-tight tracking-tight">
         Анализ лица
       </h1>
+
+      {personalizedToggle}
 
       {photoUpload}
 

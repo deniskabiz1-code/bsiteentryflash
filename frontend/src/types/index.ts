@@ -12,6 +12,7 @@ export interface User {
   reminderEnabled: boolean;
   reminderTime: string | null;
   reminderTimezone: string | null;
+  personalizedAnalysis: boolean;
   onboarded: boolean;
   faceAnalysisCount: number;
   freeAnalysisAvailable: boolean;

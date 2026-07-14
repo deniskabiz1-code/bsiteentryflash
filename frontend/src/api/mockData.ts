@@ -14,6 +14,7 @@ export const MOCK_USER = {
   reminderEnabled: true,
   reminderTime: '09:00',
   reminderTimezone: 'Europe/Moscow',
+  personalizedAnalysis: true,
   onboarded: true,
   faceAnalysisCount: 3,
   freeAnalysisAvailable: false,

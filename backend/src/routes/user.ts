@@ -48,6 +48,25 @@ router.put('/profile', validateTelegramAuth, async (req: AuthRequest, res: Respo
   }
 });
 
+router.put('/personalized-analysis', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const { enabled } = req.body;
+    const user = await findOrCreateUser(req.telegramUser!);
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { personalizedAnalysis: !!enabled },
+    });
+
+    res.json({
+      personalizedAnalysis: updated.personalizedAnalysis,
+      user: await serializeUser(updated),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Ошибка' });
+  }
+});
+
 router.put('/reminders', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
   try {
     const { enabled, time, timezone } = req.body;

@@ -3,7 +3,7 @@ import { Bell, Trash2 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import {
   createPayment,
-  updateProfile, updateReminders, getSkincareRoutine,
+  updateProfile, updateReminders, updatePersonalizedAnalysis, getSkincareRoutine,
   getLastCheckin, deleteAccount,
 } from '@/api/client';
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
@@ -38,6 +38,7 @@ export default function Profile() {
   } | null>(null);
   const [reminderEnabled, setReminderEnabled] = useState(user?.reminderEnabled || false);
   const [reminderTime, setReminderTime] = useState(user?.reminderTime || '09:00');
+  const [personalizedAnalysis, setPersonalizedAnalysis] = useState(user?.personalizedAnalysis ?? true);
   const [showDelete, setShowDelete] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -92,6 +93,23 @@ export default function Profile() {
     }
   };
 
+  useEffect(() => {
+    setPersonalizedAnalysis(user?.personalizedAnalysis ?? true);
+  }, [user?.personalizedAnalysis]);
+
+  const handlePersonalizedToggle = async () => {
+    const newVal = !personalizedAnalysis;
+    setPersonalizedAnalysis(newVal);
+    try {
+      const data = await updatePersonalizedAnalysis(newVal);
+      if (data.user) applyUser(data.user);
+      haptic('light');
+    } catch {
+      setPersonalizedAnalysis(!newVal);
+      haptic('error');
+    }
+  };
+
   const handleReminderToggle = async () => {
     const newVal = !reminderEnabled;
     setReminderEnabled(newVal);
@@ -128,7 +146,7 @@ export default function Profile() {
   };
 
   const fallbackLetter = user?.name || 'P';
-  const remeasureKey = `${editing}-${reminderEnabled}-${lastCheckin?.createdAt ?? 0}-${skincare.length}-${user?.subscriptionActive}`;
+  const remeasureKey = `${editing}-${reminderEnabled}-${personalizedAnalysis}-${lastCheckin?.createdAt ?? 0}-${skincare.length}-${user?.subscriptionActive}`;
 
   return (
     <>
@@ -232,6 +250,26 @@ export default function Profile() {
             </div>
           )}
         </section>
+
+        {(user?.faceAnalysisCount ?? 0) > 0 && (
+          <section className="card space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="text-[17px] font-bold">Учитывать прошлые анализы</h2>
+                <p className="text-[12px] leading-snug text-app-muted mt-1">
+                  Сравнение с предыдущими фото и динамика прогресса
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handlePersonalizedToggle}
+                className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${personalizedAnalysis ? 'bg-brand-green' : 'bg-app-border'}`}
+              >
+                <div className={`w-6 h-6 bg-white rounded-full absolute top-0.5 shadow-pill transition-transform ${personalizedAnalysis ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+          </section>
+        )}
 
         <section className="card space-y-4">
           <div className="flex items-center justify-between">

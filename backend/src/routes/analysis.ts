@@ -158,17 +158,19 @@ router.post(
         return;
       }
 
-      const priorFace = await prisma.analysis.findMany({
-        where: { userId: user.id, type: 'face' },
-        orderBy: { createdAt: 'desc' },
-        take: 4,
-        select: { overallScore: true, resultJson: true, createdAt: true },
-      });
+      const priorFace = user.personalizedAnalysis
+        ? await prisma.analysis.findMany({
+            where: { userId: user.id, type: 'face' },
+            orderBy: { createdAt: 'desc' },
+            take: 4,
+            select: { overallScore: true, resultJson: true, createdAt: true },
+          })
+        : [];
 
       const { data: result, demo } = await analyzeFace(req.file.path, {
-        name: user.name,
-        age: user.age,
-        goals: user.goals,
+        name: user.personalizedAnalysis ? user.name : null,
+        age: user.personalizedAnalysis ? user.age : null,
+        goals: user.personalizedAnalysis ? user.goals : [],
         previousAnalyses: priorFace.map((a) =>
           toFaceHistoryEntry(a.createdAt, a.overallScore, a.resultJson),
         ),

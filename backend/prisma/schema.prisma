@@ -28,6 +28,7 @@ model User {
   reminderTime         String? // "HH:mm" in reminderTimezone
   reminderTimezone     String? // IANA tz, e.g. Europe/Moscow
   reminderLastSentDate String? // "YYYY-MM-DD" in reminderTimezone
+  personalizedAnalysis Boolean @default(true)
   onboarded       Boolean   @default(false)
   createdAt       DateTime  @default(now())
   analyses        Analysis[]

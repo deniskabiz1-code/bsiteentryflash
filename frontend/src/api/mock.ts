@@ -147,6 +147,11 @@ export const mockApi = {
     };
   },
 
+  updatePersonalizedAnalysis: async (enabled: boolean) => {
+    user = { ...user, personalizedAnalysis: enabled };
+    return { personalizedAnalysis: enabled, user };
+  },
+
   getSkincareRoutine: async () => ({
     routine: enrichSkincareRoutine(MOCK_FACE_RESULT.skincare_routine),
   }),

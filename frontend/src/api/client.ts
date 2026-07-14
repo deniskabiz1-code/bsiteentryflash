@@ -195,6 +195,12 @@ export async function updateReminders(enabled: boolean, time?: string, timezone?
   return data;
 }
 
+export async function updatePersonalizedAnalysis(enabled: boolean) {
+  if (MOCK) return mockApi.updatePersonalizedAnalysis(enabled);
+  const { data } = await api.put('/user/personalized-analysis', { enabled });
+  return data;
+}
+
 export async function getSkincareRoutine() {
   if (MOCK) return mockApi.getSkincareRoutine();
   const { data } = await api.get('/user/skincare');
