@@ -22,7 +22,6 @@ export interface FaceAnalysisResult {
   overall_score: number;
   summary?: string;
   strengths?: string[];
-  priority_focus?: string;
   quick_wins?: { action: string; impact: string }[];
   photo_feedback?: string;
   hair_notes?: string;

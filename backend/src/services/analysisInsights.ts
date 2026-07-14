@@ -96,26 +96,6 @@ function buildFallbackStrengths(scores: unknown): string[] {
   });
 }
 
-function buildFallbackPriorityFocus(data: Record<string, unknown>): string {
-  const entries = scoreEntries(data.scores).sort((a, b) => a[1] - b[1]);
-  const weakest = entries[0];
-  if (!weakest) {
-    return 'Закрепите базовый уход: очищение утром и вечером + ежедневный SPF.';
-  }
-  const [key, value] = weakest;
-  const label = SCORE_LABELS[key] ?? key;
-  if (key === 'skin') {
-    return `Приоритет на 2 недели: кожа (${value}/100) — выровняйте очищение и увлажнение, не пропускайте SPF.`;
-  }
-  if (key === 'jawline') {
-    return `Приоритет на 2 недели: линия челюсти (${value}/100) — жевательная гимнастика 5 мин/день и контроль осанки.`;
-  }
-  if (key === 'hairstyle') {
-    return `Приоритет на 2 недели: причёска (${value}/100) — обновите стрижку под форму лица и ежедневную укладку.`;
-  }
-  return `Приоритет на 2 недели: ${label} (${value}/100) — сфокусируйтесь на этом параметре в ближайших чек-инах.`;
-}
-
 function buildFallbackQuickWins(data: Record<string, unknown>): QuickWin[] {
   const wins: QuickWin[] = [];
   const puffiness = asString(data.puffiness);
@@ -225,7 +205,6 @@ export function enrichAnalysisInsights(data: Record<string, unknown>): Record<st
       const strengths = asStringArray(data.strengths);
       return strengths.length > 0 ? strengths.slice(0, 4) : buildFallbackStrengths(data.scores);
     })(),
-    priority_focus: asString(data.priority_focus) ?? buildFallbackPriorityFocus(data),
     quick_wins: normalizeQuickWins(data.quick_wins, data),
     photo_feedback: asString(data.photo_feedback) ?? buildFallbackPhotoFeedback(),
     hair_notes: asString(data.hair_notes) ?? buildFallbackHairNotes(data.scores),

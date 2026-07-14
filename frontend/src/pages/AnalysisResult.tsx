@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { createPayment, getAnalysis } from '@/api/client';
+import AnalysisResultSection from '@/components/AnalysisResultSection';
 import SkincareRoutineSection from '@/components/SkincareRoutineSection';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
-import { SCORE_LABELS, SKIN_TYPE_LABELS, PUFFINESS_LABELS, FACE_SHAPE_LABELS } from '@/types';
+import {
+  SCORE_LABELS,
+  SKIN_TYPE_LABELS,
+  PUFFINESS_LABELS,
+  FACE_SHAPE_LABELS,
+} from '@/types';
 import { scoreBarTone, scoreInsightLabel, scoreInsightTone } from '@/utils/scoreInsight';
 import AnalysisPhoto from '@/components/AnalysisPhoto';
 import AnalysisPhotoDisclaimer from '@/components/AnalysisPhotoDisclaimer';
@@ -100,219 +106,140 @@ export default function AnalysisResult() {
       })
     : null;
 
+  const hasSkinBlock =
+    (result.problem_zones?.length ?? 0) > 0
+    || (result.improvement_tips?.length ?? 0) > 0
+    || (result.quick_wins?.length ?? 0) > 0;
+
   return (
     <div className="page">
-      <div className="page-inner space-y-6">
-        {(result.photoUrl || result.id) && (
-          <div className="flex justify-center pt-2">
-            <AnalysisPhoto
-              analysisId={result.id}
-              photoUrl={result.photoUrl}
-              alt="Анализ"
-              className="h-40 w-40 rounded-3xl object-cover shadow-card"
-            />
-          </div>
-        )}
-
-        <section className="text-center pt-2">
-          {formattedDate && (
-            <p className="label-sm mb-2">{formattedDate}</p>
-          )}
-          <p className="label-sm mb-3">Общий балл</p>
-          <p className="heading-xl">
-            {overall}
-            <span className="text-[20px] text-app-muted font-semibold">/100</span>
-          </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <span className="pill-green">Анализ завершён</span>
-            {progress?.has_previous && progress.overall_delta !== 0 && (
-              <span className={`pill-green ${progress.overall_delta < 0 ? '!bg-red-50 !text-red-600' : ''}`}>
-                {formatDelta(progress.overall_delta)} с прошлого чек-ина
-              </span>
+      <div className="page-inner space-y-5 pb-4">
+        {/* ——— Обзор ——— */}
+        <section className="card space-y-4">
+          <div className="flex items-center gap-4">
+            {(result.photoUrl || result.id) && (
+              <AnalysisPhoto
+                analysisId={result.id}
+                photoUrl={result.photoUrl}
+                alt="Анализ"
+                className="h-24 w-24 shrink-0 rounded-2xl object-cover shadow-card"
+              />
             )}
+            <div className="min-w-0 flex-1">
+              {formattedDate && <p className="label-sm mb-1">{formattedDate}</p>}
+              <p className="text-[13px] text-app-muted">Общий балл</p>
+              <p className="text-[40px] font-bold leading-none tracking-tight">
+                {overall}
+                <span className="text-[18px] font-semibold text-app-muted">/100</span>
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {progress?.has_previous && progress.overall_delta !== 0 && (
+                  <span className={`pill-green text-[11px] ${progress.overall_delta < 0 ? '!bg-red-50 !text-red-600' : ''}`}>
+                    {formatDelta(progress.overall_delta)} к прошлому
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-          <AnalysisPhotoDisclaimer className="mt-4 px-2 text-center" />
+
+          {result.summary && (
+            <p className="text-[15px] leading-relaxed">{result.summary}</p>
+          )}
+
+          {result.strengths && result.strengths.length > 0 && (
+            <ul className="space-y-1.5 border-t border-app-border pt-3">
+              {result.strengths.map((item, i) => (
+                <li key={i} className="text-[14px] leading-snug text-app-text">
+                  <span className="text-brand-greenDark font-semibold">+ </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {progress?.has_previous && progress.summary && (
+            <div className="rounded-2xl bg-brand-green/10 px-4 py-3">
+              <p className="text-[12px] font-semibold text-brand-greenDark mb-1">Динамика</p>
+              <p className="text-[14px] leading-relaxed">{progress.summary}</p>
+            </div>
+          )}
+
+          <AnalysisPhotoDisclaimer className="border-t border-app-border pt-3" />
         </section>
 
-        {result.summary && (
-          <section className="card-green">
-            <p className="label-sm mb-2">Главное по фото</p>
-            <p className="text-[15px] leading-relaxed">{result.summary}</p>
-          </section>
-        )}
-
-        {result.priority_focus && (
-          <section className="card border-2 border-brand-green/30 bg-brand-green/5">
-            <p className="label-sm mb-2 text-brand-greenDark">Приоритет на 2 недели</p>
-            <p className="text-[15px] font-semibold leading-relaxed">{result.priority_focus}</p>
-          </section>
-        )}
-
-        {progress?.has_previous && progress.summary && (
-          <section className="card-green">
-            <p className="label-sm mb-2">Динамика с прошлого анализа</p>
-            <p className="text-[15px] leading-relaxed">{progress.summary}</p>
-          </section>
-        )}
-
-        <section className="card-green">
-          <p className="label-sm mb-3">По параметрам</p>
-          <div className="space-y-4">
+        {/* ——— Баллы ——— */}
+        <AnalysisResultSection title="Баллы">
+          <div className="card space-y-4">
             {Object.entries(scores).map(([key, value]) => {
               const score = value as number;
               const delta = metricDeltas?.[key as keyof typeof metricDeltas];
               return (
                 <div key={key}>
-                  <div className="flex items-center justify-between gap-3 mb-1.5">
+                  <div className="mb-1.5 flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-[15px] font-semibold text-app-text">{SCORE_LABELS[key]}</p>
-                      <p className={`text-[12px] font-medium ${scoreInsightTone(score)}`}>
+                      <p className="text-[14px] font-semibold">{SCORE_LABELS[key]}</p>
+                      <p className={`text-[11px] font-medium ${scoreInsightTone(score)}`}>
                         {scoreInsightLabel(score)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex shrink-0 items-center gap-2">
                       {typeof delta === 'number' && delta !== 0 && (
-                        <span className={`text-[12px] font-semibold ${delta >= 0 ? 'text-brand-greenDark' : 'text-red-500'}`}>
+                        <span className={`text-[11px] font-semibold ${delta >= 0 ? 'text-brand-greenDark' : 'text-red-500'}`}>
                           {formatDelta(delta)}
                         </span>
                       )}
                       <span className="text-[15px] font-bold text-brand-greenDark">{score}</span>
                     </div>
                   </div>
-                  <div className="h-1.5 rounded-full bg-app-track overflow-hidden">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-app-track">
                     <div
-                      className={`h-full rounded-full transition-all ${scoreBarTone(score)}`}
+                      className={`h-full rounded-full ${scoreBarTone(score)}`}
                       style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
                     />
                   </div>
                 </div>
               );
             })}
-          </div>
-        </section>
-
-        {result.strengths && result.strengths.length > 0 && (
-          <section>
-            <h2 className="text-[17px] font-bold mb-3 px-1">Сильные стороны</h2>
-            <div className="card space-y-2.5">
-              {result.strengths.map((item, i) => (
-                <p key={i} className="text-[14px] leading-relaxed text-app-text">✓ {item}</p>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="card space-y-3">
-          <div className="list-row !py-0">
-            <span className="text-[15px] text-app-muted">Тип кожи</span>
-            <span className="text-[15px] font-semibold">{SKIN_TYPE_LABELS[result.skin_type]}</span>
-          </div>
-          <div className="list-row !py-0">
-            <span className="text-[15px] text-app-muted">Отёчность</span>
-            <span className="text-[15px] font-semibold">{PUFFINESS_LABELS[result.puffiness]}</span>
-          </div>
-          {result.photo_feedback && (
-            <div className="rounded-2xl bg-app-canvas px-4 py-3">
-              <p className="text-[12px] font-semibold text-app-muted mb-1">Качество фото</p>
-              <p className="text-[14px] leading-relaxed">{result.photo_feedback}</p>
-            </div>
-          )}
-        </section>
-
-        {(result.best_haircuts?.length ?? 0) > 0 && (
-          <section>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
-              <h2 className="text-[17px] font-bold">Лучшие стрижки для вас</h2>
-              {result.face_shape && (
-                <span className="pill-gray text-[12px]">
-                  {FACE_SHAPE_LABELS[result.face_shape] || result.face_shape}
-                </span>
-              )}
-            </div>
-            {result.hair_notes && (
-              <p className="mb-3 px-1 text-[14px] leading-relaxed text-app-muted">{result.hair_notes}</p>
-            )}
-            <div className="space-y-3">
-              {result.best_haircuts!.map((cut, i) => (
-                <div key={i} className="card">
-                  <p className="font-semibold text-[15px]">{cut.name}</p>
-                  <p className="mt-1 text-[14px] leading-relaxed text-app-muted">{cut.description}</p>
-                </div>
-              ))}
-            </div>
-            {result.haircuts_to_avoid && result.haircuts_to_avoid.length > 0 && (
-              <div className="card mt-3">
-                <p className="text-[14px] font-bold mb-2">Чего избегать</p>
-                {result.haircuts_to_avoid.map((item, i) => (
-                  <p key={i} className="py-1 text-[14px] text-red-500">✕ {item}</p>
-                ))}
+            <div className="flex gap-4 border-t border-app-border pt-3 text-[13px]">
+              <div className="flex-1">
+                <p className="text-app-muted">Тип кожи</p>
+                <p className="mt-0.5 font-semibold">{SKIN_TYPE_LABELS[result.skin_type]}</p>
               </div>
-            )}
-          </section>
-        )}
+              <div className="flex-1">
+                <p className="text-app-muted">Отёчность</p>
+                <p className="mt-0.5 font-semibold">{PUFFINESS_LABELS[result.puffiness]}</p>
+              </div>
+            </div>
+          </div>
+        </AnalysisResultSection>
 
-        {result.quick_wins && result.quick_wins.length > 0 && (
-          <section>
-            <h2 className="text-[17px] font-bold mb-3 px-1">Быстрые шаги</h2>
-            <div className="space-y-3">
-              {result.quick_wins.map((win, i) => (
-                <div key={i} className="card">
-                  <p className="font-semibold text-[15px] leading-snug">{win.action}</p>
-                  <p className="text-[13px] text-brand-greenDark font-medium mt-2">{win.impact}</p>
+        {/* ——— Кожа ——— */}
+        {hasSkinBlock && (
+          <AnalysisResultSection title="Кожа">
+            <div className="card divide-y divide-app-border">
+              {result.problem_zones?.map((zone, i) => (
+                <div key={i} className="py-3 first:pt-0 last:pb-0">
+                  <p className="font-semibold text-[14px]">{zone.zone}</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-app-muted">{zone.description}</p>
+                </div>
+              ))}
+              {result.improvement_tips?.map((tip, i) => (
+                <p key={`tip-${i}`} className="py-2.5 text-[14px] leading-relaxed first:pt-0">
+                  · {tip}
+                </p>
+              ))}
+              {result.quick_wins?.map((win, i) => (
+                <div key={`win-${i}`} className="py-3">
+                  <p className="text-[14px] font-medium leading-snug">{win.action}</p>
+                  <p className="mt-1 text-[12px] text-brand-greenDark">{win.impact}</p>
                 </div>
               ))}
             </div>
-          </section>
-        )}
-
-        {result.problem_zones?.length > 0 && (
-          <section>
-            <h2 className="text-[17px] font-bold mb-3 px-1">Проблемные зоны</h2>
-            <div className="card space-y-4">
-              {result.problem_zones.map((zone, i) => (
-                <div key={i} className={i > 0 ? 'pt-4 border-t border-app-border' : ''}>
-                  <p className="font-semibold text-[15px]">{zone.zone}</p>
-                  <p className="text-[14px] text-app-muted mt-1 leading-relaxed">{zone.description}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {result.improvement_tips?.length > 0 && (
-          <section>
-            <h2 className="text-[17px] font-bold mb-3 px-1">Рекомендации</h2>
-            <div className="card space-y-3">
-              {result.improvement_tips.map((tip, i) => (
-                <p key={i} className="text-[14px] leading-relaxed">• {tip}</p>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {result.growth_plan?.length > 0 && (
-          <section>
-            <h2 className="text-[17px] font-bold mb-3 px-1">План роста</h2>
-            <div className="space-y-3">
-              {result.growth_plan.map((step) => (
-                <div key={step.step} className="card">
-                  <div className="flex items-start gap-3">
-                    <span className="w-7 h-7 rounded-full bg-app-text text-white text-xs flex items-center justify-center font-bold flex-shrink-0">
-                      {step.step}
-                    </span>
-                    <div>
-                      <p className="font-semibold text-[15px]">{step.action}</p>
-                      <p className="text-[13px] text-app-muted mt-2">{step.timeline}</p>
-                      <p className="text-[13px] text-brand-greenDark font-medium mt-1">{step.progress_metric}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
+          </AnalysisResultSection>
         )}
 
         <SkincareRoutineSection
+          title="Подборка ухода"
           routine={subscribed ? (result.skincare_routine ?? []) : []}
           skinContext={{
             skin_type: result.skin_type,
@@ -324,7 +251,67 @@ export default function AnalysisResult() {
           onSubscribe={subscribed ? undefined : handleSubscribe}
         />
 
-        <div className="btn-row pb-4">
+        {/* ——— Стрижка ——— */}
+        {(result.best_haircuts?.length ?? 0) > 0 && (
+          <AnalysisResultSection title="Стрижка">
+            <div className="card space-y-0 divide-y divide-app-border">
+              <div className="flex items-center justify-between gap-2 pb-3">
+                <p className="text-[14px] font-semibold">Лучшие варианты</p>
+                {result.face_shape && (
+                  <span className="pill-gray text-[11px]">
+                    {FACE_SHAPE_LABELS[result.face_shape] || result.face_shape}
+                  </span>
+                )}
+              </div>
+              {result.hair_notes && (
+                <p className="py-3 text-[13px] leading-relaxed text-app-muted">{result.hair_notes}</p>
+              )}
+              {result.best_haircuts!.map((cut, i) => (
+                <div key={i} className="py-3">
+                  <p className="font-semibold text-[14px]">{cut.name}</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-app-muted">{cut.description}</p>
+                </div>
+              ))}
+              {result.haircuts_to_avoid && result.haircuts_to_avoid.length > 0 && (
+                <div className="pt-3">
+                  <p className="mb-2 text-[12px] font-bold uppercase tracking-wide text-app-muted">
+                    Избегать
+                  </p>
+                  {result.haircuts_to_avoid.map((item, i) => (
+                    <p key={i} className="py-1 text-[13px] text-red-500">✕ {item}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </AnalysisResultSection>
+        )}
+
+        {/* ——— План ——— */}
+        {result.growth_plan?.length > 0 && (
+          <AnalysisResultSection title="План развития">
+            <div className="card space-y-0 divide-y divide-app-border">
+              {result.growth_plan.map((step) => (
+                <div key={step.step} className="flex gap-3 py-3 first:pt-0 last:pb-0">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-app-text text-[11px] font-bold text-white">
+                    {step.step}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[14px] font-semibold leading-snug">{step.action}</p>
+                    <p className="mt-1 text-[12px] text-app-muted">{step.timeline}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </AnalysisResultSection>
+        )}
+
+        {result.photo_feedback && (
+          <p className="px-1 text-center text-[12px] leading-relaxed text-app-muted">
+            {result.photo_feedback}
+          </p>
+        )}
+
+        <div className="btn-row pt-2">
           <button type="button" onClick={() => navigate('/progress')} className="btn-light">
             История
           </button>

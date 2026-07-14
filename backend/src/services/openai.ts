@@ -205,7 +205,6 @@ const FACE_ANALYSIS_PROMPT = `You are an expert aesthetician and facial analyst.
 },
 "summary": "<2-3 sentences in Russian: honest personalized overview of what you see in THIS photo — mention skin, strongest feature, and main area to improve>",
 "strengths": ["<2-4 specific visible positives in Russian>"],
-"priority_focus": "<single clearest priority for the next 2 weeks with a concrete action, Russian>",
 "quick_wins": [
 { "action": "<habit or grooming step doable this week, Russian>", "impact": "<what it improves, Russian>" }
 ],
@@ -270,9 +269,8 @@ CONTINUITY RULES (when prior analyses are provided in the user message):
 When no prior analyses are provided: set has_previous to false, overall_delta and all metric_deltas to 0, progress_vs_last.summary to "".
 
 INSIGHT RULES (make the analysis useful, not just scores):
-- summary, strengths, priority_focus, quick_wins, photo_feedback, and hair_notes are mandatory and must be specific to THIS photo.
+- summary, strengths, quick_wins, photo_feedback, and hair_notes are mandatory and must be specific to THIS photo.
 - strengths: real positives only — do not invent compliments.
-- priority_focus: target the weakest metric OR the most visible problem; include a measurable action.
 - quick_wins: 2-3 items — mix lifestyle (сон, вода, соль) and grooming; at least one about photo conditions.
 - photo_feedback: always mention lighting and camera angle honestly if they limit accuracy.
 - improvement_tips: 3-5 tips — each must reference a visible issue from problem_zones or scores, not generic advice.
