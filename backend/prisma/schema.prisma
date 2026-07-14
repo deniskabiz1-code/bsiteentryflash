@@ -45,6 +45,7 @@ model Analysis {
   sidePhotoUrl String?
   resultJson   Json
   overallScore Int?
+  demo         Boolean  @default(false)
   createdAt    DateTime @default(now())
 }
 

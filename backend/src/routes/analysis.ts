@@ -184,6 +184,7 @@ router.post(
           photoData: photoBytes ? (photoBytes as Uint8Array<ArrayBuffer>) : undefined,
           resultJson: result as Prisma.InputJsonValue,
           overallScore,
+          demo,
         },
       });
 
@@ -274,6 +275,7 @@ router.post(
           photoData: photoBytes ? (photoBytes as Uint8Array<ArrayBuffer>) : undefined,
           sidePhotoUrl: `/uploads/${side.filename}`,
           resultJson: result as Prisma.InputJsonValue,
+          demo,
         },
       });
 

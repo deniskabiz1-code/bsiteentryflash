@@ -14,12 +14,16 @@ export function toAnalysisResultView(
   const record = source as Analysis & FaceAnalysisResult & { demo?: boolean };
   const json = (record.resultJson ?? record) as FaceAnalysisResult;
 
+  const demoFlag = record.demo
+    ?? (record as { demo?: boolean }).demo
+    ?? (json as { demo?: boolean }).demo;
+
   return {
     ...json,
     overall_score: record.overallScore ?? record.overall_score ?? json.overall_score ?? 0,
     photoUrl: record.photoUrl,
     id: record.id,
     createdAt: record.createdAt,
-    demo: record.demo,
+    demo: demoFlag,
   };
 }

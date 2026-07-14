@@ -35,11 +35,14 @@ export default function AnalysisResult() {
       return;
     }
 
-    if (stateAnalysis) {
+    if (stateAnalysis?.id === analysisId) {
       setResult(toAnalysisResultView(stateAnalysis));
+      setLoading(false);
+      setError('');
+      return;
     }
 
-    setLoading(!stateAnalysis);
+    setLoading(true);
     setError('');
     getAnalysis(analysisId)
       .then((data) => setResult(toAnalysisResultView(data.analysis)))
@@ -81,7 +84,6 @@ export default function AnalysisResult() {
   };
 
   const overall = result.overall_score || 0;
-  const isDemo = Boolean(result.demo);
   const subscribed = Boolean(user?.subscriptionActive);
   const scores = result.scores || {};
   const progress = result.progress_vs_last;
@@ -125,9 +127,6 @@ export default function AnalysisResult() {
               <span className={`pill-green ${progress.overall_delta < 0 ? '!bg-red-50 !text-red-600' : ''}`}>
                 {formatDelta(progress.overall_delta)} с прошлого чек-ина
               </span>
-            )}
-            {isDemo && (
-              <span className="pill-gray">Демо · ИИ не подключён</span>
             )}
           </div>
         </section>

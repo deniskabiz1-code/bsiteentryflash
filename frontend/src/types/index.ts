@@ -67,6 +67,7 @@ export interface Analysis {
   photoUrl: string;
   overallScore: number | null;
   resultJson: FaceAnalysisResult | HairstyleResult;
+  demo?: boolean;
   createdAt: string;
 }
 
