@@ -9,7 +9,7 @@ import { useTelegram } from '@/hooks/useTelegram';
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import { useDocumentScrollLock } from '@/hooks/useDocumentScrollLock';
 import { Analysis, TaskGroup } from '@/types';
-import { chartHint, ChartPeriod, scoresForPeriod } from '@/utils/progressChart';
+import { ChartPeriod, scoresForPeriod } from '@/utils/progressChart';
 export default function Home() {
   const { user } = useApp();
   const navigate = useNavigate();
@@ -29,10 +29,6 @@ export default function Home() {
   const chartSeries = useMemo(
     () => scoresForPeriod(faceAnalyses, period),
     [faceAnalyses, period],
-  );
-  const chartHintText = useMemo(
-    () => chartHint(chartSeries.values.length, chartSeries.usedFallback, period),
-    [chartSeries, period],
   );
 
   const load = async () => {
@@ -167,10 +163,7 @@ export default function Home() {
                 {score ?? '—'}
                 <span className="text-lg font-semibold text-app-muted"> баллов</span>
               </p>
-              <MiniBarChart
-                values={chartSeries.values}
-                hint={chartHintText}
-              />
+              <MiniBarChart points={chartSeries.points} />
               <div className="mt-4">
                 <SegmentedControl
                   options={['День', 'Неделя', 'Месяц', 'Год']}

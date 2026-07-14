@@ -1,11 +1,12 @@
+import { ChartPoint, formatChartDate } from '@/utils/progressChart';
+
 interface MiniBarChartProps {
-  values: number[];
+  points: ChartPoint[];
   max?: number;
-  hint?: string | null;
 }
 
-export default function MiniBarChart({ values, max = 100, hint }: MiniBarChartProps) {
-  if (values.length === 0) {
+export default function MiniBarChart({ points, max = 100 }: MiniBarChartProps) {
+  if (points.length === 0) {
     return (
       <p className="text-[13px] text-app-muted leading-relaxed">
         Нет данных за выбранный период
@@ -13,41 +14,51 @@ export default function MiniBarChart({ values, max = 100, hint }: MiniBarChartPr
     );
   }
 
-  const count = values.length;
+  const count = points.length;
   const single = count === 1;
 
   return (
-    <div>
-      <div
-        className={`flex h-28 items-end gap-2 pt-2 ${single ? 'justify-center' : 'justify-between'}`}
-        role="img"
-        aria-label={`График баллов: ${values.join(', ')}`}
-      >
-        {values.map((value, i) => {
-          const height = Math.max(18, (value / max) * 100);
-          const progress = (i + 1) / count;
-          const faded = !single && i < count - 1;
-          const opacity = faded ? 0.28 + progress * 0.45 : 1;
+    <div
+      className={`flex w-full items-end gap-2 ${single ? 'justify-end' : 'justify-between'}`}
+      role="img"
+      aria-label={`График баллов: ${points.map((p) => p.score).join(', ')}`}
+    >
+      {points.map((point, i) => {
+        const height = Math.max(22, (point.score / max) * 100);
+        const isLatest = i === count - 1;
+        const progress = (i + 1) / count;
+        const opacity = isLatest ? 1 : 0.3 + progress * 0.45;
 
-          return (
-            <div
-              key={`${i}-${value}`}
-              className={`flex h-full flex-col items-center justify-end ${single ? 'w-14' : 'min-w-0 flex-1'}`}
+        return (
+          <div
+            key={`${point.date}-${point.score}`}
+            className={`flex min-w-0 flex-col items-center ${single ? 'w-16' : 'flex-1'}`}
+          >
+            <span
+              className={`mb-1.5 text-[11px] font-bold leading-none tabular-nums ${
+                isLatest ? 'text-app-text' : 'text-app-muted'
+              }`}
             >
+              {point.score}
+            </span>
+
+            <div className="flex h-24 w-full items-end">
               <div
-                className={`w-full rounded-full transition-all ${
-                  faded ? 'bg-brand-green' : 'bg-gradient-to-t from-brand-green to-brand-green/70'
+                className={`mx-auto w-full max-w-[28px] rounded-full transition-all ${
+                  isLatest
+                    ? 'bg-gradient-to-t from-brand-green to-brand-green/70'
+                    : 'bg-brand-green'
                 }`}
                 style={{ height: `${height}%`, opacity }}
               />
             </div>
-          );
-        })}
-      </div>
 
-      {hint && (
-        <p className="mt-3 text-center text-[13px] leading-snug text-app-muted">{hint}</p>
-      )}
+            <span className="mt-2 max-w-full truncate text-center text-[10px] leading-tight text-app-muted">
+              {formatChartDate(point.date, count)}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

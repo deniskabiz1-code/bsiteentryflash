@@ -12,7 +12,7 @@ import { useTelegram } from '@/hooks/useTelegram';
 
 import { Analysis } from '@/types';
 import AnalysisPhoto from '@/components/AnalysisPhoto';
-import { chartHint, ChartPeriod, scoresForPeriod } from '@/utils/progressChart';
+import { ChartPeriod, scoresForPeriod } from '@/utils/progressChart';
 
 export default function Progress() {
   const navigate = useNavigate();
@@ -41,10 +41,6 @@ export default function Progress() {
   const chartSeries = useMemo(
     () => scoresForPeriod(faceAnalyses, period),
     [faceAnalyses, period],
-  );
-  const chartHintText = useMemo(
-    () => chartHint(chartSeries.values.length, chartSeries.usedFallback, period),
-    [chartSeries, period],
   );
 
   const openAnalysis = (analysis: Analysis) => {
@@ -117,7 +113,7 @@ export default function Progress() {
           <section className="card-green">
             <p className="label-sm mb-1">Динамика</p>
             <p className="text-[28px] font-bold tracking-tight mb-4">{latest?.overallScore ?? 0} баллов</p>
-            <MiniBarChart values={chartSeries.values} hint={chartHintText} />
+            <MiniBarChart points={chartSeries.points} />
             <div className="mt-4">
               <SegmentedControl
                 options={['День', 'Неделя', 'Месяц', 'Год']}
