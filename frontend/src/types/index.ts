@@ -38,6 +38,7 @@ export interface FaceAnalysisResult {
   }[];
   skincare_routine: {
     step: string;
+    product_id?: number;
     product_type: string;
     tip: string;
   }[];

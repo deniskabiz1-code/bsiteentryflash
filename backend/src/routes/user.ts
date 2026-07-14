@@ -3,7 +3,7 @@ import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegra
 import { findOrCreateUser, isSubscriptionActive } from '../services/telegram';
 import { serializeUser } from '../services/userProfile';
 import { resolveReminderTimezone } from '../services/reminders';
-import { enrichSkincareRoutine } from '../data/wildberriesSkincare';
+import { enrichSkincareRoutine, normalizeSkincareRoutine } from '../data/wildberriesSkincare';
 import { prisma } from '../utils/prisma';
 import { parseBooleanSetting } from '../utils/booleanSetting';
 
@@ -129,8 +129,17 @@ router.get('/skincare', validateTelegramAuth, async (req: AuthRequest, res: Resp
     }
 
     const result = lastFace.resultJson as Record<string, unknown>;
-    const routine = Array.isArray(result.skincare_routine) ? result.skincare_routine : [];
-    res.json({ routine: enrichSkincareRoutine(routine as { step: string; product_type: string; tip: string }[]) });
+    const routine = normalizeSkincareRoutine(result.skincare_routine, {
+      skin_type: typeof result.skin_type === 'string' ? result.skin_type : undefined,
+      puffiness: typeof result.puffiness === 'string' ? result.puffiness : undefined,
+      problem_zones: Array.isArray(result.problem_zones)
+        ? (result.problem_zones as { zone: string; description?: string }[])
+        : undefined,
+      scores: result.scores && typeof result.scores === 'object'
+        ? (result.scores as { skin?: number })
+        : undefined,
+    });
+    res.json({ routine: enrichSkincareRoutine(routine) });
   } catch (err) {
     res.status(500).json({ error: 'Ошибка' });
   }

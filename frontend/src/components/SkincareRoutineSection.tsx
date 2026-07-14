@@ -1,9 +1,14 @@
 import { Lock } from 'lucide-react';
 import WildberriesProductCard from '@/components/WildberriesProductCard';
-import type { EnrichedSkincareStep, SkincareRoutineStep } from '@/data/wildberriesSkincare';
+import type {
+  EnrichedSkincareStep,
+  SkincareAnalysisContext,
+  SkincareRoutineStep,
+} from '@/data/wildberriesSkincare';
 import {
   enrichSkincareRoutine,
   getSkincarePreviewProducts,
+  normalizeSkincareRoutine,
   SKINCARE_PRODUCT_CATALOG,
 } from '@/data/wildberriesSkincare';
 
@@ -17,6 +22,7 @@ const LOCKED_PLACEHOLDERS = [
 type SkincareRoutineSectionProps = {
   title?: string;
   routine?: SkincareRoutineStep[] | EnrichedSkincareStep[];
+  skinContext?: SkincareAnalysisContext;
   subscribed: boolean;
   onSubscribe?: () => void;
   emptyMessage?: string;
@@ -29,6 +35,7 @@ function isEnriched(step: SkincareRoutineStep | EnrichedSkincareStep): step is E
 export default function SkincareRoutineSection({
   title = 'Уход за кожей',
   routine = [],
+  skinContext,
   subscribed,
   onSubscribe,
   emptyMessage = 'Сделайте анализ лица — персональная рутина появится здесь',
@@ -38,7 +45,7 @@ export default function SkincareRoutineSection({
   const enrichedRoutine = subscribed
     ? (routine.length > 0 && isEnriched(routine[0])
         ? (routine as EnrichedSkincareStep[])
-        : enrichSkincareRoutine(routine))
+        : enrichSkincareRoutine(normalizeSkincareRoutine(routine, skinContext)))
     : [];
 
   if (subscribed && enrichedRoutine.length > 0) {
@@ -49,7 +56,7 @@ export default function SkincareRoutineSection({
           <span className="pill-green">Подписка</span>
         </div>
         <p className="mb-3 px-1 text-[13px] leading-snug text-app-muted">
-          Персональная рутина с товарами WB и Ozon — нажмите, чтобы открыть карточку.
+          Персональная подборка под ваш тип кожи — нажмите товар, чтобы открыть на WB или Ozon.
         </p>
         <div className="card !p-0 overflow-hidden">
           {enrichedRoutine.map((item, i) => (

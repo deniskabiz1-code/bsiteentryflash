@@ -10,6 +10,11 @@ import {
   buildFaceAnalysisUserMessage,
   type FaceAnalysisUserContext,
 } from './analysisHistory';
+import {
+  buildSkincareCatalogPromptSection,
+  normalizeSkincareRoutine,
+  type SkincareAnalysisContext,
+} from '../data/wildberriesSkincare';
 
 let openai: OpenAI | null = null;
 let cachedConfigKey = '';
@@ -210,7 +215,7 @@ const FACE_ANALYSIS_PROMPT = `You are an expert aesthetician and facial analyst.
 { "step": 4, ... }
 ],
 "skincare_routine": [
-{ "step": "<step name in Russian>", "product_type": "<Russian>", "tip": "<Russian>" }
+{ "step": "<morning/evening step name in Russian>", "product_id": <exact id from AVAILABLE PRODUCTS>, "product_type": "<why this exact product fits THIS user, Russian>", "tip": "<personalized application tip, Russian>" }
 ],
 "progress_vs_last": {
 "has_previous": <true if prior analyses were provided, else false>,
@@ -249,6 +254,30 @@ CONTINUITY RULES (when prior analyses are provided in the user message):
 When no prior analyses are provided: set has_previous to false, overall_delta and all metric_deltas to 0, summary to "".
 
 All text fields must be in Russian. Be honest but encouraging. Do not include any text outside the JSON object.`;
+
+function getFaceAnalysisPrompt(): string {
+  return `${FACE_ANALYSIS_PROMPT}${buildSkincareCatalogPromptSection()}`;
+}
+
+function normalizeFaceAnalysisResult(
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  const context: SkincareAnalysisContext = {
+    skin_type: typeof data.skin_type === 'string' ? data.skin_type : undefined,
+    puffiness: typeof data.puffiness === 'string' ? data.puffiness : undefined,
+    problem_zones: Array.isArray(data.problem_zones)
+      ? (data.problem_zones as { zone: string; description?: string }[])
+      : undefined,
+    scores: data.scores && typeof data.scores === 'object'
+      ? (data.scores as { skin?: number })
+      : undefined,
+  };
+
+  return {
+    ...data,
+    skincare_routine: normalizeSkincareRoutine(data.skincare_routine, context),
+  };
+}
 
 const HAIRSTYLE_ANALYSIS_PROMPT = `You are an expert barber and facial analyst. Analyze the provided face photos (front and side profile) and return ONLY valid JSON with this exact structure:
 
@@ -480,17 +509,22 @@ export async function analyzeFace(
     console.log('[demo] Face analysis — demo mode');
     await demoDelay();
     return {
-      data: { ...DEMO_FACE_RESULT, ...buildDemoProgress(context) },
+      data: normalizeFaceAnalysisResult({
+        ...DEMO_FACE_RESULT,
+        ...buildDemoProgress(context),
+      }),
       demo: true,
     };
   }
 
   try {
-    const data = await callVision(
-      FACE_ANALYSIS_PROMPT,
-      [photoPath],
-      { temperature: 0.85 },
-      userText,
+    const data = normalizeFaceAnalysisResult(
+      await callVision(
+        getFaceAnalysisPrompt(),
+        [photoPath],
+        { temperature: 0.85 },
+        userText,
+      ) as Record<string, unknown>,
     );
     return { data, demo: false };
   } catch (err) {
@@ -499,7 +533,13 @@ export async function analyzeFace(
     if (shouldFallbackToDemoOnError()) {
       console.warn('[ai] AI_FALLBACK_DEMO=true — returning demo face result');
       await demoDelay();
-      return { data: { ...DEMO_FACE_RESULT, ...buildDemoProgress(context) }, demo: true };
+      return {
+        data: normalizeFaceAnalysisResult({
+          ...DEMO_FACE_RESULT,
+          ...buildDemoProgress(context),
+        }),
+        demo: true,
+      };
     }
     throw new Error(toUserFacingAiError(detail));
   }

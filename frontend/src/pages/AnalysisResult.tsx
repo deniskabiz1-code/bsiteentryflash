@@ -220,6 +220,12 @@ export default function AnalysisResult() {
 
         <SkincareRoutineSection
           routine={subscribed ? (result.skincare_routine ?? []) : []}
+          skinContext={{
+            skin_type: result.skin_type,
+            puffiness: result.puffiness,
+            problem_zones: result.problem_zones,
+            scores: result.scores,
+          }}
           subscribed={subscribed}
           onSubscribe={subscribed ? undefined : handleSubscribe}
         />
