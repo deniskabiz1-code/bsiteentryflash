@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, Trash2 } from 'lucide-react';
+import { Bell, Settings, Trash2 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import {
   createPayment,
@@ -235,33 +235,44 @@ export default function Profile() {
           )}
         </section>
 
-        {(user?.faceAnalysisCount ?? 0) > 0 && (
-          <section className="card space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="text-[17px] font-bold">Учитывать прошлые анализы</h2>
-                <p className="text-[12px] leading-snug text-app-muted mt-1">
-                  Сравнение с предыдущими фото и динамика прогресса
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handlePersonalizedToggle}
-                className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${personalizedAnalysis ? 'bg-brand-green' : 'bg-app-border'}`}
-              >
-                <div className={`w-6 h-6 bg-white rounded-full absolute top-0.5 shadow-pill transition-transform ${personalizedAnalysis ? 'translate-x-5' : 'translate-x-0.5'}`} />
-              </button>
-            </div>
-          </section>
-        )}
-
         <section className="card space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[17px] font-bold flex items-center gap-2"><Bell size={18} /> Напоминания</h2>
+          <h2 className="text-[17px] font-bold flex items-center gap-2">
+            <Settings size={18} />
+            Настройки
+          </h2>
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[15px] font-semibold">Персональный анализ</p>
+              <p className="text-[12px] leading-snug text-app-muted mt-1">
+                Сравнение с прошлыми фото и динамика прогресса
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handlePersonalizedToggle}
+              className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${personalizedAnalysis ? 'bg-brand-green' : 'bg-app-border'}`}
+            >
+              <div className={`w-6 h-6 bg-white rounded-full absolute top-0.5 shadow-pill transition-transform ${personalizedAnalysis ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+
+          <div className="border-t border-app-border" />
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[15px] font-semibold flex items-center gap-2">
+                <Bell size={16} />
+                Напоминания
+              </p>
+              <p className="text-[12px] leading-snug text-app-muted mt-1">
+                Бот пришлёт напоминание в Telegram
+              </p>
+            </div>
             <button
               type="button"
               onClick={handleReminderToggle}
-              className={`w-12 h-7 rounded-full transition-colors relative ${reminderEnabled ? 'bg-brand-green' : 'bg-app-border'}`}
+              className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${reminderEnabled ? 'bg-brand-green' : 'bg-app-border'}`}
             >
               <div className={`w-6 h-6 bg-white rounded-full absolute top-0.5 shadow-pill transition-transform ${reminderEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </button>
@@ -277,9 +288,6 @@ export default function Profile() {
                   className="input-field input-field-time shrink-0"
                 />
               </div>
-              <p className="text-[12px] leading-snug text-app-muted">
-                Бот пришлёт напоминание в Telegram в выбранное время.
-              </p>
             </div>
           )}
         </section>
