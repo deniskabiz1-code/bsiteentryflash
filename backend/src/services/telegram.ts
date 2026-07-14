@@ -154,22 +154,9 @@ type PhotoPayload = {
   filename: string;
 };
 
-function getAdminAnalysisChatIds(): string[] {
-  const groupChat = process.env.ADMIN_ANALYSIS_CHAT_ID?.trim();
-  if (groupChat) return [groupChat];
-
-  const multi = process.env.ADMIN_ANALYSIS_CHAT_IDS?.trim();
-  if (multi) {
-    return multi.split(',').map((id) => id.trim()).filter(Boolean);
-  }
-
-  const admin = process.env.ADMIN_TELEGRAM_ID?.trim();
-  return admin ? [admin] : [];
-}
-
 function isAdminAnalysisNotifyEnabled(): boolean {
   if (process.env.ADMIN_NOTIFY_ANALYSES === 'false') return false;
-  return getAdminAnalysisChatIds().length > 0;
+  return Boolean(process.env.ADMIN_TELEGRAM_ID?.trim());
 }
 
 export async function sendBotPhotoBuffer(
@@ -318,7 +305,7 @@ export async function notifyAdminAnalysisSubmission(payload: {
 }): Promise<void> {
   if (!isAdminAnalysisNotifyEnabled()) return;
 
-  const chatIds = getAdminAnalysisChatIds();
+  const adminId = process.env.ADMIN_TELEGRAM_ID!.trim();
   const userLabel = payload.username ? `@${payload.username}` : `ID ${payload.telegramId}`;
   const profileBits = [
     payload.name?.trim(),
@@ -354,14 +341,12 @@ export async function notifyAdminAnalysisSubmission(payload: {
   const photos = payload.photos.filter((photo) => photo.buffer.length > 0);
   if (photos.length === 0) return;
 
-  for (const chatId of chatIds) {
-    if (photos.length === 1) {
-      await sendBotPhotoBuffer(chatId, photos[0], caption);
-      continue;
-    }
-
-    await sendBotMediaGroupBuffers(chatId, photos, caption);
+  if (photos.length === 1) {
+    await sendBotPhotoBuffer(adminId, photos[0], caption);
+    return;
   }
+
+  await sendBotMediaGroupBuffers(adminId, photos, caption);
 }
 
 export async function notifyAdminReferralProof(proof: {
