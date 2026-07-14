@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Scissors, Sparkles } from 'lucide-react';
@@ -10,7 +10,6 @@ import { useApp } from '@/context/AppContext';
 import { preparePhotoForUpload } from '@/utils/preparePhoto';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useFirstAnalysisViewportLock } from '@/hooks/useFirstAnalysisViewportLock';
-import { setVerticalSwipeLock } from '@/lib/tgWebApp';
 
 export default function Analysis() {
   const navigate = useNavigate();
@@ -36,27 +35,6 @@ export default function Analysis() {
     (isFirstAnalysis && freeAnalysisAvailable) ||
     (user?.referralCredits ?? 0) > 0;
   const noFreeAnalysisLeft = !canAnalyze && !user?.subscriptionActive;
-  const useUploadScrollLock = !isMandatoryFirstFlow && !noFreeAnalysisLeft && !isFirstAnalysis;
-
-  useEffect(() => {
-    if (!useUploadScrollLock) return;
-
-    document.documentElement.classList.add('pf-analysis-upload');
-    setVerticalSwipeLock(true);
-
-    const blockScroll = (event: Event) => {
-      if (event.cancelable) event.preventDefault();
-    };
-    document.addEventListener('touchmove', blockScroll, { passive: false });
-    document.addEventListener('wheel', blockScroll, { passive: false });
-
-    return () => {
-      document.documentElement.classList.remove('pf-analysis-upload');
-      setVerticalSwipeLock(false);
-      document.removeEventListener('touchmove', blockScroll);
-      document.removeEventListener('wheel', blockScroll);
-    };
-  }, [useUploadScrollLock]);
 
   const handleAnalyze = async () => {
     if (!photo) { setError('Загрузите фото'); return; }
@@ -115,76 +93,37 @@ export default function Analysis() {
         : 'Начать анализ'
       : 'Сначала сделайте селфи';
 
-  const content = (
-    <div
-      className="page-inner first-analysis-grid h-full px-5 py-3"
+  const analyzeButton = (
+    <button
+      type="button"
+      onClick={handleAnalyze}
+      disabled={!photo || loading || !canAnalyze}
+      className={isMandatoryFirstFlow ? 'btn-accent' : 'btn-dark'}
     >
-      <header className="min-h-0 shrink-0 overflow-hidden">
-        {isFirstAnalysis ? (
-          <div className="space-y-1.5">
-            <span className="pill-green inline-flex">
-              <Sparkles size={14} />
-              1 анализ бесплатно
-            </span>
-            <h1 className="text-[22px] font-bold leading-snug tracking-tight break-words">
-              {greeting}
-            </h1>
-            <p className="text-[14px] leading-snug text-app-muted">
-              Сделайте селфи — ИИ бесплатно оценит внешность.
-            </p>
-          </div>
-        ) : (
-          <h1 className="text-[20px] font-bold leading-tight tracking-tight">
-            Анализ лица
-          </h1>
-        )}
-      </header>
-
-      <div className="card flex h-full min-h-0 min-w-0 flex-col overflow-hidden !p-4">
-          <PhotoUpload
-            onPhotoSelect={setPhoto}
-            onPhotoClear={() => setPhoto(null)}
-            label="Сделать селфи"
-            compact
-            fill
-          />
-        </div>
-
-      <footer className="analysis-upload-footer shrink-0 space-y-2">
-        {error && (
-          <p className="text-center text-[13px] font-medium text-red-500 line-clamp-2">{error}</p>
-        )}
-
-        <button
-          type="button"
-          onClick={handleAnalyze}
-          disabled={!photo || loading || !canAnalyze}
-          className={isMandatoryFirstFlow ? 'btn-accent' : 'btn-dark'}
-        >
-          {analyzeLabel}
-        </button>
-        {user?.subscriptionActive && !isFirstAnalysis && (
-          <button
-            type="button"
-            onClick={() => navigate('/analysis/hairstyle')}
-            className="flex w-full items-center justify-center gap-1.5 py-1 text-[13px] font-semibold text-app-muted"
-          >
-            <Scissors size={15} />
-            Анализ причёски
-          </button>
-        )}
-      </footer>
-    </div>
+      {analyzeLabel}
+    </button>
   );
 
-  if (isMandatoryFirstFlow) {
-    return createPortal(
-      <div ref={viewportRef} className="bg-app-canvas">
-        {content}
-      </div>,
-      document.body,
-    );
-  }
+  const hairstyleLink = user?.subscriptionActive && !isFirstAnalysis ? (
+    <button
+      type="button"
+      onClick={() => navigate('/analysis/hairstyle')}
+      className="flex w-full items-center justify-center gap-1.5 py-1 text-[13px] font-semibold text-app-muted"
+    >
+      <Scissors size={15} />
+      Анализ причёски
+    </button>
+  ) : null;
+
+  const photoUpload = (
+    <PhotoUpload
+      onPhotoSelect={setPhoto}
+      onPhotoClear={() => setPhoto(null)}
+      label="Сделать селфи"
+      compact
+      fill={isMandatoryFirstFlow}
+    />
+  );
 
   if (noFreeAnalysisLeft) {
     return (
@@ -212,9 +151,62 @@ export default function Analysis() {
     );
   }
 
+  if (isMandatoryFirstFlow) {
+    const content = (
+      <div className="page-inner first-analysis-grid h-full px-5 py-3">
+        <header className="min-h-0 shrink-0 overflow-hidden">
+          <div className="space-y-1.5">
+            <span className="pill-green inline-flex">
+              <Sparkles size={14} />
+              1 анализ бесплатно
+            </span>
+            <h1 className="text-[22px] font-bold leading-snug tracking-tight break-words">
+              {greeting}
+            </h1>
+            <p className="text-[14px] leading-snug text-app-muted">
+              Сделайте селфи — ИИ бесплатно оценит внешность.
+            </p>
+          </div>
+        </header>
+
+        <div className={`flex min-h-0 flex-col overflow-hidden ${photo ? 'flex-1' : 'justify-center'}`}>
+          {photoUpload}
+        </div>
+
+        <footer className="shrink-0 space-y-2 pb-1">
+          {error && (
+            <p className="text-center text-[13px] font-medium text-red-500 line-clamp-2">{error}</p>
+          )}
+          {analyzeButton}
+        </footer>
+      </div>
+    );
+
+    return createPortal(
+      <div ref={viewportRef} className="bg-app-canvas">
+        {content}
+      </div>,
+      document.body,
+    );
+  }
+
   return (
-    <div className="page analysis-upload-page">
-      {content}
-    </div>
+    <ConditionalScrollPage
+      innerClassName="page-inner space-y-4 pt-2"
+      remeasureKey={photo ? 'preview' : 'empty'}
+    >
+      <h1 className="text-[20px] font-bold leading-tight tracking-tight">
+        Анализ лица
+      </h1>
+
+      {photoUpload}
+
+      {error && (
+        <p className="text-center text-[13px] font-medium text-red-500">{error}</p>
+      )}
+
+      {analyzeButton}
+      {hairstyleLink}
+    </ConditionalScrollPage>
   );
 }
