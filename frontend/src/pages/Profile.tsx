@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bell, Lock, Moon, Settings, Trash2 } from 'lucide-react';
+import { Bell, Settings, Trash2 } from 'lucide-react';
+import DarkThemeSetting from '@/components/DarkThemeSetting';
 import Modal from '@/components/Modal';
 import {
   createPayment,
@@ -301,38 +302,12 @@ export default function Profile() {
 
           <div className="border-t border-app-border" />
 
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[15px] font-semibold flex items-center gap-2">
-                <Moon size={16} />
-                Тёмная тема
-                {!darkThemeSubscribed && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-app-track px-2 py-0.5 text-[10px] font-semibold text-app-muted">
-                    <Lock size={10} />
-                    Подписка
-                  </span>
-                )}
-              </p>
-              <p className="text-[12px] leading-snug text-app-muted mt-1">
-                {darkThemeSubscribed
-                  ? 'Комфортный тёмный интерфейс для вечернего использования'
-                  : 'Оформите подписку, чтобы включить тёмную тему'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleDarkThemeToggle}
-              className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${
-                darkTheme && darkThemeSubscribed ? 'bg-brand-green' : 'bg-app-border'
-              } ${!darkThemeSubscribed ? 'opacity-60' : ''}`}
-            >
-              <div
-                className={`w-6 h-6 bg-white rounded-full absolute top-0.5 shadow-pill transition-transform ${
-                  darkTheme && darkThemeSubscribed ? 'translate-x-5' : 'translate-x-0.5'
-                }`}
-              />
-            </button>
-          </div>
+          <DarkThemeSetting
+            enabled={darkTheme}
+            subscribed={darkThemeSubscribed}
+            onToggle={handleDarkThemeToggle}
+            onSubscribe={handleSubscribe}
+          />
         </section>
 
         <section className="card space-y-0">
