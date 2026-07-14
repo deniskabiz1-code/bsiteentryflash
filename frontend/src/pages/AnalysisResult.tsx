@@ -310,12 +310,6 @@ export default function AnalysisResult() {
           </AnalysisResultSection>
         )}
 
-        {result.photo_feedback && (
-          <AnalysisResultSection title="Фото">
-            <p className="card text-[14px] leading-relaxed text-app-muted">{result.photo_feedback}</p>
-          </AnalysisResultSection>
-        )}
-
         <AnalysisPhotoDisclaimer className="px-1" />
 
         <div className="btn-row pt-2">
