@@ -34,6 +34,33 @@ export function resolveDarkTheme(
   return normalizeDarkTheme(serverValue, fallback);
 }
 
+/** True while a dark-theme toggle API call is in flight (refresh should not overwrite). */
+let darkThemeSaveDepth = 0;
+
+export function beginDarkThemeSave(): void {
+  darkThemeSaveDepth += 1;
+}
+
+export function endDarkThemeSave(): void {
+  darkThemeSaveDepth = Math.max(0, darkThemeSaveDepth - 1);
+}
+
+export function isDarkThemeSaveInFlight(): boolean {
+  return darkThemeSaveDepth > 0;
+}
+
+export function syncDarkThemeFromServer(
+  serverValue: boolean | undefined | null,
+  preserveInFlightValue?: boolean | null,
+): boolean {
+  const darkTheme = preserveInFlightValue === true || preserveInFlightValue === false
+    ? preserveInFlightValue
+    : normalizeDarkTheme(serverValue);
+  writeDarkThemePreference(darkTheme);
+  applyTheme(darkTheme);
+  return darkTheme;
+}
+
 const LIGHT_COLORS = {
   header: '#F5F5F7',
   background: '#F5F5F7',

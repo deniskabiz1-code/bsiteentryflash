@@ -51,7 +51,7 @@ export default function Profile() {
   }, [openLink, haptic]);
 
   const { enabled: personalizedAnalysis, toggle: handlePersonalizedToggle } = usePersonalizedAnalysisToggle();
-  const { enabled: darkTheme, toggle: handleDarkThemeToggle } = useDarkThemeToggle();
+  const { enabled: darkTheme, toggle: handleDarkThemeToggle, saving: darkThemeSaving } = useDarkThemeToggle();
   const [showDelete, setShowDelete] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -309,7 +309,8 @@ export default function Profile() {
             <button
               type="button"
               onClick={handleDarkThemeToggle}
-              className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${darkTheme ? 'bg-brand-green' : 'bg-app-border'}`}
+              disabled={darkThemeSaving}
+              className={`shrink-0 w-12 h-7 rounded-full transition-colors relative disabled:opacity-60 ${darkTheme ? 'bg-brand-green' : 'bg-app-border'}`}
             >
               <div className={`w-6 h-6 bg-white rounded-full absolute top-0.5 shadow-pill transition-transform ${darkTheme ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </button>

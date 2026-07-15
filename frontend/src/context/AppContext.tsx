@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { fetchMe } from '@/api/client';
 import { getTgWebApp } from '@/lib/tgWebApp';
 import { User } from '@/types';
@@ -7,10 +7,9 @@ import {
   writePersonalizedAnalysisPreference,
 } from '@/utils/personalizedAnalysis';
 import {
-  applyTheme,
+  isDarkThemeSaveInFlight,
   normalizeDarkTheme,
-  resolveDarkTheme,
-  writeDarkThemePreference,
+  syncDarkThemeFromServer,
 } from '@/utils/theme';
 
 interface AppContextType {
@@ -39,6 +38,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [testCreditsEnabled, setTestCreditsEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const userRef = useRef<User | null>(null);
+  userRef.current = user;
 
   const refreshUser = useCallback(async () => {
     try {
@@ -46,9 +47,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const data = await fetchMe();
       const personalizedAnalysis = resolvePersonalizedAnalysis(data.user?.personalizedAnalysis);
       writePersonalizedAnalysisPreference(personalizedAnalysis);
-      const darkTheme = resolveDarkTheme(data.user?.darkTheme);
-      writeDarkThemePreference(darkTheme);
-      applyTheme(darkTheme);
+      const preserveTheme = isDarkThemeSaveInFlight()
+        ? normalizeDarkTheme(userRef.current?.darkTheme)
+        : undefined;
+      const darkTheme = syncDarkThemeFromServer(data.user?.darkTheme, preserveTheme);
       setUser({ ...data.user, personalizedAnalysis, darkTheme });
       setChannelSubscribed(data.channelSubscribed);
       setTestCreditsEnabled(Boolean(data.testCreditsEnabled));
@@ -62,9 +64,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const applyUser = useCallback((nextUser: User) => {
-    const darkTheme = normalizeDarkTheme(nextUser.darkTheme);
-    writeDarkThemePreference(darkTheme);
-    applyTheme(darkTheme);
+    const darkTheme = syncDarkThemeFromServer(nextUser.darkTheme);
     setUser({ ...nextUser, darkTheme });
     setLoading(false);
     setError(null);
