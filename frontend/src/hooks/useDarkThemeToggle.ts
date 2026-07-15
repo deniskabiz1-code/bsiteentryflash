@@ -3,7 +3,7 @@ import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import {
   applyTheme,
-  resolveDarkTheme,
+  normalizeDarkTheme,
   writeDarkThemePreference,
 } from '@/utils/theme';
 
@@ -11,7 +11,7 @@ export function useDarkThemeToggle() {
   const { user, applyUser } = useApp();
   const { haptic } = useTelegram();
 
-  const enabled = resolveDarkTheme(user?.darkTheme);
+  const enabled = normalizeDarkTheme(user?.darkTheme);
 
   const toggle = async () => {
     if (!user) return;
@@ -23,7 +23,7 @@ export function useDarkThemeToggle() {
 
     try {
       const data = await updateDarkTheme(newVal);
-      const saved = data.darkTheme === true;
+      const saved = normalizeDarkTheme(data.darkTheme);
       writeDarkThemePreference(saved);
       applyTheme(saved);
       if (data.user) {
@@ -32,11 +32,8 @@ export function useDarkThemeToggle() {
         applyUser({ ...user, darkTheme: saved });
       }
       haptic('light');
-    } catch {
-      const reverted = !newVal;
-      writeDarkThemePreference(reverted);
-      applyTheme(reverted);
-      applyUser({ ...user, darkTheme: reverted });
+    } catch (err) {
+      console.error('Dark theme save failed:', err);
       haptic('error');
     }
   };

@@ -8,6 +8,7 @@ import {
 } from '@/utils/personalizedAnalysis';
 import {
   applyTheme,
+  normalizeDarkTheme,
   resolveDarkTheme,
   writeDarkThemePreference,
 } from '@/utils/theme';
@@ -61,7 +62,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const applyUser = useCallback((nextUser: User) => {
-    const darkTheme = resolveDarkTheme(nextUser.darkTheme);
+    const darkTheme = normalizeDarkTheme(nextUser.darkTheme);
     writeDarkThemePreference(darkTheme);
     applyTheme(darkTheme);
     setUser({ ...nextUser, darkTheme });

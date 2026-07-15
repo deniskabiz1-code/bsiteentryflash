@@ -5,7 +5,7 @@ import './index.css';
 import { applyTheme, readDarkThemePreference } from './utils/theme';
 
 const storedTheme = readDarkThemePreference();
-if (storedTheme) {
+if (storedTheme !== null) {
   applyTheme(storedTheme);
 }
 

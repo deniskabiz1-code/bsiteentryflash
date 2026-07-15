@@ -5,10 +5,16 @@ import {
   syncTelegramSafeAreaInsets,
   syncViewportMetrics,
 } from '@/lib/tgWebApp';
+import { applyTheme, readDarkThemePreference } from '@/utils/theme';
 
 export default function TelegramBootstrap() {
   useEffect(() => {
     initTelegramWebApp();
+
+    const storedTheme = readDarkThemePreference();
+    if (storedTheme !== null) {
+      applyTheme(storedTheme);
+    }
 
     const sync = () => {
       ensureTelegramViewportExpanded();

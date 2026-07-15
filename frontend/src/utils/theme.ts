@@ -21,15 +21,17 @@ export function writeDarkThemePreference(enabled: boolean): void {
   }
 }
 
+export function normalizeDarkTheme(value: boolean | undefined | null, fallback = false): boolean {
+  return value === true;
+}
+
 export function resolveDarkTheme(
   serverValue: boolean | undefined | null,
   fallback = false,
 ): boolean {
   const local = readDarkThemePreference();
   if (local !== null) return local;
-  if (serverValue === true) return true;
-  if (serverValue === false) return false;
-  return fallback;
+  return normalizeDarkTheme(serverValue, fallback);
 }
 
 const LIGHT_COLORS = {
