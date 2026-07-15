@@ -151,14 +151,14 @@ export default function AnalysisResult() {
         </section>
 
         {Object.keys(scores).length > 0 && (
-          <>
+          <div className="relative">
             <p
-              className="pointer-events-none -my-4 flex items-center justify-center text-[10px] font-medium leading-none tracking-wide text-app-text opacity-50 select-none"
+              className="pointer-events-none absolute left-0 right-0 -top-2.5 z-10 flex -translate-y-1/2 items-center justify-center text-[10px] font-medium leading-none tracking-wide text-app-text opacity-50 select-none"
               aria-hidden
             >
               {BOT_HANDLE}
             </p>
-            <AnalysisResultSection title="Баллы" className="[&>h2]:mb-1">
+            <AnalysisResultSection title="Баллы">
             <div className="card space-y-4">
               {Object.entries(scores).map(([key, value]) => {
                 const score = value as number;
@@ -202,7 +202,7 @@ export default function AnalysisResult() {
               </div>
             </div>
           </AnalysisResultSection>
-          </>
+          </div>
         )}
 
         {result.summary && (
