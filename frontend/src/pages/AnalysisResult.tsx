@@ -124,8 +124,14 @@ export default function AnalysisResult() {
   return (
     <div className="page">
       <div className="page-inner space-y-5 pb-4">
-        <section className="card">
-          <div className="flex items-center gap-4">
+        <section className="card relative overflow-hidden">
+          <p
+            className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center text-[13px] font-semibold tracking-wide text-app-text opacity-50 select-none"
+            aria-hidden
+          >
+            {BOT_HANDLE}
+          </p>
+          <div className="relative z-10 flex items-center gap-4">
             {(result.photoUrl || result.id) && (
               <AnalysisPhoto
                 analysisId={result.id}
@@ -152,7 +158,7 @@ export default function AnalysisResult() {
 
         {Object.keys(scores).length > 0 && (
           <AnalysisResultSection title="Баллы">
-            <div className="card relative space-y-4 overflow-hidden">
+            <div className="card space-y-4">
               {Object.entries(scores).map(([key, value]) => {
                 const score = value as number;
                 const delta = metricDeltas?.[key as keyof typeof metricDeltas];
@@ -193,12 +199,6 @@ export default function AnalysisResult() {
                   <p className="mt-0.5 font-semibold">{PUFFINESS_LABELS[result.puffiness]}</p>
                 </div>
               </div>
-              <p
-                className="pointer-events-none absolute bottom-3 right-4 text-[11px] font-semibold tracking-wide text-app-text opacity-50 select-none"
-                aria-hidden
-              >
-                {BOT_HANDLE}
-              </p>
             </div>
           </AnalysisResultSection>
         )}
