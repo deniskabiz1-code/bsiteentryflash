@@ -17,6 +17,7 @@ import {
 import { scoreBarTone, scoreInsightLabel, scoreInsightTone } from '@/utils/scoreInsight';
 import AnalysisPhoto from '@/components/AnalysisPhoto';
 import AnalysisPhotoDisclaimer from '@/components/AnalysisPhotoDisclaimer';
+import { BOT_HANDLE } from '@/config/bot';
 import { toAnalysisResultView, type AnalysisResultView } from '@/utils/analysisView';
 
 function resolveContentLevel(
@@ -152,7 +153,7 @@ export default function AnalysisResult() {
 
         {Object.keys(scores).length > 0 && (
           <AnalysisResultSection title="Баллы">
-            <div className="card space-y-4">
+            <div className="card relative space-y-4 overflow-hidden">
               {Object.entries(scores).map(([key, value]) => {
                 const score = value as number;
                 const delta = metricDeltas?.[key as keyof typeof metricDeltas];
@@ -193,6 +194,12 @@ export default function AnalysisResult() {
                   <p className="mt-0.5 font-semibold">{PUFFINESS_LABELS[result.puffiness]}</p>
                 </div>
               </div>
+              <p
+                className="pointer-events-none absolute bottom-3 right-4 text-[11px] font-semibold tracking-wide text-app-text opacity-50 select-none"
+                aria-hidden
+              >
+                {BOT_HANDLE}
+              </p>
             </div>
           </AnalysisResultSection>
         )}
