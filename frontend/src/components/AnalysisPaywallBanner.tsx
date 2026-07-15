@@ -2,7 +2,6 @@ import { Crown, Lock, Sparkles } from 'lucide-react';
 
 type AnalysisPaywallBannerProps = {
   onSubscribe: () => void;
-  onGetFullAnalysis?: () => void;
 };
 
 const LOCKED_FEATURES = [
@@ -14,7 +13,6 @@ const LOCKED_FEATURES = [
 
 export default function AnalysisPaywallBanner({
   onSubscribe,
-  onGetFullAnalysis,
 }: AnalysisPaywallBannerProps) {
   return (
     <section className="card overflow-hidden !p-0">
@@ -60,12 +58,6 @@ export default function AnalysisPaywallBanner({
         <button type="button" onClick={onSubscribe} className="btn-dark w-full">
           Оформить подписку — 400 ₽/мес
         </button>
-
-        {onGetFullAnalysis && (
-          <button type="button" onClick={onGetFullAnalysis} className="btn-light w-full">
-            Получить полный анализ за друга
-          </button>
-        )}
       </div>
     </section>
   );

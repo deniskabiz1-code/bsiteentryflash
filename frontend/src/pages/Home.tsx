@@ -124,7 +124,7 @@ export default function Home() {
             onClick={() => navigate('/analysis', { state: { firstAnalysis: true } })}
             className="card-green w-full py-4 text-center"
           >
-            <p className="text-[15px] font-semibold text-brand-greenDark">Первая оценка бесплатно</p>
+            <p className="text-[15px] font-semibold text-brand-greenDark">Анализ бесплатно</p>
             <p className="mt-1 text-[13px] text-app-muted">Загрузите селфи и получите балл</p>
           </button>
         )}

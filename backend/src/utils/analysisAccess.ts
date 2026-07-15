@@ -18,21 +18,15 @@ const PREVIEW_FIELDS = new Set([
   'resultJson',
 ]);
 
-export function resolveAccessTier(
-  subscribed: boolean,
-  useCredit: boolean,
-): AnalysisAccessTier {
-  if (subscribed || useCredit) return 'full';
-  return 'free';
+export function resolveAccessTier(subscribed: boolean): AnalysisAccessTier {
+  return subscribed ? 'full' : 'free';
 }
 
 export function resolveContentLevel(
   accessTier: string | null | undefined,
   subscribed: boolean,
 ): AnalysisContentLevel {
-  if (accessTier === 'full') {
-    return subscribed ? 'premium' : 'full';
-  }
+  if (subscribed && accessTier === 'full') return 'premium';
   return 'preview';
 }
 
@@ -42,20 +36,11 @@ export function sanitizeFaceResultForClient<T extends Record<string, unknown>>(
 ): T {
   if (contentLevel === 'premium') return result;
 
-  if (contentLevel === 'preview') {
-    const preview: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(result)) {
-      if (PREVIEW_FIELDS.has(key) && value !== undefined) {
-        preview[key] = value;
-      }
+  const preview: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(result)) {
+    if (PREVIEW_FIELDS.has(key) && value !== undefined) {
+      preview[key] = value;
     }
-    return preview as T;
   }
-
-  if ('skincare_routine' in result) {
-    const { skincare_routine: _removed, ...rest } = result;
-    return rest as T;
-  }
-
-  return result;
+  return preview as T;
 }

@@ -37,7 +37,7 @@ export const mockApi = {
 
   analyzeFace: async (_photo: File) => {
     await delay(1500);
-    const useFull = (user.referralCredits ?? 0) > 0 || user.subscriptionActive;
+    const useFull = user.subscriptionActive;
     const analysis = {
       id: analyses.length + 1,
       ...(useFull
@@ -51,7 +51,7 @@ export const mockApi = {
           }),
       photoUrl: MOCK_ANALYSES[0].photoUrl,
       accessTier: useFull ? 'full' : 'free',
-      contentLevel: useFull ? (user.subscriptionActive ? 'premium' : 'full') : 'preview',
+      contentLevel: useFull ? 'premium' : 'preview',
     };
     return { analysis };
   },

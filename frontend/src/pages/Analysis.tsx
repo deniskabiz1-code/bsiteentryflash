@@ -32,12 +32,7 @@ export default function Analysis() {
   const freeAnalysisAvailable = user?.freeAnalysisAvailable ?? isFirstAnalysis;
   const isMandatoryFirstFlow = isFirstAnalysis && freeAnalysisAvailable;
   const viewportRef = useFirstAnalysisViewportLock(isMandatoryFirstFlow);
-
-  const canAnalyze =
-    Boolean(user?.subscriptionActive) ||
-    (isFirstAnalysis && freeAnalysisAvailable) ||
-    (user?.referralCredits ?? 0) > 0;
-  const noFreeAnalysisLeft = !canAnalyze && !user?.subscriptionActive;
+  const subscribed = Boolean(user?.subscriptionActive);
 
   const handleAnalyze = async () => {
     if (!photo) { setError('Загрузите фото'); return; }
@@ -67,8 +62,6 @@ export default function Analysis() {
         setError('Сервер долго отвечает — подождите и повторите');
       } else if (!ax.response) {
         setError('Ошибка связи с сервером. Проверьте интернет и повторите.');
-      } else if (ax.response.status === 403) {
-        setError(msg || 'Бесплатный анализ уже использован');
       } else if (ax.response.status === 503) {
         setError(msg || 'ИИ временно недоступен — попробуйте позже');
       } else if (ax.response.status === 401) {
@@ -102,14 +95,14 @@ export default function Analysis() {
     <button
       type="button"
       onClick={handleAnalyze}
-      disabled={!photo || loading || !canAnalyze}
+      disabled={!photo || loading}
       className={isMandatoryFirstFlow ? 'btn-accent' : 'btn-dark'}
     >
       {analyzeLabel}
     </button>
   );
 
-  const hairstyleLink = user?.subscriptionActive && !isFirstAnalysis ? (
+  const hairstyleLink = subscribed && !isFirstAnalysis ? (
     <button
       type="button"
       onClick={() => navigate('/analysis/hairstyle')}
@@ -130,32 +123,6 @@ export default function Analysis() {
     />
   );
 
-  if (noFreeAnalysisLeft) {
-    return (
-      <ConditionalScrollPage innerClassName="page-inner space-y-6 pt-8" remeasureKey="no-credits">
-        <h1 className="text-[20px] font-bold leading-tight tracking-tight text-center">
-          Бесплатных анализов не осталось
-        </h1>
-        <div className="space-y-2 pt-4">
-          <button
-            type="button"
-            onClick={() => navigate('/free-analysis')}
-            className="btn-accent"
-          >
-            Получить полный анализ
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/profile')}
-            className="btn-dark"
-          >
-            Оформить подписку
-          </button>
-        </div>
-      </ConditionalScrollPage>
-    );
-  }
-
   if (isMandatoryFirstFlow) {
     const content = (
       <div className="page-inner first-analysis-grid h-full px-5 py-3">
@@ -163,7 +130,7 @@ export default function Analysis() {
           <div className="space-y-1.5">
             <span className="pill-green inline-flex">
               <Sparkles size={14} />
-              Оценка бесплатно
+              Анализ бесплатно
             </span>
             <h1 className="text-[22px] font-bold leading-snug tracking-tight break-words">
               {greeting}
@@ -205,6 +172,11 @@ export default function Analysis() {
         <h1 className="text-[20px] font-bold leading-tight tracking-tight">
           Анализ лица
         </h1>
+        <p className="text-[13px] text-app-muted">
+          {subscribed
+            ? 'Полный разбор с советами, стрижками и уходом.'
+            : 'Бесплатно: оценки и обзор. Полный разбор — по подписке.'}
+        </p>
         <AnalysisPhotoDisclaimer />
       </div>
 

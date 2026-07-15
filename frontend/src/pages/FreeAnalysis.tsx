@@ -1,23 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Copy, Gift, Share2 } from 'lucide-react';
-import TestCreditButton from '@/components/TestCreditButton';
+import { ArrowLeft, Copy, Crown, Share2 } from 'lucide-react';
 import { createPayment, getReferralInfo } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 
 export default function FreeAnalysis() {
   const navigate = useNavigate();
-  const { user, testCreditsEnabled } = useApp();
+  const { user } = useApp();
   const { haptic, openLink } = useTelegram();
 
-  const [referral, setReferral] = useState<{ referralLink: string; referralCredits: number } | null>(null);
+  const [referral, setReferral] = useState<{ referralLink: string } | null>(null);
 
   useEffect(() => {
     getReferralInfo().then(setReferral).catch(() => {});
   }, []);
-
-  const credits = referral?.referralCredits ?? user?.referralCredits ?? 0;
 
   const handleSubscribe = async () => {
     try {
@@ -48,48 +45,24 @@ export default function FreeAnalysis() {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-[22px] font-bold leading-tight">Полные анализы</h1>
+            <h1 className="text-[22px] font-bold leading-tight">Полный анализ</h1>
             <p className="text-[14px] text-app-muted mt-0.5">
-              Кредиты: <span className="font-bold text-brand-greenDark">{credits}</span>
+              Оценки бесплатно · разбор по подписке
             </p>
           </div>
         </header>
 
         <section className="card-green space-y-3">
           <div className="flex items-start gap-3">
-            <Gift size={22} className="shrink-0 text-brand-greenDark mt-0.5" />
+            <Crown size={22} className="shrink-0 text-brand-greenDark mt-0.5" />
             <div className="space-y-1">
               <p className="text-[15px] font-bold text-brand-greenDark">Как это работает</p>
               <p className="text-[13px] leading-snug text-app-muted">
-                Первый анализ бесплатно — только оценки и краткий обзор. 1 кредит = 1 полный разбор
-                со всеми блоками. Получите кредиты, пригласив друга по ссылке.
+                Анализ лица всегда бесплатный — оценки и краткий обзор без ограничений.
+                Подписка открывает полный разбор: советы, стрижки, динамику и рутину ухода.
               </p>
             </div>
           </div>
-        </section>
-
-        {testCreditsEnabled && (
-          <section className="card space-y-3">
-            <h2 className="text-[17px] font-bold">Тестовый кредит</h2>
-            <p className="text-[14px] text-app-muted">
-              Для проверки полного ИИ-анализа — разовое начисление +1 кредита.
-            </p>
-            <TestCreditButton variant="accent" showCredits />
-          </section>
-        )}
-
-        <section className="card space-y-4">
-          <h2 className="text-[17px] font-bold flex items-center gap-2">
-            <Share2 size={18} />
-            Реферальная ссылка
-          </h2>
-          <p className="text-[14px] text-app-muted">
-            Поделитесь ссылкой с другом — вы оба получите +1 полный анализ после его регистрации.
-          </p>
-          <button type="button" onClick={copyReferralLink} className="btn-light flex items-center justify-center gap-2">
-            <Copy size={16} />
-            Копировать ссылку
-          </button>
         </section>
 
         <section className="card space-y-3">
@@ -99,6 +72,20 @@ export default function FreeAnalysis() {
           </p>
           <button type="button" onClick={handleSubscribe} className="btn-dark">
             {user?.subscriptionActive ? 'Продлить подписку' : 'Оформить подписку'}
+          </button>
+        </section>
+
+        <section className="card space-y-4">
+          <h2 className="text-[17px] font-bold flex items-center gap-2">
+            <Share2 size={18} />
+            Реферальная ссылка
+          </h2>
+          <p className="text-[14px] text-app-muted">
+            Поделитесь Primeform с другом — помогите ему начать путь к улучшению внешности.
+          </p>
+          <button type="button" onClick={copyReferralLink} className="btn-light flex items-center justify-center gap-2">
+            <Copy size={16} />
+            Копировать ссылку
           </button>
         </section>
       </div>

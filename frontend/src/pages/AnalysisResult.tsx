@@ -24,7 +24,7 @@ function resolveContentLevel(
   subscribed: boolean,
 ): AnalysisContentLevel {
   if (result.contentLevel) return result.contentLevel;
-  if (result.accessTier === 'full') return subscribed ? 'premium' : 'full';
+  if (subscribed && result.accessTier === 'full') return 'premium';
   return 'preview';
 }
 
@@ -205,10 +205,7 @@ export default function AnalysisResult() {
 
         {isPreview && (
           <>
-            <AnalysisPaywallBanner
-              onSubscribe={handleSubscribe}
-              onGetFullAnalysis={() => navigate('/free-analysis')}
-            />
+            <AnalysisPaywallBanner onSubscribe={handleSubscribe} />
             <LockedAnalysisSection
               title="Сильные стороны"
               description="ИИ выделит ваши реальные плюсы по фото — то, на что стоит опираться."

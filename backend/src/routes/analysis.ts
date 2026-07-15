@@ -8,7 +8,6 @@ import {
   isSubscriptionActive,
   notifyAdminAnalysisSubmission,
 } from '../services/telegram';
-import { hasTelegramUsedFreeTrial, markTelegramFreeTrialUsed } from '../services/freeTrial';
 import { toFaceHistoryEntry } from '../services/analysisHistory';
 import {
   analyzeFace,
@@ -104,37 +103,6 @@ const upload = multer({
   },
 });
 
-async function canPerformAnalysis(
-  userId: number,
-  telegramId: bigint,
-  subscriptionEnd: Date | null,
-  referralCredits: number,
-  type: 'face' | 'hairstyle'
-): Promise<{ allowed: boolean; useCredit: boolean; reason?: string }> {
-  if (isSubscriptionActive(subscriptionEnd)) {
-    return { allowed: true, useCredit: false };
-  }
-
-  if (type === 'face') {
-    const count = await prisma.analysis.count({
-      where: { userId, type: 'face' },
-    });
-    if (count === 0 && !(await hasTelegramUsedFreeTrial(telegramId))) {
-      return { allowed: true, useCredit: false };
-    }
-  }
-
-  if (referralCredits > 0) {
-    return { allowed: true, useCredit: true };
-  }
-
-  return {
-    allowed: false,
-    useCredit: false,
-    reason: 'Бесплатный анализ уже использован. Нужна подписка или реферальный кредит на полный анализ',
-  };
-}
-
 router.post(
   '/face',
   validateTelegramAuth,
@@ -147,22 +115,8 @@ router.post(
       }
 
       const user = await findOrCreateUser(req.telegramUser!);
-      const access = await canPerformAnalysis(
-        user.id,
-        user.telegramId,
-        user.subscriptionEnd,
-        user.referralCredits,
-        'face'
-      );
-
-      if (!access.allowed) {
-        fs.unlinkSync(req.file.path);
-        res.status(403).json({ error: access.reason });
-        return;
-      }
-
       const subscribed = isSubscriptionActive(user.subscriptionEnd);
-      const accessTier = resolveAccessTier(subscribed, access.useCredit);
+      const accessTier = resolveAccessTier(subscribed);
       const contentLevel = resolveContentLevel(accessTier, subscribed);
       const usePersonalized = accessTier === 'full' && wantsPersonalizedAnalysis(
         user.personalizedAnalysis,
@@ -207,15 +161,6 @@ router.post(
           demo,
         },
       });
-
-      if (access.useCredit) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { referralCredits: { decrement: 1 } },
-        });
-      } else if (!subscribed) {
-        await markTelegramFreeTrialUsed(user.telegramId);
-      }
 
       const clientResult = sanitizeFaceResultForClient(
         result as Record<string, unknown>,

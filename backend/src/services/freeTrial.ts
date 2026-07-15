@@ -17,8 +17,9 @@ export async function markTelegramFreeTrialUsed(telegramId: bigint): Promise<voi
   });
 }
 
+/** True when user should see the first-analysis onboarding flow (no face analyses yet). */
 export async function isFreeAnalysisAvailable(
-  telegramId: bigint,
+  _telegramId: bigint,
   userId: number,
   subscriptionEnd: Date | null,
 ): Promise<boolean> {
@@ -29,11 +30,7 @@ export async function isFreeAnalysisAvailable(
   const faceCount = await prisma.analysis.count({
     where: { userId, type: 'face' },
   });
-  if (faceCount > 0) {
-    return false;
-  }
-
-  return !(await hasTelegramUsedFreeTrial(telegramId));
+  return faceCount === 0;
 }
 
 /** Backfill trial usage from existing face analyses (survives account deletion). */
