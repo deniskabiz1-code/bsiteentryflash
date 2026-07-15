@@ -7,21 +7,14 @@ import {
   writeDarkThemePreference,
 } from '@/utils/theme';
 
-export function useDarkThemeToggle(onSubscribe?: () => void) {
+export function useDarkThemeToggle() {
   const { user, applyUser } = useApp();
   const { haptic } = useTelegram();
 
-  const subscribed = Boolean(user?.subscriptionActive);
-  const enabled = resolveDarkTheme(user?.darkTheme, subscribed);
+  const enabled = resolveDarkTheme(user?.darkTheme);
 
   const toggle = async () => {
     if (!user) return;
-
-    if (!subscribed) {
-      haptic('error');
-      onSubscribe?.();
-      return;
-    }
 
     const newVal = !enabled;
     writeDarkThemePreference(newVal);
@@ -48,5 +41,5 @@ export function useDarkThemeToggle(onSubscribe?: () => void) {
     }
   };
 
-  return { enabled, subscribed, toggle };
+  return { enabled, toggle };
 }

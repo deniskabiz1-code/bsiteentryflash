@@ -55,10 +55,7 @@ export async function serializeUser(user: User) {
     reminderTime: user.reminderTime,
     reminderTimezone: user.reminderTimezone,
     personalizedAnalysis: user.personalizedAnalysis === false ? false : true,
-    darkTheme:
-      isSubscriptionActive(user.subscriptionEnd) && user.darkTheme === true
-        ? true
-        : false,
+    darkTheme: user.darkTheme === true,
     onboarded: user.onboarded,
     faceAnalysisCount,
     freeAnalysisAvailable,

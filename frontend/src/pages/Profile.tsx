@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Bell, Settings, Trash2 } from 'lucide-react';
-import DarkThemeSetting from '@/components/DarkThemeSetting';
+import { Bell, Moon, Settings, Trash2 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import {
   createPayment,
@@ -52,11 +51,7 @@ export default function Profile() {
   }, [openLink, haptic]);
 
   const { enabled: personalizedAnalysis, toggle: handlePersonalizedToggle } = usePersonalizedAnalysisToggle();
-  const {
-    enabled: darkTheme,
-    subscribed: darkThemeSubscribed,
-    toggle: handleDarkThemeToggle,
-  } = useDarkThemeToggle(handleSubscribe);
+  const { enabled: darkTheme, toggle: handleDarkThemeToggle } = useDarkThemeToggle();
   const [showDelete, setShowDelete] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -197,7 +192,6 @@ export default function Profile() {
           <ul className="space-y-2 text-[14px] text-app-muted">
             <li>· Безлимитный анализ лица и причёски</li>
             <li>· Персональная рутина ухода с подборкой WB и Ozon</li>
-            <li>· Тёмная тема интерфейса</li>
           </ul>
           <p className="text-[14px] font-semibold text-app-text">400 ₽/мес</p>
           <button type="button" onClick={handleSubscribe} className="btn-dark">
@@ -302,12 +296,24 @@ export default function Profile() {
 
           <div className="border-t border-app-border" />
 
-          <DarkThemeSetting
-            enabled={darkTheme}
-            subscribed={darkThemeSubscribed}
-            onToggle={handleDarkThemeToggle}
-            onSubscribe={handleSubscribe}
-          />
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[15px] font-semibold flex items-center gap-2">
+                <Moon size={16} />
+                Тёмная тема
+              </p>
+              <p className="text-[12px] leading-snug text-app-muted mt-1">
+                Комфортный тёмный интерфейс для вечернего использования
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDarkThemeToggle}
+              className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${darkTheme ? 'bg-brand-green' : 'bg-app-border'}`}
+            >
+              <div className={`w-6 h-6 bg-white rounded-full absolute top-0.5 shadow-pill transition-transform ${darkTheme ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
         </section>
 
         <section className="card space-y-0">

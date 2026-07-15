@@ -45,10 +45,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const data = await fetchMe();
       const personalizedAnalysis = resolvePersonalizedAnalysis(data.user?.personalizedAnalysis);
       writePersonalizedAnalysisPreference(personalizedAnalysis);
-      const darkTheme = resolveDarkTheme(
-        data.user?.darkTheme,
-        Boolean(data.user?.subscriptionActive),
-      );
+      const darkTheme = resolveDarkTheme(data.user?.darkTheme);
       writeDarkThemePreference(darkTheme);
       applyTheme(darkTheme);
       setUser({ ...data.user, personalizedAnalysis, darkTheme });
@@ -64,10 +61,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const applyUser = useCallback((nextUser: User) => {
-    const darkTheme = resolveDarkTheme(
-      nextUser.darkTheme,
-      Boolean(nextUser.subscriptionActive),
-    );
+    const darkTheme = resolveDarkTheme(nextUser.darkTheme);
     writeDarkThemePreference(darkTheme);
     applyTheme(darkTheme);
     setUser({ ...nextUser, darkTheme });

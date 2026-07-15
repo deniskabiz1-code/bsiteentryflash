@@ -153,11 +153,8 @@ export const mockApi = {
   },
 
   updateDarkTheme: async (enabled: boolean) => {
-    if (enabled && !user.subscriptionActive) {
-      throw new Error('Доступно по подписке');
-    }
-    user = { ...user, darkTheme: enabled && user.subscriptionActive };
-    return { darkTheme: user.darkTheme, user };
+    user = { ...user, darkTheme: enabled };
+    return { darkTheme: enabled, user };
   },
 
   getSkincareRoutine: async () => ({

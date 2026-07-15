@@ -23,10 +23,8 @@ export function writeDarkThemePreference(enabled: boolean): void {
 
 export function resolveDarkTheme(
   serverValue: boolean | undefined | null,
-  subscriptionActive: boolean,
   fallback = false,
 ): boolean {
-  if (!subscriptionActive) return false;
   const local = readDarkThemePreference();
   if (local !== null) return local;
   if (serverValue === true) return true;

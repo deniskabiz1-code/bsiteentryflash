@@ -65,11 +65,6 @@ router.put('/dark-theme', validateTelegramAuth, async (req: AuthRequest, res: Re
 
     const user = await findOrCreateUser(req.telegramUser!);
 
-    if (enabled && !isSubscriptionActive(user.subscriptionEnd)) {
-      res.status(403).json({ error: 'Тёмная тема доступна по подписке' });
-      return;
-    }
-
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: { darkTheme: enabled },
