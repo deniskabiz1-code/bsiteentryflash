@@ -153,12 +153,12 @@ export default function AnalysisResult() {
         {Object.keys(scores).length > 0 && (
           <>
             <p
-              className="pointer-events-none -my-2 flex items-center justify-center text-[12px] font-semibold tracking-wide text-app-text opacity-50 select-none"
+              className="pointer-events-none -my-4 flex items-center justify-center text-[10px] font-medium leading-none tracking-wide text-app-text opacity-50 select-none"
               aria-hidden
             >
               {BOT_HANDLE}
             </p>
-            <AnalysisResultSection title="Баллы">
+            <AnalysisResultSection title="Баллы" className="[&>h2]:mb-1">
             <div className="card space-y-4">
               {Object.entries(scores).map(([key, value]) => {
                 const score = value as number;
