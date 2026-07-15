@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { fetchMe } from '@/api/client';
+import { getTgWebApp } from '@/lib/tgWebApp';
 import { User } from '@/types';
 import {
   resolvePersonalizedAnalysis,
@@ -54,7 +55,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setChannelSubscribed(data.channelSubscribed);
       setTestCreditsEnabled(Boolean(data.testCreditsEnabled));
     } catch (err) {
-      setError('Ошибка загрузки данных');
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      setError(status === 401 ? 'session_expired' : 'load_failed');
       console.error(err);
     } finally {
       setLoading(false);
@@ -75,6 +77,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refreshUser();
+  }, [refreshUser]);
+
+  useEffect(() => {
+    const webApp = getTgWebApp();
+    if (!webApp) return;
+    const onActivated = () => {
+      refreshUser();
+    };
+    webApp.onEvent('activated', onActivated);
+    return () => webApp.offEvent('activated', onActivated);
   }, [refreshUser]);
 
   return (

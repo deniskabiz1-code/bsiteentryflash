@@ -215,8 +215,8 @@ html.pf-analysis-upload #root > * {
   height: 100%;
 }
 
-html.pf-onboarding,
-html.pf-onboarding body {
+html.pf-onboarding-lock,
+html.pf-onboarding-lock body {
   overflow: hidden;
   overscroll-behavior: none;
 }
@@ -224,7 +224,10 @@ html.pf-onboarding body {
 html.pf-onboarding #root {
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  min-height: 100dvh;
+}
+
+html.pf-onboarding-lock #root {
   height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
@@ -235,16 +238,11 @@ html.pf-onboarding #root {
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
 }
 
-.onboarding-grid {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 0.75rem;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
+.onboarding-profile-step {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 @layer components {

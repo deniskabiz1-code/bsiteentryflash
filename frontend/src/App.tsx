@@ -13,9 +13,10 @@ import HairstyleAnalysis from '@/pages/HairstyleAnalysis';
 import Progress from '@/pages/Progress';
 import Profile from '@/pages/Profile';
 import FreeAnalysis from '@/pages/FreeAnalysis';
+import { shouldSkipOnboarding } from '@/utils/onboarding';
 
 function AppRoutes() {
-  const { user, loading } = useApp();
+  const { user, loading, error, refreshUser } = useApp();
   const { overlayActive } = useOverlay();
   const location = useLocation();
   const hideNavOnAnalysisUpload =
@@ -26,9 +27,29 @@ function AppRoutes() {
 
   if (loading) return <LoadingScreen />;
 
+  if (error && !user) {
+    return (
+      <div className="page">
+        <div className="page-inner space-y-4 pt-20 text-center">
+          <h1 className="heading-md">
+            {error === 'session_expired' ? 'Сессия устарела' : 'Не удалось загрузить профиль'}
+          </h1>
+          <p className="text-[15px] leading-relaxed text-app-muted">
+            {error === 'session_expired'
+              ? 'Закройте приложение и откройте Primeform снова из бота в Telegram — профиль на месте.'
+              : 'Проверьте интернет и попробуйте снова.'}
+          </p>
+          <button type="button" onClick={() => refreshUser()} className="btn-light">
+            Попробовать снова
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const skipOnboarding = import.meta.env.VITE_SKIP_ONBOARDING === 'true';
 
-  if (!user?.onboarded && !skipOnboarding) {
+  if (!skipOnboarding && !shouldSkipOnboarding(user)) {
     return (
       <Routes>
         <Route path="*" element={<Onboarding />} />

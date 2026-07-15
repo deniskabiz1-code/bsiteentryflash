@@ -6,14 +6,14 @@ import {
   getChannelOpenUrl,
   getUserProfilePhotoFilePath,
 } from '../services/telegram';
-import { serializeUser } from '../services/userProfile';
+import { repairOnboardedIfNeeded, serializeUser } from '../services/userProfile';
 import { isTestCreditsEnabled } from './user';
 
 const router = Router();
 
 router.post('/me', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
   try {
-    const user = await findOrCreateUser(req.telegramUser!);
+    const user = await repairOnboardedIfNeeded(await findOrCreateUser(req.telegramUser!));
 
     res.json({
       user: await serializeUser(user),

@@ -49,7 +49,8 @@ function validateInitData(initData: string, botToken: string): TelegramUser | nu
 
   const authDate = parseInt(params.auth_date || '0', 10);
   const now = Math.floor(Date.now() / 1000);
-  if (now - authDate > 86400) return null;
+  const maxAgeSec = parseInt(process.env.TELEGRAM_INIT_DATA_MAX_AGE_SEC || String(7 * 86400), 10);
+  if (now - authDate > maxAgeSec) return null;
 
   if (!params.user) return null;
   try {
@@ -81,7 +82,10 @@ export function validateTelegramAuth(
 
   const user = validateInitData(initData, botToken);
   if (!user) {
-    res.status(401).json({ error: 'Недействительные данные авторизации' });
+    res.status(401).json({
+      error: 'Недействительные данные авторизации',
+      hint: 'Закройте приложение и откройте Primeform снова из бота в Telegram',
+    });
     return;
   }
 

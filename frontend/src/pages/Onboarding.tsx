@@ -13,7 +13,7 @@ import { DEFAULT_CHANNEL_URL, DEFAULT_CHANNEL_USERNAME } from '@/config/channel'
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { applyUser } = useApp();
+  const { user: appUser, applyUser } = useApp();
   const submittingRef = useRef(false);
   const nameSeededFromTelegram = useRef(false);
   const openedChannelRef = useRef(false);
@@ -35,9 +35,16 @@ export default function Onboarding() {
 
   useEffect(() => {
     document.documentElement.classList.add('pf-onboarding');
-    setVerticalSwipeLock(true);
+    if (step === 0) {
+      document.documentElement.classList.add('pf-onboarding-lock');
+      setVerticalSwipeLock(true);
+    } else {
+      document.documentElement.classList.remove('pf-onboarding-lock');
+      setVerticalSwipeLock(false);
+    }
 
     const blockScroll = (event: Event) => {
+      if (step !== 0) return;
       const target = event.target;
       if (
         target instanceof Element
@@ -51,16 +58,25 @@ export default function Onboarding() {
     document.addEventListener('wheel', blockScroll, { passive: false });
 
     return () => {
-      document.documentElement.classList.remove('pf-onboarding');
+      document.documentElement.classList.remove('pf-onboarding', 'pf-onboarding-lock');
       setVerticalSwipeLock(false);
       document.removeEventListener('touchmove', blockScroll);
       document.removeEventListener('wheel', blockScroll);
     };
-  }, []);
+  }, [step]);
+
+  useEffect(() => {
+    if (appUser?.name) {
+      setName(appUser.name);
+      nameSeededFromTelegram.current = true;
+    }
+    if (appUser?.age) setAge(appUser.age);
+    if (appUser?.goals?.length) setGoals(appUser.goals);
+  }, [appUser]);
 
   useEffect(() => {
     if (nameSeededFromTelegram.current || !tgUser?.first_name) return;
-    setName(tgUser.first_name);
+    setName((prev) => prev || tgUser.first_name || '');
     nameSeededFromTelegram.current = true;
   }, [tgUser]);
 
@@ -169,7 +185,7 @@ export default function Onboarding() {
 
   return (
     <div className="onboarding-page bg-app-canvas">
-      <div className="page-inner flex min-h-0 flex-1 flex-col px-5 pb-[5.5rem] pt-2">
+      <div className="page-inner flex min-h-0 flex-1 flex-col px-5 pb-36 pt-2">
         {step === 0 && (
           <div className="flex h-full min-h-0 flex-col items-center justify-center overflow-hidden text-center">
             <UserAvatar photoUrl={photoUrl} fallbackLetter={fallbackLetter} size="lg" className="mb-5" />
@@ -186,29 +202,25 @@ export default function Onboarding() {
         )}
 
         {step === 1 && (
-          <div className="onboarding-grid min-h-0 flex-1">
-            <header className="shrink-0 text-center">
-              <h1 className="text-[22px] font-bold tracking-tight">Настройка профиля</h1>
-              <p className="mt-1 text-[13px] text-app-muted">Можно изменить в любой момент</p>
+          <div className="onboarding-profile-step flex-1 space-y-6 pb-8 pt-4">
+            <header className="text-center">
+              <h1 className="heading-md">Настройка профиля</h1>
+              <p className="mt-2 text-[14px] text-app-muted">Можно изменить в любой момент</p>
             </header>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
-              <input
-                className="input-field shrink-0 text-center"
-                placeholder="Как вас зовут?"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+            <input
+              className="input-field text-center"
+              placeholder="Как вас зовут?"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
 
-              <div className="shrink-0">
-                <AgeSlider value={age} onChange={setAge} compact />
-              </div>
+            <AgeSlider value={age} onChange={setAge} />
 
-              <GoalSelector selected={goals} onToggle={toggleGoal} compact fill />
+            <GoalSelector selected={goals} onToggle={toggleGoal} />
 
-              {error && <p className="shrink-0 text-center text-sm text-red-500">{error}</p>}
-              {hint && <p className="shrink-0 text-center text-xs text-amber-600">{hint}</p>}
-            </div>
+            {error && <p className="text-center text-sm text-red-500">{error}</p>}
+            {hint && <p className="text-center text-xs text-amber-600">{hint}</p>}
           </div>
         )}
       </div>
