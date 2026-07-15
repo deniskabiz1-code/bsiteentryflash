@@ -138,8 +138,6 @@ export default function Profile() {
   return (
     <>
     <ConditionalScrollPage remeasureKey={remeasureKey}>
-        <FreeAnalysisEntryCard />
-
         <section className="text-center pt-2">
           <UserAvatar
             photoUrl={photoUrl}
@@ -204,6 +202,8 @@ export default function Profile() {
             {user?.subscriptionActive ? 'Продлить подписку' : 'Оформить подписку'}
           </button>
         </section>
+
+        <FreeAnalysisEntryCard />
 
         <section className="card space-y-4">
           <div className="flex items-center justify-between">
