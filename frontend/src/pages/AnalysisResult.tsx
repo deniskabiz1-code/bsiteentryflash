@@ -124,14 +124,8 @@ export default function AnalysisResult() {
   return (
     <div className="page">
       <div className="page-inner space-y-5 pb-4">
-        <section className="card relative overflow-hidden">
-          <p
-            className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center text-[13px] font-semibold tracking-wide text-app-text opacity-50 select-none"
-            aria-hidden
-          >
-            {BOT_HANDLE}
-          </p>
-          <div className="relative z-10 flex items-center gap-4">
+        <section className="card">
+          <div className="flex items-center gap-4">
             {(result.photoUrl || result.id) && (
               <AnalysisPhoto
                 analysisId={result.id}
@@ -157,7 +151,14 @@ export default function AnalysisResult() {
         </section>
 
         {Object.keys(scores).length > 0 && (
-          <AnalysisResultSection title="Баллы">
+          <>
+            <p
+              className="pointer-events-none -my-2 flex items-center justify-center text-[12px] font-semibold tracking-wide text-app-text opacity-50 select-none"
+              aria-hidden
+            >
+              {BOT_HANDLE}
+            </p>
+            <AnalysisResultSection title="Баллы">
             <div className="card space-y-4">
               {Object.entries(scores).map(([key, value]) => {
                 const score = value as number;
@@ -201,6 +202,7 @@ export default function AnalysisResult() {
               </div>
             </div>
           </AnalysisResultSection>
+          </>
         )}
 
         {result.summary && (
