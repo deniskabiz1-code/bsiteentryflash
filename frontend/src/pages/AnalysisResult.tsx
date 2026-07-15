@@ -209,7 +209,14 @@ export default function AnalysisResult() {
           </AnalysisResultSection>
         )}
 
-        {isPreview && <AnalysisPaywallBanner onSubscribe={handleSubscribe} />}
+        {isPreview && (
+          <AnalysisPaywallBanner
+            onSubscribe={handleSubscribe}
+            overallScore={overall}
+            scores={scores}
+            skinType={result.skin_type}
+          />
+        )}
 
         {showFullSections && result.strengths && result.strengths.length > 0 && (
           <AnalysisResultSection title="Сильные стороны">

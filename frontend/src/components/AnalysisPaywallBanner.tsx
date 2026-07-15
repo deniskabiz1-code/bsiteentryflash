@@ -1,64 +1,158 @@
-import { Crown, Lock, Sparkles } from 'lucide-react';
+import { Check, Crown, Lock, Sparkles, X } from 'lucide-react';
+import WildberriesProductCard from '@/components/WildberriesProductCard';
+import { getSkincarePreviewProducts, SKINCARE_PRODUCT_CATALOG } from '@/data/wildberriesSkincare';
+import { SCORE_LABELS, SKIN_TYPE_LABELS } from '@/types';
 
 type AnalysisPaywallBannerProps = {
   onSubscribe: () => void;
+  overallScore?: number;
+  scores?: Record<string, number>;
+  skinType?: string;
 };
 
-const LOCKED_FEATURES = [
+const FULL_BLOCKS = [
   'Сильные стороны и зоны внимания',
-  'Быстрые улучшения и персональные советы',
-  'Подбор стрижек и план развития',
-  'Рутина ухода с товарами WB/Ozon',
+  'Быстрые улучшения и советы',
+  'Стрижки и план на 4 недели',
+  'Рутина ухода WB/Ozon',
 ];
+
+function getFocusArea(scores: Record<string, number>): string {
+  let focusKey = 'skin';
+  let lowest = 101;
+  for (const [key, value] of Object.entries(scores)) {
+    if (typeof value === 'number' && value < lowest) {
+      lowest = value;
+      focusKey = key;
+    }
+  }
+  return SCORE_LABELS[focusKey] || 'внешности';
+}
 
 export default function AnalysisPaywallBanner({
   onSubscribe,
+  overallScore,
+  scores = {},
+  skinType,
 }: AnalysisPaywallBannerProps) {
+  const focusArea = getFocusArea(scores);
+  const skinLabel = skinType ? SKIN_TYPE_LABELS[skinType] : null;
+  const teaserProduct = getSkincarePreviewProducts(1)[0];
+  const blurredInsights = [
+    `Персональный план: что улучшить в зоне «${focusArea}»`,
+    '3 стрижки под вашу форму лица с объяснением',
+    'Динамика к следующему анализу и метрики прогресса',
+  ];
+
   return (
-    <section className="card overflow-hidden !p-0">
-      <div className="bg-gradient-to-br from-app-text to-[#2a2a2e] px-5 py-5 text-white">
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10">
-            <Crown size={22} className="text-brand-green" />
+    <section className="space-y-4">
+      <div className="card overflow-hidden !p-0">
+        <div className="bg-gradient-to-br from-app-text to-[#2a2a2e] px-5 py-5 text-white">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10">
+              <Crown size={22} className="text-brand-green" />
+            </div>
+            <div className="min-w-0 space-y-1">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-white/60">
+                {typeof overallScore === 'number' ? `Ваш балл ${overallScore}/100` : 'Базовый анализ готов'}
+              </p>
+              <h2 className="text-[20px] font-bold leading-tight">
+                Откройте полный ИИ-разбор
+              </h2>
+              <p className="text-[13px] leading-snug text-white/75">
+                {skinLabel
+                  ? `Подписка соберёт план под ${skinLabel.toLowerCase()} кожу и ваши оценки — не общие советы из интернета.`
+                  : 'Подписка открывает персональный план, стрижки и уход под ваше фото.'}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0 space-y-1">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-white/60">
-              Базовый анализ готов
-            </p>
-            <h2 className="text-[20px] font-bold leading-tight">
-              Разблокируйте полный разбор
-            </h2>
-            <p className="text-[13px] leading-snug text-white/75">
-              Вы видите оценки и краткий обзор. Подписка открывает детальный план, стрижки и уход.
-            </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-px bg-app-border">
+          <div className="bg-app-surface px-4 py-3">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-app-muted">Сейчас</p>
+            <ul className="mt-2 space-y-1.5 text-[12px] text-app-muted">
+              <li className="flex items-center gap-1.5"><Check size={13} className="text-brand-greenDark" /> Оценки</li>
+              <li className="flex items-center gap-1.5"><Check size={13} className="text-brand-greenDark" /> Краткий обзор</li>
+              <li className="flex items-center gap-1.5"><X size={13} className="text-app-faint" /> Полный разбор</li>
+            </ul>
           </div>
+          <div className="bg-brand-green/10 px-4 py-3">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-brand-greenDark">Подписка</p>
+            <ul className="mt-2 space-y-1.5 text-[12px] text-app-text">
+              <li className="flex items-center gap-1.5"><Check size={13} className="text-brand-greenDark" /> Безлимит анализов</li>
+              <li className="flex items-center gap-1.5"><Check size={13} className="text-brand-greenDark" /> Все блоки ниже</li>
+              <li className="flex items-center gap-1.5"><Check size={13} className="text-brand-greenDark" /> Причёска + уход</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="space-y-3 px-5 py-4">
+          <button type="button" onClick={onSubscribe} className="btn-dark w-full">
+            Получить полный разбор — 400 ₽/мес
+          </button>
+          <p className="text-center text-[11px] text-app-muted">
+            Доступ сразу после оплаты · отмена в любой момент
+          </p>
         </div>
       </div>
 
-      <div className="space-y-3 px-5 py-4">
-        <ul className="space-y-2">
-          {LOCKED_FEATURES.map((feature) => (
-            <li key={feature} className="flex items-start gap-2.5 text-[14px] leading-snug">
-              <Sparkles size={15} className="mt-0.5 shrink-0 text-brand-greenDark" />
-              <span>{feature}</span>
-            </li>
+      <div className="card space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-[15px] font-bold">Пример полного разбора</h3>
+          <span className="pill-gray inline-flex items-center gap-1 text-[10px] font-semibold">
+            <Lock size={10} />
+            Скрыто
+          </span>
+        </div>
+        <p className="text-[13px] leading-snug text-app-muted">
+          Фокус по вашему фото: <span className="font-semibold text-app-text">{focusArea}</span>
+        </p>
+        <div className="space-y-2 rounded-2xl border border-app-border bg-app-canvas/40 p-3">
+          {blurredInsights.map((line, i) => (
+            <div
+              key={line}
+              className={`flex items-start gap-2 text-[13px] leading-snug ${i > 0 ? 'blur-[3px] select-none text-app-muted/80' : 'text-app-text'}`}
+            >
+              <Sparkles size={14} className="mt-0.5 shrink-0 text-brand-greenDark" />
+              <span>{line}</span>
+            </div>
           ))}
-        </ul>
-
-        <div className="rounded-2xl border border-dashed border-app-border bg-app-track/40 px-4 py-3">
-          <p className="flex items-center gap-2 text-[13px] font-semibold text-app-text">
-            <Lock size={14} />
-            8+ персональных блоков скрыто
-          </p>
-          <p className="mt-1 text-[12px] leading-snug text-app-muted">
-            Подписка — безлимит полных анализов, причёска и рутина ухода.
-          </p>
         </div>
-
-        <button type="button" onClick={onSubscribe} className="btn-dark w-full">
-          Оформить подписку — 400 ₽/мес
-        </button>
+        <div className="flex flex-wrap gap-1.5">
+          {FULL_BLOCKS.map((block) => (
+            <span
+              key={block}
+              className="rounded-full bg-app-track px-2.5 py-1 text-[11px] font-medium text-app-muted"
+            >
+              {block}
+            </span>
+          ))}
+        </div>
       </div>
+
+      {teaserProduct && (
+        <div className="card !p-0 overflow-hidden">
+          <div className="flex items-center justify-between gap-2 border-b border-app-border px-4 py-3">
+            <p className="text-[14px] font-semibold">Подборка ухода</p>
+            <span className="pill-gray inline-flex items-center gap-1 text-[10px] font-semibold">
+              <Lock size={10} />
+              +{Math.max(SKINCARE_PRODUCT_CATALOG.length - 1, 1)} товаров
+            </span>
+          </div>
+          <WildberriesProductCard product={teaserProduct} previewOnly />
+          <div className="border-t border-app-border bg-app-track/30 px-4 py-2.5">
+            <p className="blur-[3px] select-none text-[12px] text-app-muted">
+              Вечер: сыворотка с азелаиновой кислотой · артикул ••••••
+            </p>
+          </div>
+          <div className="px-4 pb-4 pt-2">
+            <button type="button" onClick={onSubscribe} className="btn-accent w-full">
+              Разблокировать уход и разбор
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
