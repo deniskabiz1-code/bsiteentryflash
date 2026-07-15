@@ -133,30 +133,51 @@ export const MOCK_ANALYSES = [
 ];
 
 export const MOCK_DAILY_TASKS = {
-  streak: 5,
-  dailyTip: 'Пейте не менее 2 литров воды в день — это улучшает тонус кожи и снижает отёчность.',
+  streak: 3,
+  dailyTip: MOCK_FACE_RESULT.quick_wins?.[0]?.impact || MOCK_FACE_RESULT.summary || '',
   tasks: [
-    { category: 'skin', label: '💧 Кожа', tasks: [
-      { key: 'skin_wash_morning', label: 'Умыться утром с мягким гелем', completed: true },
-      { key: 'skin_moisturize', label: 'Нанести увлажняющий крем', completed: true },
-      { key: 'skin_spf', label: 'Нанести SPF 30+', completed: false },
-      { key: 'skin_wash_evening', label: 'Вечернее умывание', completed: false },
-    ]},
-    { category: 'jawline', label: '💪 Линия челюсти', tasks: [
-      { key: 'jawline_chew', label: '5 мин жевательной гимнастики', completed: true },
-      { key: 'jawline_posture', label: 'Держать подбородок параллельно полу', completed: false },
-    ]},
-    { category: 'puffiness', label: '😴 Отёчность', tasks: [
-      { key: 'puffiness_water', label: 'Выпить 2 л воды', completed: false },
-      { key: 'puffiness_salt', label: 'Ограничить соль после 18:00', completed: true },
-      { key: 'puffiness_sleep', label: 'Спать на спине', completed: false },
-    ]},
-    { category: 'hair', label: '✂️ Волосы/стрижка', tasks: [
-      { key: 'hair_style', label: 'Уложить волосы аккуратно', completed: true },
-    ]},
-    { category: 'symmetry', label: '⚖️ Симметрия', tasks: [
-      { key: 'symmetry_massage', label: '2 мин массажа лица', completed: false },
-    ]},
+    {
+      category: 'puffiness',
+      label: '😴 Отёчность',
+      tasks: [
+        {
+          key: 'focus_mock_water',
+          label: MOCK_FACE_RESULT.quick_wins?.[0]?.action || 'Выпить 2 л воды',
+          completed: true,
+          fromAnalysis: true,
+        },
+      ],
+    },
+    {
+      category: 'skin',
+      label: '💧 Кожа',
+      tasks: [
+        {
+          key: 'focus_mock_spf',
+          label: MOCK_FACE_RESULT.improvement_tips?.[0] || 'Нанести SPF 30+',
+          completed: false,
+          fromAnalysis: true,
+        },
+        {
+          key: 'skin_moisturize',
+          label: 'Нанести увлажняющий крем',
+          completed: false,
+          fromAnalysis: false,
+        },
+      ],
+    },
+    {
+      category: 'hair',
+      label: '✂️ Волосы/стрижка',
+      tasks: [
+        {
+          key: 'focus_mock_hair',
+          label: MOCK_FACE_RESULT.growth_plan?.[3]?.action || 'Уложить волосы аккуратно',
+          completed: false,
+          fromAnalysis: true,
+        },
+      ],
+    },
   ],
   neverDo: [
     'Выдавливать прыщи и чёрные точки',
@@ -166,4 +187,9 @@ export const MOCK_DAILY_TASKS = {
     'Трогать лицо грязными руками',
   ],
   allCompletedToday: false,
+  focusMeta: {
+    total: 4,
+    fromAnalysis: 3,
+    analysisDate: MOCK_ANALYSES[0].createdAt,
+  },
 };

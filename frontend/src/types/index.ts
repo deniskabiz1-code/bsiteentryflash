@@ -86,12 +86,19 @@ export interface DailyTask {
   key: string;
   label: string;
   completed: boolean;
+  fromAnalysis?: boolean;
 }
 
 export interface TaskGroup {
   category: string;
   label: string;
   tasks: DailyTask[];
+}
+
+export interface DailyFocusMeta {
+  total: number;
+  fromAnalysis: number;
+  analysisDate: string | null;
 }
 
 export const GOAL_LABELS: Record<string, string> = {

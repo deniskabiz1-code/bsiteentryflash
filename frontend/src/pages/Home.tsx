@@ -8,7 +8,7 @@ import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import { useDocumentScrollLock } from '@/hooks/useDocumentScrollLock';
-import { Analysis, TaskGroup } from '@/types';
+import { Analysis, DailyFocusMeta, TaskGroup } from '@/types';
 import { ChartPeriod, scoresForPeriod } from '@/utils/progressChart';
 import { pluralizeBalls } from '@/utils/russianPlural';
 export default function Home() {
@@ -20,6 +20,7 @@ export default function Home() {
   const [dailyTip, setDailyTip] = useState('');
   const [tasks, setTasks] = useState<TaskGroup[]>([]);
   const [neverDo, setNeverDo] = useState<string[]>([]);
+  const [focusMeta, setFocusMeta] = useState<DailyFocusMeta | null>(null);
   const [neverDoOpen, setNeverDoOpen] = useState(false);
   const [contentLoading, setContentLoading] = useState(true);
   const [score, setScore] = useState<number | null>(null);
@@ -44,11 +45,13 @@ export default function Home() {
         setDailyTip(taskData.dailyTip);
         setTasks(taskData.tasks);
         setNeverDo(taskData.neverDo);
+        setFocusMeta(taskData.focusMeta ?? null);
       } else {
         setStreak(0);
         setDailyTip('');
         setTasks([]);
         setNeverDo([]);
+        setFocusMeta(null);
       }
       if (face.length > 0) {
         setFaceAnalyses(face);
@@ -98,7 +101,11 @@ export default function Home() {
     (user?.faceAnalysisCount ?? 0) === 0
     && (user?.freeAnalysisAvailable ?? true);
   const hasAnalysis = (user?.faceAnalysisCount ?? 0) > 0;
-  const remeasureKey = `${hasAnalysis}-${neverDoOpen}-${completedCount}-${tasks.length}-${needsFirstAnalysis}-${score ?? 'x'}`;
+  const focusSubtitle = focusMeta?.analysisDate
+    ? `По анализу от ${new Date(focusMeta.analysisDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}`
+    : 'Под ваши цели';
+
+  const remeasureKey = `${hasAnalysis}-${neverDoOpen}-${completedCount}-${tasks.length}-${needsFirstAnalysis}-${score ?? 'x'}-${focusMeta?.fromAnalysis ?? 0}`;
   useDocumentScrollLock(contentLoading);
 
   if (contentLoading) {
@@ -183,46 +190,56 @@ export default function Home() {
 
         {hasAnalysis ? (
           <>
-            <section className="card">
-              <p className="label-sm mb-2">Совет дня</p>
-              <p className="text-[15px] leading-relaxed text-app-text">{dailyTip}</p>
-            </section>
-
             <section>
-              <div className="flex items-center justify-between mb-3 px-1">
-                <h2 className="text-[17px] font-bold">Задачи на сегодня</h2>
-                <span className="pill-gray">{completedCount}/{totalCount}</span>
+              <div className="mb-4 px-1">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-[17px] font-bold">Фокус на сегодня</h2>
+                  <span className="pill-gray shrink-0">{completedCount}/{totalCount}</span>
+                </div>
+                <p className="mt-1 text-[13px] text-app-muted">{focusSubtitle}</p>
+                {dailyTip && (
+                  <p className="mt-3 text-[14px] leading-relaxed text-app-text">{dailyTip}</p>
+                )}
               </div>
 
-              <div className="card !p-0 overflow-hidden">
+              <div className="space-y-4">
                 {tasks.map((group) => (
                   <div key={group.category}>
-                    <p className="px-5 pt-4 pb-2 text-[13px] font-semibold text-app-muted">{group.label}</p>
-                    {group.tasks.map((task) => (
-                      <button
-                        key={task.key}
-                        type="button"
-                        onClick={() => handleToggle(task.key)}
-                        className="w-full flex items-center gap-3 px-5 py-3.5 border-t border-app-border active:bg-app-canvas transition-colors"
-                      >
-                        <div
-                          className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                            task.completed
-                              ? 'bg-brand-green border-brand-green'
-                              : 'border-app-border bg-app-surface'
+                    <p className="mb-2 px-1 text-[12px] font-bold uppercase tracking-wide text-app-muted">
+                      {group.label}
+                    </p>
+                    <div className="card !p-0 overflow-hidden">
+                      {group.tasks.map((task, index) => (
+                        <button
+                          key={task.key}
+                          type="button"
+                          onClick={() => handleToggle(task.key)}
+                          className={`w-full flex items-center gap-3 px-5 py-4 active:bg-app-canvas transition-colors ${
+                            index > 0 ? 'border-t border-app-border' : ''
                           }`}
                         >
-                          {task.completed && (
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                              <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" />
-                            </svg>
+                          <div
+                            className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                              task.completed
+                                ? 'bg-brand-green border-brand-green'
+                                : 'border-app-border bg-app-surface'
+                            }`}
+                          >
+                            {task.completed && (
+                              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                              </svg>
+                            )}
+                          </div>
+                          <span className={`text-[15px] text-left flex-1 leading-snug ${task.completed ? 'text-app-muted line-through' : 'text-app-text'}`}>
+                            {task.label}
+                          </span>
+                          {task.fromAnalysis && !task.completed && (
+                            <span className="shrink-0 text-[10px] font-semibold text-brand-greenDark">AI</span>
                           )}
-                        </div>
-                        <span className={`text-[15px] text-left flex-1 ${task.completed ? 'text-app-muted line-through' : 'text-app-text'}`}>
-                          {task.label}
-                        </span>
-                      </button>
-                    ))}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -248,9 +265,9 @@ export default function Home() {
           </>
         ) : (
           <section className="card">
-            <p className="label-sm mb-2">Советы и задачи</p>
+            <p className="label-sm mb-2">Фокус на сегодня</p>
             <p className="text-[15px] leading-relaxed text-app-muted">
-              Появятся после первого анализа лица — они подстраиваются под ваши цели и результаты.
+              После первого анализа здесь появится персональный план на день — до 5 задач из ваших результатов.
             </p>
           </section>
         )}
