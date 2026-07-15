@@ -172,11 +172,6 @@ export default function Analysis() {
         <h1 className="text-[20px] font-bold leading-tight tracking-tight">
           Анализ лица
         </h1>
-        <p className="text-[13px] text-app-muted">
-          {subscribed
-            ? 'Полный разбор с советами, стрижками и уходом.'
-            : 'Бесплатно: оценки и обзор. Полный разбор — по подписке.'}
-        </p>
         <AnalysisPhotoDisclaimer />
       </div>
 
