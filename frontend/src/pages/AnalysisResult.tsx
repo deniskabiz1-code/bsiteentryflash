@@ -3,7 +3,6 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { createPayment, getAnalysis } from '@/api/client';
 import AnalysisPaywallBanner from '@/components/AnalysisPaywallBanner';
 import AnalysisResultSection from '@/components/AnalysisResultSection';
-import LockedAnalysisSection from '@/components/LockedAnalysisSection';
 import SkincareRoutineSection from '@/components/SkincareRoutineSection';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -210,46 +209,7 @@ export default function AnalysisResult() {
           </AnalysisResultSection>
         )}
 
-        {isPreview && (
-          <>
-            <AnalysisPaywallBanner onSubscribe={handleSubscribe} />
-            <LockedAnalysisSection
-              title="Сильные стороны"
-              description="ИИ выделит ваши реальные плюсы по фото — то, на что стоит опираться."
-              lockedLabels={['Чёткая линия челюсти', 'Ровный тон кожи', 'Удачная симметрия']}
-              lockedCount={2}
-              onSubscribe={handleSubscribe}
-            />
-            <LockedAnalysisSection
-              title="Зоны внимания"
-              description="Конкретные зоны лица с объяснением, что именно тянет оценку вниз."
-              lockedLabels={['Т-зона и жирность', 'Подглазничная область', 'Контур нижней челюсти']}
-              lockedCount={2}
-              onSubscribe={handleSubscribe}
-            />
-            <LockedAnalysisSection
-              title="Быстрые улучшения"
-              description="Действия на эту неделю с прогнозом эффекта — без воды и общих фраз."
-              lockedLabels={['Режим сна и вода', 'Утренний уход за 5 мин', 'Правильное селфи для трекинга']}
-              lockedCount={2}
-              onSubscribe={handleSubscribe}
-            />
-            <LockedAnalysisSection
-              title="Советы и план"
-              description="Персональные советы, динамика к прошлому анализу и пошаговый план на месяц."
-              lockedLabels={['3–5 персональных советов', 'Динамика к прошлому анализу', 'План развития на 4 шага']}
-              lockedCount={3}
-              onSubscribe={handleSubscribe}
-            />
-            <LockedAnalysisSection
-              title="Стрижки"
-              description="3 лучшие стрижки под вашу форму лица и список того, чего избегать."
-              lockedLabels={['Текстурированный кроп', 'Фейд с объёмом', 'Стили, которые вам не подходят']}
-              lockedCount={2}
-              onSubscribe={handleSubscribe}
-            />
-          </>
-        )}
+        {isPreview && <AnalysisPaywallBanner onSubscribe={handleSubscribe} />}
 
         {showFullSections && result.strengths && result.strengths.length > 0 && (
           <AnalysisResultSection title="Сильные стороны">
@@ -308,18 +268,20 @@ export default function AnalysisResult() {
           </AnalysisResultSection>
         )}
 
-        <SkincareRoutineSection
-          title="Подборка ухода"
-          routine={subscribed ? (result.skincare_routine ?? []) : []}
-          skinContext={{
-            skin_type: result.skin_type,
-            puffiness: result.puffiness,
-            problem_zones: result.problem_zones,
-            scores: result.scores,
-          }}
-          subscribed={subscribed}
-          onSubscribe={subscribed ? undefined : handleSubscribe}
-        />
+        {!isPreview && (
+          <SkincareRoutineSection
+            title="Подборка ухода"
+            routine={subscribed ? (result.skincare_routine ?? []) : []}
+            skinContext={{
+              skin_type: result.skin_type,
+              puffiness: result.puffiness,
+              problem_zones: result.problem_zones,
+              scores: result.scores,
+            }}
+            subscribed={subscribed}
+            onSubscribe={subscribed ? undefined : handleSubscribe}
+          />
+        )}
 
         {showFullSections && (result.best_haircuts?.length ?? 0) > 0 && (
           <AnalysisResultSection title="Лучшие стрижки">
