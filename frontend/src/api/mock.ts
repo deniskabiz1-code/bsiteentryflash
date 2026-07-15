@@ -37,10 +37,21 @@ export const mockApi = {
 
   analyzeFace: async (_photo: File) => {
     await delay(1500);
+    const useFull = (user.referralCredits ?? 0) > 0 || user.subscriptionActive;
     const analysis = {
       id: analyses.length + 1,
-      ...MOCK_FACE_RESULT,
+      ...(useFull
+        ? MOCK_FACE_RESULT
+        : {
+            overall_score: MOCK_FACE_RESULT.overall_score,
+            scores: MOCK_FACE_RESULT.scores,
+            skin_type: MOCK_FACE_RESULT.skin_type,
+            puffiness: MOCK_FACE_RESULT.puffiness,
+            summary: MOCK_FACE_RESULT.summary,
+          }),
       photoUrl: MOCK_ANALYSES[0].photoUrl,
+      accessTier: useFull ? 'full' : 'free',
+      contentLevel: useFull ? (user.subscriptionActive ? 'premium' : 'full') : 'preview',
     };
     return { analysis };
   },

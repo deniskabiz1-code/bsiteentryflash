@@ -72,11 +72,16 @@ export interface HairstyleResult {
   barber_brief: string;
 }
 
+export type AnalysisAccessTier = 'free' | 'full';
+export type AnalysisContentLevel = 'preview' | 'full' | 'premium';
+
 export interface Analysis {
   id: number;
   type: 'face' | 'hairstyle';
   photoUrl: string;
   overallScore: number | null;
+  accessTier?: AnalysisAccessTier;
+  contentLevel?: AnalysisContentLevel;
   resultJson: FaceAnalysisResult | HairstyleResult;
   demo?: boolean;
   createdAt: string;

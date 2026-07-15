@@ -17,9 +17,9 @@ export default function FreeAnalysisEntryCard() {
         <div className="flex items-start gap-3">
           <Gift size={22} className="shrink-0 text-brand-greenDark mt-0.5" />
           <div>
-            <p className="text-[15px] font-bold text-brand-greenDark">Бесплатные анализы</p>
+            <p className="text-[15px] font-bold text-brand-greenDark">Полные анализы</p>
             <p className="text-[13px] leading-snug text-app-muted mt-1">
-              Реферальная ссылка, TikTok и другие способы получить +1 анализ
+              Пригласите друга — получите полный разбор бесплатно
             </p>
           </div>
         </div>

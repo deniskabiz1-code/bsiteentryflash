@@ -1,4 +1,9 @@
-import { Analysis, FaceAnalysisResult } from '@/types';
+import {
+  Analysis,
+  AnalysisAccessTier,
+  AnalysisContentLevel,
+  FaceAnalysisResult,
+} from '@/types';
 
 export type AnalysisResultView = FaceAnalysisResult & {
   overall_score: number;
@@ -6,6 +11,8 @@ export type AnalysisResultView = FaceAnalysisResult & {
   id?: number;
   createdAt?: string;
   demo?: boolean;
+  accessTier?: AnalysisAccessTier;
+  contentLevel?: AnalysisContentLevel;
 };
 
 export function toAnalysisResultView(
@@ -25,5 +32,7 @@ export function toAnalysisResultView(
     id: record.id,
     createdAt: record.createdAt,
     demo: demoFlag,
+    accessTier: record.accessTier,
+    contentLevel: record.contentLevel,
   };
 }

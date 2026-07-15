@@ -103,6 +103,7 @@ export const MOCK_ANALYSES = [
     type: 'face' as const,
     photoUrl: photo(12),
     overallScore: 81,
+    accessTier: 'full' as const,
     resultJson: {
       ...MOCK_FACE_RESULT,
       overall_score: 81,
@@ -115,7 +116,15 @@ export const MOCK_ANALYSES = [
     type: 'face' as const,
     photoUrl: photo(33),
     overallScore: 64,
-    resultJson: MOCK_FACE_RESULT,
+    accessTier: 'free' as const,
+    contentLevel: 'preview' as const,
+    resultJson: {
+      overall_score: MOCK_FACE_RESULT.overall_score,
+      scores: MOCK_FACE_RESULT.scores,
+      skin_type: MOCK_FACE_RESULT.skin_type,
+      puffiness: MOCK_FACE_RESULT.puffiness,
+      summary: MOCK_FACE_RESULT.summary,
+    },
     createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
   },
   {

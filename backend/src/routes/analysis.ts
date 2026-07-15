@@ -19,17 +19,13 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../utils/prisma';
 import { wantsPersonalizedAnalysis } from '../utils/booleanSetting';
 import { enrichAnalysisInsights } from '../services/analysisInsights';
+import {
+  resolveAccessTier,
+  resolveContentLevel,
+  sanitizeFaceResultForClient,
+} from '../utils/analysisAccess';
 
 const router = Router();
-
-function sanitizeFaceResultForClient<T extends Record<string, unknown>>(
-  result: T,
-  subscribed: boolean,
-): T {
-  if (subscribed || !('skincare_routine' in result)) return result;
-  const { skincare_routine: _removed, ...rest } = result;
-  return rest as T;
-}
 
 function sanitizeAnalysisRecord(
   analysis: {
@@ -37,16 +33,21 @@ function sanitizeAnalysisRecord(
     type: string;
     photoUrl: string;
     overallScore: number | null;
+    accessTier?: string | null;
     resultJson: unknown;
     createdAt: Date;
   },
   subscribed: boolean,
 ) {
-  if (analysis.type !== 'face') return analysis;
+  const contentLevel = resolveContentLevel(analysis.accessTier, subscribed);
+  if (analysis.type !== 'face') {
+    return { ...analysis, contentLevel };
+  }
   const resultJson = enrichAnalysisInsights(analysis.resultJson as Record<string, unknown>);
   return {
     ...analysis,
-    resultJson: sanitizeFaceResultForClient(resultJson, subscribed),
+    contentLevel,
+    resultJson: sanitizeFaceResultForClient(resultJson, contentLevel),
   };
 }
 
@@ -130,7 +131,7 @@ async function canPerformAnalysis(
   return {
     allowed: false,
     useCredit: false,
-    reason: 'Бесплатный анализ уже использован. Нужна подписка или реферальные кредиты',
+    reason: 'Бесплатный анализ уже использован. Нужна подписка или реферальный кредит на полный анализ',
   };
 }
 
@@ -160,7 +161,10 @@ router.post(
         return;
       }
 
-      const usePersonalized = wantsPersonalizedAnalysis(
+      const subscribed = isSubscriptionActive(user.subscriptionEnd);
+      const accessTier = resolveAccessTier(subscribed, access.useCredit);
+      const contentLevel = resolveContentLevel(accessTier, subscribed);
+      const usePersonalized = accessTier === 'full' && wantsPersonalizedAnalysis(
         user.personalizedAnalysis,
         req.body?.personalized,
       );
@@ -174,14 +178,20 @@ router.post(
           })
         : [];
 
-      const { data: result, demo } = await analyzeFace(req.file.path, {
-        name: usePersonalized ? user.name : null,
-        age: usePersonalized ? user.age : null,
-        goals: usePersonalized ? user.goals : [],
-        previousAnalyses: priorFace.map((a) =>
-          toFaceHistoryEntry(a.createdAt, a.overallScore, a.resultJson),
-        ),
-      });
+      const { data: result, demo } = await analyzeFace(
+        req.file.path,
+        usePersonalized
+          ? {
+              name: user.name,
+              age: user.age,
+              goals: user.goals,
+              previousAnalyses: priorFace.map((a) =>
+                toFaceHistoryEntry(a.createdAt, a.overallScore, a.resultJson),
+              ),
+            }
+          : undefined,
+        accessTier === 'free' ? 'lite' : 'full',
+      );
       const overallScore = (result.overall_score as number) || 0;
 
       const photoBytes = readPhotoBytes(req.file.path);
@@ -193,6 +203,7 @@ router.post(
           photoData: photoBytes ? (photoBytes as Uint8Array<ArrayBuffer>) : undefined,
           resultJson: result as Prisma.InputJsonValue,
           overallScore,
+          accessTier,
           demo,
         },
       });
@@ -202,14 +213,13 @@ router.post(
           where: { id: user.id },
           data: { referralCredits: { decrement: 1 } },
         });
-      } else if (!isSubscriptionActive(user.subscriptionEnd)) {
+      } else if (!subscribed) {
         await markTelegramFreeTrialUsed(user.telegramId);
       }
 
-      const subscribed = isSubscriptionActive(user.subscriptionEnd);
       const clientResult = sanitizeFaceResultForClient(
         result as Record<string, unknown>,
-        subscribed,
+        contentLevel,
       );
 
       res.json({
@@ -217,6 +227,8 @@ router.post(
           id: analysis.id,
           ...clientResult,
           photoUrl: analysis.photoUrl,
+          accessTier,
+          contentLevel,
           demo,
         },
       });
@@ -291,6 +303,7 @@ router.post(
           photoData: photoBytes ? (photoBytes as Uint8Array<ArrayBuffer>) : undefined,
           sidePhotoUrl: `/uploads/${side.filename}`,
           resultJson: result as Prisma.InputJsonValue,
+          accessTier: 'full',
           demo,
         },
       });
@@ -300,6 +313,8 @@ router.post(
           id: analysis.id,
           ...result,
           photoUrl: analysis.photoUrl,
+          accessTier: 'full',
+          contentLevel: 'premium',
           demo,
         },
       });
@@ -389,6 +404,7 @@ router.get('/history', validateTelegramAuth, async (req: AuthRequest, res: Respo
         type: true,
         photoUrl: true,
         overallScore: true,
+        accessTier: true,
         resultJson: true,
         createdAt: true,
       },

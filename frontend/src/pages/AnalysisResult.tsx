@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { createPayment, getAnalysis } from '@/api/client';
+import AnalysisPaywallBanner from '@/components/AnalysisPaywallBanner';
 import AnalysisResultSection from '@/components/AnalysisResultSection';
+import LockedAnalysisSection from '@/components/LockedAnalysisSection';
 import SkincareRoutineSection from '@/components/SkincareRoutineSection';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
@@ -10,11 +12,21 @@ import {
   SKIN_TYPE_LABELS,
   PUFFINESS_LABELS,
   FACE_SHAPE_LABELS,
+  type AnalysisContentLevel,
 } from '@/types';
 import { scoreBarTone, scoreInsightLabel, scoreInsightTone } from '@/utils/scoreInsight';
 import AnalysisPhoto from '@/components/AnalysisPhoto';
 import AnalysisPhotoDisclaimer from '@/components/AnalysisPhotoDisclaimer';
 import { toAnalysisResultView, type AnalysisResultView } from '@/utils/analysisView';
+
+function resolveContentLevel(
+  result: AnalysisResultView,
+  subscribed: boolean,
+): AnalysisContentLevel {
+  if (result.contentLevel) return result.contentLevel;
+  if (result.accessTier === 'full') return subscribed ? 'premium' : 'full';
+  return 'preview';
+}
 
 export default function AnalysisResult() {
   const { id } = useParams();
@@ -93,6 +105,9 @@ export default function AnalysisResult() {
 
   const overall = result.overall_score || 0;
   const subscribed = Boolean(user?.subscriptionActive);
+  const contentLevel = resolveContentLevel(result, subscribed);
+  const isPreview = contentLevel === 'preview';
+  const showFullSections = contentLevel === 'full' || contentLevel === 'premium';
   const scores = result.scores || {};
   const progress = result.progress_vs_last;
   const metricDeltas = progress?.has_previous ? progress.metric_deltas : null;
@@ -126,7 +141,7 @@ export default function AnalysisResult() {
                 {overall}
                 <span className="text-[18px] font-semibold text-app-muted">/100</span>
               </p>
-              {progress?.has_previous && progress.overall_delta !== 0 && (
+              {showFullSections && progress?.has_previous && progress.overall_delta !== 0 && (
                 <span className={`mt-2 inline-flex pill-green text-[11px] ${progress.overall_delta < 0 ? '!bg-red-50 !text-red-600' : ''}`}>
                   {formatDelta(progress.overall_delta)} к прошлому
                 </span>
@@ -151,7 +166,7 @@ export default function AnalysisResult() {
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        {typeof delta === 'number' && delta !== 0 && (
+                        {showFullSections && typeof delta === 'number' && delta !== 0 && (
                           <span className={`text-[11px] font-semibold ${delta >= 0 ? 'text-brand-greenDark' : 'text-red-500'}`}>
                             {formatDelta(delta)}
                           </span>
@@ -188,7 +203,51 @@ export default function AnalysisResult() {
           </AnalysisResultSection>
         )}
 
-        {result.strengths && result.strengths.length > 0 && (
+        {isPreview && (
+          <>
+            <AnalysisPaywallBanner
+              onSubscribe={handleSubscribe}
+              onGetFullAnalysis={() => navigate('/free-analysis')}
+            />
+            <LockedAnalysisSection
+              title="Сильные стороны"
+              description="ИИ выделит ваши реальные плюсы по фото — то, на что стоит опираться."
+              lockedLabels={['Чёткая линия челюсти', 'Ровный тон кожи', 'Удачная симметрия']}
+              lockedCount={2}
+              onSubscribe={handleSubscribe}
+            />
+            <LockedAnalysisSection
+              title="Зоны внимания"
+              description="Конкретные зоны лица с объяснением, что именно тянет оценку вниз."
+              lockedLabels={['Т-зона и жирность', 'Подглазничная область', 'Контур нижней челюсти']}
+              lockedCount={2}
+              onSubscribe={handleSubscribe}
+            />
+            <LockedAnalysisSection
+              title="Быстрые улучшения"
+              description="Действия на эту неделю с прогнозом эффекта — без воды и общих фраз."
+              lockedLabels={['Режим сна и вода', 'Утренний уход за 5 мин', 'Правильное селфи для трекинга']}
+              lockedCount={2}
+              onSubscribe={handleSubscribe}
+            />
+            <LockedAnalysisSection
+              title="Советы и план"
+              description="Персональные советы, динамика к прошлому анализу и пошаговый план на месяц."
+              lockedLabels={['3–5 персональных советов', 'Динамика к прошлому анализу', 'План развития на 4 шага']}
+              lockedCount={3}
+              onSubscribe={handleSubscribe}
+            />
+            <LockedAnalysisSection
+              title="Стрижки"
+              description="3 лучшие стрижки под вашу форму лица и список того, чего избегать."
+              lockedLabels={['Текстурированный кроп', 'Фейд с объёмом', 'Стили, которые вам не подходят']}
+              lockedCount={2}
+              onSubscribe={handleSubscribe}
+            />
+          </>
+        )}
+
+        {showFullSections && result.strengths && result.strengths.length > 0 && (
           <AnalysisResultSection title="Сильные стороны">
             <ul className="card space-y-3">
               {result.strengths.map((item, i) => (
@@ -201,7 +260,7 @@ export default function AnalysisResult() {
           </AnalysisResultSection>
         )}
 
-        {result.problem_zones && result.problem_zones.length > 0 && (
+        {showFullSections && result.problem_zones && result.problem_zones.length > 0 && (
           <AnalysisResultSection title="Зоны внимания">
             <div className="card space-y-4">
               {result.problem_zones.map((zone, i) => (
@@ -214,7 +273,7 @@ export default function AnalysisResult() {
           </AnalysisResultSection>
         )}
 
-        {result.quick_wins && result.quick_wins.length > 0 && (
+        {showFullSections && result.quick_wins && result.quick_wins.length > 0 && (
           <AnalysisResultSection title="Быстрые улучшения">
             <div className="card space-y-4">
               {result.quick_wins.map((win, i) => (
@@ -227,7 +286,7 @@ export default function AnalysisResult() {
           </AnalysisResultSection>
         )}
 
-        {result.improvement_tips && result.improvement_tips.length > 0 && (
+        {showFullSections && result.improvement_tips && result.improvement_tips.length > 0 && (
           <AnalysisResultSection title="Советы">
             <ul className="card space-y-3">
               {result.improvement_tips.map((tip, i) => (
@@ -239,7 +298,7 @@ export default function AnalysisResult() {
           </AnalysisResultSection>
         )}
 
-        {progress?.has_previous && progress.summary && (
+        {showFullSections && progress?.has_previous && progress.summary && (
           <AnalysisResultSection title="Динамика">
             <p className="card text-[14px] leading-relaxed text-brand-greenDark">{progress.summary}</p>
           </AnalysisResultSection>
@@ -258,7 +317,7 @@ export default function AnalysisResult() {
           onSubscribe={subscribed ? undefined : handleSubscribe}
         />
 
-        {(result.best_haircuts?.length ?? 0) > 0 && (
+        {showFullSections && (result.best_haircuts?.length ?? 0) > 0 && (
           <AnalysisResultSection title="Лучшие стрижки">
             <div className="card space-y-4">
               {result.face_shape && (
@@ -279,7 +338,7 @@ export default function AnalysisResult() {
           </AnalysisResultSection>
         )}
 
-        {result.haircuts_to_avoid && result.haircuts_to_avoid.length > 0 && (
+        {showFullSections && result.haircuts_to_avoid && result.haircuts_to_avoid.length > 0 && (
           <AnalysisResultSection title="Стрижки — избегать">
             <ul className="card space-y-3">
               {result.haircuts_to_avoid.map((item, i) => (
@@ -291,8 +350,7 @@ export default function AnalysisResult() {
           </AnalysisResultSection>
         )}
 
-        {/* ——— План ——— */}
-        {result.growth_plan?.length > 0 && (
+        {showFullSections && result.growth_plan?.length > 0 && (
           <AnalysisResultSection title="План развития">
             <div className="card space-y-0 divide-y divide-app-border">
               {result.growth_plan.map((step) => (

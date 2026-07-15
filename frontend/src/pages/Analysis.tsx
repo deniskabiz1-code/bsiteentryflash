@@ -94,7 +94,7 @@ export default function Analysis() {
     ? 'Анализируем...'
     : photo
       ? isFirstAnalysis
-        ? 'Начать бесплатный анализ'
+        ? 'Получить оценку бесплатно'
         : 'Начать анализ'
       : 'Сначала сделайте селфи';
 
@@ -142,7 +142,7 @@ export default function Analysis() {
             onClick={() => navigate('/free-analysis')}
             className="btn-accent"
           >
-            Получить бесплатный анализ
+            Получить полный анализ
           </button>
           <button
             type="button"
@@ -163,13 +163,13 @@ export default function Analysis() {
           <div className="space-y-1.5">
             <span className="pill-green inline-flex">
               <Sparkles size={14} />
-              1 анализ бесплатно
+              Оценка бесплатно
             </span>
             <h1 className="text-[22px] font-bold leading-snug tracking-tight break-words">
               {greeting}
             </h1>
             <p className="text-[14px] leading-snug text-app-muted">
-              Сделайте селфи — ИИ бесплатно оценит внешность.
+              Сделайте селфи — бесплатно получите оценки и краткий обзор.
             </p>
             <AnalysisPhotoDisclaimer compact className="pt-1" />
           </div>

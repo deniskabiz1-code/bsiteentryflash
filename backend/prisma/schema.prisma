@@ -47,6 +47,7 @@ model Analysis {
   sidePhotoUrl String?
   resultJson   Json
   overallScore Int?
+  accessTier   String   @default("full") // free = preview only; full = referral or subscription run
   demo         Boolean  @default(false)
   createdAt    DateTime @default(now())
 }

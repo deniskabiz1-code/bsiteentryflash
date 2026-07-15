@@ -285,6 +285,45 @@ function getFaceAnalysisPrompt(): string {
   return `${FACE_ANALYSIS_PROMPT}${buildSkincareCatalogPromptSection()}`;
 }
 
+const FACE_ANALYSIS_LITE_PROMPT = `You are an expert facial analyst. Analyze the provided face photo and return ONLY valid JSON with this exact structure:
+
+{
+"overall_score": <integer 0-100>,
+"scores": {
+"skin": <integer 0-100>,
+"jawline": <integer 0-100>,
+"symmetry": <integer 0-100>,
+"hairstyle": <integer 0-100>
+},
+"skin_type": "dry" | "oily" | "combination" | "normal",
+"puffiness": "low" | "medium" | "high",
+"summary": "<2 short sentences in Russian: honest overview of skin, strongest feature, and main area to improve>"
+}
+
+SCORING RULES (mandatory):
+- Use the full range 48–88 for overall_score. Sub-scores should often differ by 10–25 points.
+- overall_score = rounded mean of the four sub-scores (±5 max adjustment).
+- Be honest, not flattering.
+
+All text must be in Russian. Do not include any text outside the JSON object.`;
+
+function normalizeLiteFaceAnalysisResult(
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    overall_score: data.overall_score,
+    scores: data.scores,
+    skin_type: data.skin_type,
+    puffiness: data.puffiness,
+    summary: data.summary,
+  };
+}
+
+function toLiteDemoResult(): Record<string, unknown> {
+  const { overall_score, scores, skin_type, puffiness, summary } = DEMO_FACE_RESULT;
+  return { overall_score, scores, skin_type, puffiness, summary };
+}
+
 function normalizeFaceAnalysisResult(
   data: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -528,30 +567,37 @@ function buildDemoProgress(context?: FaceAnalysisUserContext): Record<string, un
 export async function analyzeFace(
   photoPath: string,
   context?: FaceAnalysisUserContext,
+  mode: 'lite' | 'full' = 'full',
 ): Promise<AnalysisRunResult> {
-  const userText = buildFaceAnalysisUserMessage(context);
+  const lite = mode === 'lite';
+  const userText = lite
+    ? 'Проанализируй это фото и верни JSON с оценками и кратким обзором.'
+    : buildFaceAnalysisUserMessage(context);
 
   if (shouldUseDemoAnalysis()) {
-    console.log('[demo] Face analysis — demo mode');
+    console.log(`[demo] Face analysis (${mode}) — demo mode`);
     await demoDelay();
     return {
-      data: normalizeFaceAnalysisResult({
-        ...DEMO_FACE_RESULT,
-        ...buildDemoProgress(context),
-      }),
+      data: lite
+        ? normalizeLiteFaceAnalysisResult(toLiteDemoResult())
+        : normalizeFaceAnalysisResult({
+            ...DEMO_FACE_RESULT,
+            ...buildDemoProgress(context),
+          }),
       demo: true,
     };
   }
 
   try {
-    const data = normalizeFaceAnalysisResult(
-      await callVision(
-        getFaceAnalysisPrompt(),
-        [photoPath],
-        { temperature: 0.85 },
-        userText,
-      ) as Record<string, unknown>,
-    );
+    const raw = await callVision(
+      lite ? FACE_ANALYSIS_LITE_PROMPT : getFaceAnalysisPrompt(),
+      [photoPath],
+      { temperature: lite ? 0.7 : 0.85 },
+      userText,
+    ) as Record<string, unknown>;
+    const data = lite
+      ? normalizeLiteFaceAnalysisResult(raw)
+      : normalizeFaceAnalysisResult(raw);
     return { data, demo: false };
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
@@ -560,10 +606,12 @@ export async function analyzeFace(
       console.warn('[ai] AI_FALLBACK_DEMO=true — returning demo face result');
       await demoDelay();
       return {
-        data: normalizeFaceAnalysisResult({
-          ...DEMO_FACE_RESULT,
-          ...buildDemoProgress(context),
-        }),
+        data: lite
+          ? normalizeLiteFaceAnalysisResult(toLiteDemoResult())
+          : normalizeFaceAnalysisResult({
+              ...DEMO_FACE_RESULT,
+              ...buildDemoProgress(context),
+            }),
         demo: true,
       };
     }
