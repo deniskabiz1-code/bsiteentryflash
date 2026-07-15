@@ -189,9 +189,15 @@ export default function Profile() {
               До {new Date(user.subscriptionEnd).toLocaleDateString('ru-RU')}
             </p>
           )}
+          {!user?.subscriptionActive && (
+            <p className="text-[13px] leading-snug text-app-muted">
+              Оценки и обзор — бесплатно всегда. Подписка открывает полный ИИ-разбор.
+            </p>
+          )}
           <ul className="space-y-2 text-[14px] text-app-muted">
-            <li>· Безлимитный анализ лица и причёски</li>
-            <li>· Персональная рутина ухода с подборкой WB и Ozon</li>
+            <li>· Полный разбор: советы, зоны, стрижки и план</li>
+            <li>· Безлимит анализов лица с динамикой прогресса</li>
+            <li>· Анализ причёски и персональная рутина WB/Ozon</li>
           </ul>
           <p className="text-[14px] font-semibold text-app-text">400 ₽/мес</p>
           <button type="button" onClick={handleSubscribe} className="btn-dark">
