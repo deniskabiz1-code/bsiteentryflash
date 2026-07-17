@@ -8,6 +8,7 @@ import {
 } from '@/api/client';
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import FreeAnalysisEntryCard from '@/components/FreeAnalysisEntryCard';
+import TestCreditButton from '@/components/TestCreditButton';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useTelegramPhoto } from '@/hooks/useTelegramPhoto';
@@ -21,7 +22,7 @@ import { usePersonalizedAnalysisToggle } from '@/hooks/usePersonalizedAnalysisTo
 import { useDarkThemeToggle } from '@/hooks/useDarkThemeToggle';
 
 export default function Profile() {
-  const { user, refreshUser, applyUser } = useApp();
+  const { user, refreshUser, applyUser, testCreditsEnabled } = useApp();
   const { openLink, haptic } = useTelegram();
   const photoUrl = useTelegramPhoto();
 
@@ -189,6 +190,16 @@ export default function Profile() {
         </section>
 
         <FreeAnalysisEntryCard />
+
+        {testCreditsEnabled && (
+          <section className="card-green space-y-3">
+            <p className="text-[15px] font-bold text-brand-greenDark">Бесплатный полный анализ</p>
+            <p className="text-[13px] leading-snug text-app-muted">
+              +1 кредит на полный разбор. Можно открыть прошлый анализ в истории или сделать новый.
+            </p>
+            <TestCreditButton variant="accent" showCredits label="Получить 1 полный анализ" />
+          </section>
+        )}
 
         <section className="card space-y-4">
           <div className="flex items-center justify-between">

@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Copy, Crown, Share2 } from 'lucide-react';
+import { ArrowLeft, Copy, Crown, Gift, Share2 } from 'lucide-react';
 import { createPayment, getReferralInfo } from '@/api/client';
+import TestCreditButton from '@/components/TestCreditButton';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 
 export default function FreeAnalysis() {
   const navigate = useNavigate();
-  const { user } = useApp();
+  const { user, testCreditsEnabled } = useApp();
   const { haptic, openLink } = useTelegram();
 
   const [referral, setReferral] = useState<{
@@ -15,8 +16,12 @@ export default function FreeAnalysis() {
     referralCredits: number;
   } | null>(null);
 
-  useEffect(() => {
+  const refreshReferral = () => {
     getReferralInfo().then(setReferral).catch(() => {});
+  };
+
+  useEffect(() => {
+    refreshReferral();
   }, []);
 
   const handleSubscribe = async () => {
@@ -77,6 +82,31 @@ export default function FreeAnalysis() {
             {user?.subscriptionActive ? 'Продлить подписку' : 'Оформить подписку'}
           </button>
         </section>
+
+        {testCreditsEnabled && (
+          <section className="card-green space-y-3">
+            <div className="flex items-start gap-3">
+              <Gift size={22} className="mt-0.5 shrink-0 text-brand-greenDark" />
+              <div className="min-w-0 space-y-1">
+                <p className="text-[15px] font-bold text-brand-greenDark">Бесплатный полный анализ</p>
+                <p className="text-[13px] leading-snug text-app-muted">
+                  Начислите себе 1 кредит. Потом откройте прошлый разбор в истории или сделайте новый анализ.
+                </p>
+              </div>
+            </div>
+            <TestCreditButton
+              variant="accent"
+              showCredits
+              label="Получить 1 полный анализ"
+              onGranted={(credits) => {
+                setReferral((prev) =>
+                  prev ? { ...prev, referralCredits: credits } : prev,
+                );
+                refreshReferral();
+              }}
+            />
+          </section>
+        )}
 
         <section className="card space-y-4">
           <h2 className="text-[17px] font-bold flex items-center gap-2">
