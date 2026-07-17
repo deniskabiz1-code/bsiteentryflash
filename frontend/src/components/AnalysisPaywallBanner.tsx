@@ -103,7 +103,7 @@ export default function AnalysisPaywallBanner({
 
         <div className="space-y-3 px-5 py-4">
           <button type="button" onClick={onSubscribe} className="btn-dark w-full">
-            Получить полный разбор, 400 ₽/мес
+            400 ₽/мес
           </button>
           <p className="text-center text-[11px] text-app-muted">
             Доступ сразу после оплаты · отмена в любой момент

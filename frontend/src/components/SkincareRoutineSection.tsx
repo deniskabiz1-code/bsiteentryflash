@@ -131,7 +131,7 @@ export default function SkincareRoutineSection({
           </div>
           {onSubscribe && (
             <button type="button" onClick={onSubscribe} className="btn-dark !py-3.5 text-[14px]">
-              Подписка, 400 ₽/мес
+              400 ₽/мес
             </button>
           )}
         </div>
@@ -192,7 +192,7 @@ export default function SkincareRoutineSection({
         </p>
         {onSubscribe && (
           <button type="button" onClick={onSubscribe} className="btn-dark">
-            Оформить подписку, 400 ₽/мес
+            400 ₽/мес
           </button>
         )}
       </div>
