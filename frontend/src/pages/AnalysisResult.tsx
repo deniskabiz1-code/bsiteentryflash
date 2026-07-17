@@ -165,43 +165,47 @@ export default function AnalysisResult() {
   return (
     <div className="page">
       <div key={id || 'result'} className="page-inner page-animate space-y-5 pb-4">
-        <section className="card">
-          <div className="flex items-center gap-4">
-            {(result.photoUrl || result.id) && (
-              <AnalysisPhoto
-                analysisId={result.id}
-                photoUrl={result.photoUrl}
-                alt="Анализ"
-                className="h-24 w-24 shrink-0 rounded-2xl object-cover shadow-card anim-scale-in"
-              />
-            )}
-            <div className="min-w-0 flex-1">
-              {formattedDate && <p className="label-sm mb-1">{formattedDate}</p>}
-              <p className="text-[13px] text-app-muted">Общий балл</p>
-              <p className="text-[40px] font-bold leading-none tracking-tight">
-                <span className="anim-score-pop tabular-nums">{overall}</span>
-                <span className="text-[18px] font-semibold text-app-muted">/100</span>
-              </p>
-              {showFullSections && progress?.has_previous && progress.overall_delta !== 0 && (
-                <span className={`mt-2 inline-flex pill-green text-[11px] ${progress.overall_delta < 0 ? '!bg-red-50 !text-red-600' : ''}`}>
-                  {formatDelta(progress.overall_delta)} к прошлому
-                </span>
+        {/* Score card + scores card as one unit so watermark sits exactly mid-gap */}
+        <div>
+          <section className="card">
+            <div className="flex items-center gap-4">
+              {(result.photoUrl || result.id) && (
+                <AnalysisPhoto
+                  analysisId={result.id}
+                  photoUrl={result.photoUrl}
+                  alt="Анализ"
+                  className="h-24 w-24 shrink-0 rounded-2xl object-cover shadow-card anim-scale-in"
+                />
               )}
+              <div className="min-w-0 flex-1">
+                {formattedDate && <p className="label-sm mb-1">{formattedDate}</p>}
+                <p className="text-[13px] text-app-muted">Общий балл</p>
+                <p className="text-[40px] font-bold leading-none tracking-tight">
+                  <span className="anim-score-pop tabular-nums">{overall}</span>
+                  <span className="text-[18px] font-semibold text-app-muted">/100</span>
+                </p>
+                {showFullSections && progress?.has_previous && progress.overall_delta !== 0 && (
+                  <span className={`mt-2 inline-flex pill-green text-[11px] ${progress.overall_delta < 0 ? '!bg-red-50 !text-red-600' : ''}`}>
+                    {formatDelta(progress.overall_delta)} к прошлому
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {Object.keys(scores).length > 0 && (
-          <div className="relative">
-            {/* Center watermark in the existing space-y-5 gap (1.25rem). Does not change gap size */}
-            <p
-              className="pointer-events-none absolute left-0 right-0 top-0 z-10 -mt-2.5 -translate-y-1/2 text-center text-[10px] font-medium leading-none tracking-wide text-app-text opacity-50 select-none"
-              aria-hidden
-            >
-              {BOT_HANDLE}
-            </p>
-            <AnalysisResultSection title="Баллы">
-              <div className="card space-y-4">
+          {Object.keys(scores).length > 0 && (
+            <>
+              {/* Only gap between the two white cards — watermark vertically centered */}
+              <div className="flex h-9 items-center justify-center" aria-hidden>
+                <p className="text-center text-[10px] font-medium leading-none tracking-wide text-app-text opacity-50 select-none">
+                  {BOT_HANDLE}
+                </p>
+              </div>
+
+              <div className="card space-y-4 anim-fade-in">
+                <h2 className="text-[12px] font-bold uppercase tracking-wide text-app-muted">
+                  Баллы
+                </h2>
                 {Object.entries(scores).map(([key, value], index) => {
                   const score = value as number;
                   const delta = metricDeltas?.[key as keyof typeof metricDeltas];
@@ -246,9 +250,9 @@ export default function AnalysisResult() {
                   </div>
                 </div>
               </div>
-            </AnalysisResultSection>
-          </div>
-        )}
+            </>
+          )}
+        </div>
 
         {result.summary && (
           <AnalysisResultSection title="Обзор">
