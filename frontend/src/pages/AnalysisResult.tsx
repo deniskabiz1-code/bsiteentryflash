@@ -135,94 +135,90 @@ export default function AnalysisResult() {
   return (
     <div className="page">
       <div key={id || 'result'} className="page-inner page-animate space-y-5 pb-4">
-        <div>
-          <section className="card">
-            <div className="flex items-center gap-4">
-              {(result.photoUrl || result.id) && (
-                <AnalysisPhoto
-                  analysisId={result.id}
-                  photoUrl={result.photoUrl}
-                  alt="Анализ"
-                  className="h-24 w-24 shrink-0 rounded-2xl object-cover shadow-card anim-scale-in"
-                />
-              )}
-              <div className="min-w-0 flex-1">
-                {formattedDate && <p className="label-sm mb-1">{formattedDate}</p>}
-                <p className="text-[13px] text-app-muted">Общий балл</p>
-                <p className="text-[40px] font-bold leading-none tracking-tight">
-                  <span className="anim-score-pop tabular-nums">{overall}</span>
-                  <span className="text-[18px] font-semibold text-app-muted">/100</span>
-                </p>
-                {showFullSections && progress?.has_previous && progress.overall_delta !== 0 && (
-                  <span className={`mt-2 inline-flex pill-green text-[11px] ${progress.overall_delta < 0 ? '!bg-red-50 !text-red-600' : ''}`}>
-                    {formatDelta(progress.overall_delta)} к прошлому
-                  </span>
-                )}
-              </div>
-            </div>
-          </section>
-
-          {Object.keys(scores).length > 0 && (
-            <>
-              {/* Equal gap score card ↔ watermark ↔ Баллы (same mt on both sides) */}
-              <p
-                className="mt-2.5 mb-0 text-center text-[10px] font-medium leading-none tracking-wide text-app-text opacity-50 select-none"
-                aria-hidden
-              >
-                {BOT_HANDLE}
+        <section className="card">
+          <div className="flex items-center gap-4">
+            {(result.photoUrl || result.id) && (
+              <AnalysisPhoto
+                analysisId={result.id}
+                photoUrl={result.photoUrl}
+                alt="Анализ"
+                className="h-24 w-24 shrink-0 rounded-2xl object-cover shadow-card anim-scale-in"
+              />
+            )}
+            <div className="min-w-0 flex-1">
+              {formattedDate && <p className="label-sm mb-1">{formattedDate}</p>}
+              <p className="text-[13px] text-app-muted">Общий балл</p>
+              <p className="text-[40px] font-bold leading-none tracking-tight">
+                <span className="anim-score-pop tabular-nums">{overall}</span>
+                <span className="text-[18px] font-semibold text-app-muted">/100</span>
               </p>
-              <div className="mt-2.5">
-                <AnalysisResultSection title="Баллы">
-                  <div className="card space-y-4">
-                    {Object.entries(scores).map(([key, value], index) => {
-                      const score = value as number;
-                      const delta = metricDeltas?.[key as keyof typeof metricDeltas];
-                      return (
-                        <div key={key}>
-                          <div className="mb-1.5 flex items-center justify-between gap-3">
-                            <div>
-                              <p className="text-[14px] font-semibold">{SCORE_LABELS[key]}</p>
-                              <p className={`text-[11px] font-medium ${scoreInsightTone(score)}`}>
-                                {scoreInsightLabel(score)}
-                              </p>
-                            </div>
-                            <div className="flex shrink-0 items-center gap-2">
-                              {showFullSections && typeof delta === 'number' && delta !== 0 && (
-                                <span className={`text-[11px] font-semibold ${delta >= 0 ? 'text-brand-greenDark' : 'text-red-500'}`}>
-                                  {formatDelta(delta)}
-                                </span>
-                              )}
-                              <span className="text-[15px] font-bold text-brand-greenDark tabular-nums">{score}</span>
-                            </div>
-                          </div>
-                          <div className="h-1.5 overflow-hidden rounded-full bg-app-track">
-                            <div
-                              className={`score-bar-fill h-full rounded-full ${scoreBarTone(score)}`}
-                              style={{
-                                width: `${Math.max(0, Math.min(100, score))}%`,
-                                ['--bar-delay' as string]: `${index * 60}ms`,
-                              }}
-                            />
-                          </div>
+              {showFullSections && progress?.has_previous && progress.overall_delta !== 0 && (
+                <span className={`mt-2 inline-flex pill-green text-[11px] ${progress.overall_delta < 0 ? '!bg-red-50 !text-red-600' : ''}`}>
+                  {formatDelta(progress.overall_delta)} к прошлому
+                </span>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {Object.keys(scores).length > 0 && (
+          <div className="relative">
+            {/* Center watermark in the existing space-y-5 gap (1.25rem) — does not change gap size */}
+            <p
+              className="pointer-events-none absolute left-0 right-0 top-0 z-10 -mt-2.5 -translate-y-1/2 text-center text-[10px] font-medium leading-none tracking-wide text-app-text opacity-50 select-none"
+              aria-hidden
+            >
+              {BOT_HANDLE}
+            </p>
+            <AnalysisResultSection title="Баллы">
+              <div className="card space-y-4">
+                {Object.entries(scores).map(([key, value], index) => {
+                  const score = value as number;
+                  const delta = metricDeltas?.[key as keyof typeof metricDeltas];
+                  return (
+                    <div key={key}>
+                      <div className="mb-1.5 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[14px] font-semibold">{SCORE_LABELS[key]}</p>
+                          <p className={`text-[11px] font-medium ${scoreInsightTone(score)}`}>
+                            {scoreInsightLabel(score)}
+                          </p>
                         </div>
-                      );
-                    })}
-                    <div className="flex gap-4 border-t border-app-border pt-3 text-[13px]">
-                      <div className="flex-1">
-                        <p className="text-app-muted">Тип кожи</p>
-                        <p className="mt-0.5 font-semibold">{SKIN_TYPE_LABELS[result.skin_type]}</p>
+                        <div className="flex shrink-0 items-center gap-2">
+                          {showFullSections && typeof delta === 'number' && delta !== 0 && (
+                            <span className={`text-[11px] font-semibold ${delta >= 0 ? 'text-brand-greenDark' : 'text-red-500'}`}>
+                              {formatDelta(delta)}
+                            </span>
+                          )}
+                          <span className="text-[15px] font-bold text-brand-greenDark tabular-nums">{score}</span>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-app-muted">Отёчность</p>
-                        <p className="mt-0.5 font-semibold">{PUFFINESS_LABELS[result.puffiness]}</p>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-app-track">
+                        <div
+                          className={`score-bar-fill h-full rounded-full ${scoreBarTone(score)}`}
+                          style={{
+                            width: `${Math.max(0, Math.min(100, score))}%`,
+                            ['--bar-delay' as string]: `${index * 60}ms`,
+                          }}
+                        />
                       </div>
                     </div>
+                  );
+                })}
+                <div className="flex gap-4 border-t border-app-border pt-3 text-[13px]">
+                  <div className="flex-1">
+                    <p className="text-app-muted">Тип кожи</p>
+                    <p className="mt-0.5 font-semibold">{SKIN_TYPE_LABELS[result.skin_type]}</p>
                   </div>
-                </AnalysisResultSection>
+                  <div className="flex-1">
+                    <p className="text-app-muted">Отёчность</p>
+                    <p className="mt-0.5 font-semibold">{PUFFINESS_LABELS[result.puffiness]}</p>
+                  </div>
+                </div>
               </div>
-            </>
-          )}
-        </div>
+            </AnalysisResultSection>
+          </div>
+        )}
 
         {result.summary && (
           <AnalysisResultSection title="Обзор">
