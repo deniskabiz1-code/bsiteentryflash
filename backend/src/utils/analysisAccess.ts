@@ -39,7 +39,8 @@ export function sanitizeFaceResultForClient<T extends Record<string, unknown>>(
   result: T,
   contentLevel: AnalysisContentLevel,
 ): T {
-  if (contentLevel === 'premium') return result;
+  // full = referral credit unlock; premium = active subscription
+  if (contentLevel === 'premium' || contentLevel === 'full') return result;
 
   const preview: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(result)) {

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { createPayment, getAnalysis } from '@/api/client';
+import { createPayment, getAnalysis, unlockAnalysis } from '@/api/client';
 import { forceScrollToTop, scheduleScrollToTop } from '@/utils/scroll';
 import AnalysisPaywallBanner from '@/components/AnalysisPaywallBanner';
 import AnalysisResultSection from '@/components/AnalysisResultSection';
@@ -24,8 +24,12 @@ function resolveContentLevel(
   result: AnalysisResultView,
   subscribed: boolean,
 ): AnalysisContentLevel {
-  if (result.contentLevel) return result.contentLevel;
+  if (result.contentLevel === 'premium' || result.contentLevel === 'full') {
+    return result.contentLevel;
+  }
   if (subscribed && result.accessTier === 'full') return 'premium';
+  if (result.accessTier === 'full') return 'full';
+  if (result.contentLevel) return result.contentLevel;
   return 'preview';
 }
 
@@ -33,7 +37,7 @@ export default function AnalysisResult() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useApp();
+  const { user, refreshUser, applyUser } = useApp();
   const { openLink, haptic } = useTelegram();
   const stateAnalysis = location.state?.analysis as AnalysisResultView | undefined;
 
@@ -42,6 +46,8 @@ export default function AnalysisResult() {
   );
   const [loading, setLoading] = useState(Boolean(id && !stateAnalysis));
   const [error, setError] = useState('');
+  const [unlocking, setUnlocking] = useState(false);
+  const [unlockError, setUnlockError] = useState('');
 
   useEffect(() => {
     if (!id) {
@@ -114,11 +120,35 @@ export default function AnalysisResult() {
     }
   };
 
+  const handleUnlockWithCredit = async () => {
+    if (!result?.id || unlocking) return;
+    setUnlocking(true);
+    setUnlockError('');
+    try {
+      const data = await unlockAnalysis(result.id);
+      setResult(toAnalysisResultView(data.analysis));
+      if (user && typeof data.referralCredits === 'number') {
+        applyUser({ ...user, referralCredits: data.referralCredits });
+      } else {
+        await refreshUser();
+      }
+      haptic('success');
+      scheduleScrollToTop();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      setUnlockError(msg || 'Не удалось открыть полный разбор');
+      haptic('error');
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
   const overall = result.overall_score || 0;
   const subscribed = Boolean(user?.subscriptionActive);
   const contentLevel = resolveContentLevel(result, subscribed);
   const isPreview = contentLevel === 'preview';
   const showFullSections = contentLevel === 'full' || contentLevel === 'premium';
+  const referralCredits = user?.referralCredits ?? 0;
   const scores = result.scores || {};
   const progress = result.progress_vs_last;
   const metricDeltas = progress?.has_previous ? progress.metric_deltas : null;
@@ -227,14 +257,25 @@ export default function AnalysisResult() {
         )}
 
         {isPreview && (
-          <AnalysisPaywallBanner
-            onSubscribe={handleSubscribe}
-            overallScore={overall}
-            scores={scores}
-            skinType={result.skin_type}
-            puffiness={result.puffiness}
-            problemZones={result.problem_zones}
-          />
+          <>
+            <AnalysisPaywallBanner
+              onSubscribe={handleSubscribe}
+              onGoToFreeAnalysis={() => navigate('/free-analysis')}
+              onUnlockWithCredit={
+                referralCredits > 0 && result.id ? handleUnlockWithCredit : undefined
+              }
+              referralCredits={referralCredits}
+              unlocking={unlocking}
+              overallScore={overall}
+              scores={scores}
+              skinType={result.skin_type}
+              puffiness={result.puffiness}
+              problemZones={result.problem_zones}
+            />
+            {unlockError && (
+              <p className="px-1 text-center text-[13px] font-medium text-red-500">{unlockError}</p>
+            )}
+          </>
         )}
 
         {showFullSections && result.strengths && result.strengths.length > 0 && (
@@ -297,14 +338,14 @@ export default function AnalysisResult() {
         {!isPreview && (
           <SkincareRoutineSection
             title="Подборка ухода"
-            routine={subscribed ? (result.skincare_routine ?? []) : []}
+            routine={result.skincare_routine ?? []}
             skinContext={{
               skin_type: result.skin_type,
               puffiness: result.puffiness,
               problem_zones: result.problem_zones,
               scores: result.scores,
             }}
-            subscribed={subscribed}
+            subscribed={showFullSections}
             onSubscribe={subscribed ? undefined : handleSubscribe}
           />
         )}

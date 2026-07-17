@@ -389,6 +389,166 @@ router.get('/history', validateTelegramAuth, async (req: AuthRequest, res: Respo
   }
 });
 
+/**
+ * Spend 1 referral credit to re-run full AI on a past free (preview) face analysis.
+ */
+router.post('/:id/unlock', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
+  let usedReferralCredit = false;
+  let userId: number | null = null;
+  let tempPhotoPath: string | null = null;
+
+  try {
+    const user = await findOrCreateUser(req.telegramUser!);
+    userId = user.id;
+    const analysisId = parseInt(String(req.params.id), 10);
+
+    if (Number.isNaN(analysisId)) {
+      res.status(400).json({ error: 'Некорректный id' });
+      return;
+    }
+
+    if (isSubscriptionActive(user.subscriptionEnd)) {
+      res.status(400).json({ error: 'Подписка уже открывает полный разбор' });
+      return;
+    }
+
+    if (user.referralCredits < 1) {
+      res.status(403).json({ error: 'Нет бесплатных полных анализов. Пригласите друга или оформите подписку.' });
+      return;
+    }
+
+    const analysis = await prisma.analysis.findFirst({
+      where: { id: analysisId, userId: user.id, type: 'face' },
+    });
+
+    if (!analysis) {
+      res.status(404).json({ error: 'Анализ не найден' });
+      return;
+    }
+
+    if (analysis.accessTier === 'full') {
+      res.status(400).json({ error: 'Этот анализ уже полный' });
+      return;
+    }
+
+    const reserved = await prisma.user.updateMany({
+      where: { id: user.id, referralCredits: { gt: 0 } },
+      data: { referralCredits: { decrement: 1 } },
+    });
+    if (reserved.count === 0) {
+      res.status(403).json({ error: 'Нет бесплатных полных анализов' });
+      return;
+    }
+    usedReferralCredit = true;
+
+    const diskPath = path.join(uploadDir, path.basename(analysis.photoUrl));
+    let photoPath = diskPath;
+    if (!fs.existsSync(diskPath)) {
+      if (analysis.photoData && analysis.photoData.length > 0) {
+        tempPhotoPath = path.join(uploadDir, `unlock-${analysis.id}-${Date.now()}.jpg`);
+        fs.writeFileSync(
+          tempPhotoPath,
+          Buffer.from(
+            analysis.photoData.buffer,
+            analysis.photoData.byteOffset,
+            analysis.photoData.byteLength,
+          ),
+        );
+        photoPath = tempPhotoPath;
+      } else {
+        throw new Error('PHOTO_MISSING');
+      }
+    }
+
+    const usePersonalized = wantsPersonalizedAnalysis(user.personalizedAnalysis, req.body?.personalized);
+    const priorFace = usePersonalized
+      ? await prisma.analysis.findMany({
+          where: {
+            userId: user.id,
+            type: 'face',
+            id: { not: analysis.id },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 4,
+          select: { overallScore: true, resultJson: true, createdAt: true },
+        })
+      : [];
+
+    const { data: result, demo } = await analyzeFace(
+      photoPath,
+      usePersonalized
+        ? {
+            name: user.name,
+            age: user.age,
+            goals: user.goals,
+            previousAnalyses: priorFace.map((a) =>
+              toFaceHistoryEntry(a.createdAt, a.overallScore, a.resultJson),
+            ),
+          }
+        : undefined,
+      'full',
+    );
+
+    const overallScore = (result.overall_score as number) || analysis.overallScore || 0;
+    const updated = await prisma.analysis.update({
+      where: { id: analysis.id },
+      data: {
+        resultJson: result as Prisma.InputJsonValue,
+        overallScore,
+        accessTier: 'full',
+        demo,
+      },
+    });
+
+    const contentLevel = resolveContentLevel('full', false);
+    const clientResult = sanitizeFaceResultForClient(
+      enrichAnalysisInsights(result as Record<string, unknown>),
+      contentLevel,
+    );
+
+    const refreshedUser = await prisma.user.findUnique({ where: { id: user.id } });
+
+    res.json({
+      analysis: {
+        id: updated.id,
+        ...clientResult,
+        photoUrl: updated.photoUrl,
+        accessTier: 'full',
+        contentLevel,
+        demo: updated.demo,
+        createdAt: updated.createdAt,
+      },
+      referralCredits: refreshedUser?.referralCredits ?? 0,
+    });
+  } catch (err) {
+    console.error('Unlock analysis error:', err);
+    if (usedReferralCredit && userId !== null) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { referralCredits: { increment: 1 } },
+      }).catch(() => {});
+    }
+    const message = err instanceof Error ? err.message : '';
+    if (message === 'PHOTO_MISSING') {
+      res.status(404).json({ error: 'Фото анализа не найдено. Сделайте новый анализ.' });
+      return;
+    }
+    if (message.startsWith('ИИ ')) {
+      res.status(503).json({ error: message });
+      return;
+    }
+    res.status(500).json({ error: 'Не удалось открыть полный разбор' });
+  } finally {
+    if (tempPhotoPath && fs.existsSync(tempPhotoPath)) {
+      try {
+        fs.unlinkSync(tempPhotoPath);
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+});
+
 router.get('/:id/photo', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
   try {
     const user = await findOrCreateUser(req.telegramUser!);

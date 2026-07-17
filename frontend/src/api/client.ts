@@ -98,6 +98,13 @@ export async function getAnalysis(id: number) {
   return data;
 }
 
+/** Spend 1 referral credit to upgrade a past free face analysis to full AI. */
+export async function unlockAnalysis(id: number) {
+  if (MOCK) return mockApi.unlockAnalysis(id);
+  const { data } = await api.post(`/analysis/${id}/unlock`, {});
+  return data;
+}
+
 export async function fetchAnalysisPhoto(id: number): Promise<Blob | null> {
   if (MOCK) return null;
   try {

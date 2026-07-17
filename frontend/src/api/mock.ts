@@ -85,6 +85,29 @@ export const mockApi = {
     return { analysis };
   },
 
+  unlockAnalysis: async (id: number) => {
+    await delay(800);
+    if ((user.referralCredits ?? 0) < 1) {
+      throw Object.assign(new Error('Нет бесплатных полных анализов'), {
+        response: { data: { error: 'Нет бесплатных полных анализов' } },
+      });
+    }
+    const idx = analyses.findIndex((a) => a.id === id);
+    if (idx < 0) throw new Error('Анализ не найден');
+    user = { ...user, referralCredits: (user.referralCredits ?? 0) - 1 };
+    analyses[idx] = {
+      ...analyses[idx],
+      resultJson: { ...MOCK_FACE_RESULT },
+      overallScore: MOCK_FACE_RESULT.overall_score,
+      accessTier: 'full' as const,
+      contentLevel: 'full' as const,
+    } as unknown as (typeof analyses)[number];
+    return {
+      analysis: analyses[idx],
+      referralCredits: user.referralCredits,
+    };
+  },
+
   deleteAnalysis: async (id: number) => {
     await delay(300);
     analyses = analyses.filter((a) => a.id !== id);

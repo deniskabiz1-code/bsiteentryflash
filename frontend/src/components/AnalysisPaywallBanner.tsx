@@ -5,6 +5,10 @@ import { SCORE_LABELS, SKIN_TYPE_LABELS } from '@/types';
 
 type AnalysisPaywallBannerProps = {
   onSubscribe: () => void;
+  onGoToFreeAnalysis?: () => void;
+  onUnlockWithCredit?: () => void;
+  referralCredits?: number;
+  unlocking?: boolean;
   overallScore?: number;
   scores?: Record<string, number>;
   skinType?: string;
@@ -33,6 +37,10 @@ function getFocusArea(scores: Record<string, number>): string {
 
 export default function AnalysisPaywallBanner({
   onSubscribe,
+  onGoToFreeAnalysis,
+  onUnlockWithCredit,
+  referralCredits = 0,
+  unlocking = false,
   overallScore,
   scores = {},
   skinType,
@@ -102,11 +110,35 @@ export default function AnalysisPaywallBanner({
         </div>
 
         <div className="space-y-3 px-5 py-4">
-          <button type="button" onClick={onSubscribe} className="btn-dark w-full">
+          {referralCredits > 0 && onUnlockWithCredit && (
+            <button
+              type="button"
+              onClick={onUnlockWithCredit}
+              disabled={unlocking}
+              className="btn-accent w-full disabled:opacity-60"
+            >
+              {unlocking
+                ? 'Открываем полный разбор...'
+                : `Открыть этот разбор бесплатно (${referralCredits})`}
+            </button>
+          )}
+          <button type="button" onClick={onSubscribe} className="btn-dark w-full" disabled={unlocking}>
             400 ₽/мес
           </button>
+          {onGoToFreeAnalysis && (
+            <button
+              type="button"
+              onClick={onGoToFreeAnalysis}
+              disabled={unlocking}
+              className="btn-light w-full"
+            >
+              Как получить полный анализ бесплатно
+            </button>
+          )}
           <p className="text-center text-[11px] text-app-muted">
-            Доступ сразу после оплаты · отмена в любой момент
+            {referralCredits > 0
+              ? 'Кредит можно потратить на этот или новый анализ'
+              : 'Доступ сразу после оплаты · отмена в любой момент'}
           </p>
         </div>
       </div>

@@ -87,9 +87,22 @@ export default function FreeAnalysis() {
             Пригласите друга. Когда он оформит подписку, вы получите 1 полный анализ бесплатно.
           </p>
           {(referral?.referralCredits ?? user?.referralCredits ?? 0) > 0 && (
-            <p className="text-[13px] font-semibold text-brand-greenDark">
-              Доступно полных анализов: {referral?.referralCredits ?? user?.referralCredits}
-            </p>
+            <div className="space-y-2 rounded-2xl border border-brand-green/20 bg-brand-greenLight/40 px-4 py-3">
+              <p className="text-[13px] font-semibold text-brand-greenDark">
+                Доступно полных анализов: {referral?.referralCredits ?? user?.referralCredits}
+              </p>
+              <p className="text-[12px] leading-snug text-app-muted">
+                Откройте прошлый бесплатный анализ в истории и нажмите «Открыть этот разбор бесплатно»,
+                либо сделайте новый анализ.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/progress')}
+                className="btn-light !py-3 text-[14px]"
+              >
+                К истории анализов
+              </button>
+            </div>
           )}
           <button type="button" onClick={copyReferralLink} className="btn-light flex items-center justify-center gap-2">
             <Copy size={16} />
