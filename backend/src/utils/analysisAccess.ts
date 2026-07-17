@@ -18,12 +18,9 @@ const PREVIEW_FIELDS = new Set([
   'resultJson',
 ]);
 
-export function resolveAccessTier(
-  subscribed: boolean,
-  referralCredits = 0,
-): AnalysisAccessTier {
-  if (subscribed || referralCredits > 0) return 'full';
-  return 'free';
+/** Access for a newly run analysis. Credits never auto-apply here — only via explicit unlock. */
+export function resolveAccessTier(subscribed: boolean): AnalysisAccessTier {
+  return subscribed ? 'full' : 'free';
 }
 
 export function resolveContentLevel(

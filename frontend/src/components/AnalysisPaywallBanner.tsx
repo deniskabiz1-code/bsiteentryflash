@@ -137,7 +137,7 @@ export default function AnalysisPaywallBanner({
           )}
           <p className="text-center text-[11px] text-app-muted">
             {referralCredits > 0
-              ? 'Кредит можно потратить на этот или новый анализ'
+              ? 'Кредит тратится только если нажмёте «Открыть этот разбор бесплатно»'
               : 'Доступ сразу после оплаты · отмена в любой момент'}
           </p>
         </div>

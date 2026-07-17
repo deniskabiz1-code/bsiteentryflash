@@ -90,7 +90,7 @@ export default function FreeAnalysis() {
               <div className="min-w-0 space-y-1">
                 <p className="text-[15px] font-bold text-brand-greenDark">Бесплатный полный анализ</p>
                 <p className="text-[13px] leading-snug text-app-muted">
-                  Начислите себе 1 кредит. Потом откройте прошлый разбор в истории или сделайте новый анализ.
+                  Начислите себе 1 кредит, затем откройте прошлый бесплатный разбор в истории и нажмите «Открыть этот разбор бесплатно».
                 </p>
               </div>
             </div>
@@ -122,8 +122,8 @@ export default function FreeAnalysis() {
                 Доступно полных анализов: {referral?.referralCredits ?? user?.referralCredits}
               </p>
               <p className="text-[12px] leading-snug text-app-muted">
-                Откройте прошлый бесплатный анализ в истории и нажмите «Открыть этот разбор бесплатно»,
-                либо сделайте новый анализ.
+                Откройте прошлый бесплатный анализ в истории и нажмите «Открыть этот разбор бесплатно».
+                Новый анализ без подписки остаётся бесплатным превью и кредит не тратит.
               </p>
               <button
                 type="button"

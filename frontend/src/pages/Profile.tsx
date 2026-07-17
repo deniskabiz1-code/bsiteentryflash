@@ -195,7 +195,7 @@ export default function Profile() {
           <section className="card-green space-y-3">
             <p className="text-[15px] font-bold text-brand-greenDark">Бесплатный полный анализ</p>
             <p className="text-[13px] leading-snug text-app-muted">
-              +1 кредит на полный разбор. Можно открыть прошлый анализ в истории или сделать новый.
+              +1 кредит на полный разбор. Откройте прошлый анализ в истории и нажмите «Открыть этот разбор бесплатно».
             </p>
             <TestCreditButton variant="accent" showCredits label="Получить 1 полный анализ" />
           </section>

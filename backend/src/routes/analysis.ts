@@ -108,9 +108,6 @@ router.post(
   validateTelegramAuth,
   upload.single('photo'),
   async (req: AuthRequest, res: Response) => {
-    let usedReferralCredit = false;
-    let userId: number | null = null;
-
     try {
       if (!req.file) {
         res.status(400).json({ error: 'Загрузите фото' });
@@ -118,23 +115,9 @@ router.post(
       }
 
       const user = await findOrCreateUser(req.telegramUser!);
-      userId = user.id;
       const subscribed = isSubscriptionActive(user.subscriptionEnd);
-      let accessTier = resolveAccessTier(subscribed, user.referralCredits);
-
-      if (!subscribed && user.referralCredits > 0) {
-        const reserved = await prisma.user.updateMany({
-          where: { id: user.id, referralCredits: { gt: 0 } },
-          data: { referralCredits: { decrement: 1 } },
-        });
-        if (reserved.count > 0) {
-          usedReferralCredit = true;
-          accessTier = 'full';
-        } else {
-          accessTier = 'free';
-        }
-      }
-
+      // Referral credits are only spent via POST /:id/unlock — never auto on new runs
+      const accessTier = resolveAccessTier(subscribed);
       const contentLevel = resolveContentLevel(accessTier, subscribed);
       const usePersonalized = accessTier === 'full' && wantsPersonalizedAnalysis(
         user.personalizedAnalysis,
@@ -213,12 +196,6 @@ router.post(
       }
     } catch (err) {
       console.error('Face analysis error:', err);
-      if (usedReferralCredit && userId !== null) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { referralCredits: { increment: 1 } },
-        }).catch(() => {});
-      }
       if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
       const message = err instanceof Error ? err.message : 'Ошибка анализа лица';
       if (message.includes('Неподдерживаемый формат')) {
