@@ -26,6 +26,8 @@ type SkincareRoutineSectionProps = {
   subscribed: boolean;
   onSubscribe?: () => void;
   emptyMessage?: string;
+  /** Tighter teaser for Home; full layout elsewhere (e.g. analysis result). */
+  compact?: boolean;
 };
 
 function isEnriched(step: SkincareRoutineStep | EnrichedSkincareStep): step is EnrichedSkincareStep {
@@ -39,9 +41,11 @@ export default function SkincareRoutineSection({
   subscribed,
   onSubscribe,
   emptyMessage = 'Сделайте анализ лица — персональная рутина появится здесь',
+  compact = false,
 }: SkincareRoutineSectionProps) {
   const teaserProduct = getSkincarePreviewProducts(1)[0];
   const lockedCount = Math.max(SKINCARE_PRODUCT_CATALOG.length - 1, 1);
+  const lockedPreviewCount = compact ? 1 : Math.min(lockedCount, 3);
   const enrichedRoutine = subscribed
     ? (routine.length > 0 && isEnriched(routine[0])
         ? (routine as EnrichedSkincareStep[])
@@ -87,6 +91,55 @@ export default function SkincareRoutineSection({
     );
   }
 
+  if (compact) {
+    return (
+      <section>
+        <div className="mb-2 flex items-center justify-between px-1">
+          <h2 className="text-[17px] font-bold">{title}</h2>
+          <span className="pill-gray inline-flex items-center gap-1 font-semibold text-app-text">
+            <Lock size={12} className="text-app-text" strokeWidth={2.5} />
+            По подписке
+          </span>
+        </div>
+        <div className="card space-y-3 !py-4">
+          <p className="text-[13px] leading-snug text-app-muted">
+            11 товаров WB/Ozon с артикулами — по подписке после анализа.
+          </p>
+          <div className="overflow-hidden rounded-2xl border border-app-border">
+            <p className="bg-app-track/60 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-app-muted">
+              Пример · 1 из {SKINCARE_PRODUCT_CATALOG.length}
+            </p>
+            {teaserProduct && (
+              <WildberriesProductCard product={teaserProduct} previewOnly compact />
+            )}
+            {LOCKED_PLACEHOLDERS.slice(0, lockedPreviewCount).map((label) => (
+              <div
+                key={label}
+                className="flex items-center justify-between gap-3 border-t border-app-border bg-app-canvas/40 px-3 py-2.5"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-medium text-app-muted/80 blur-[3px] select-none">
+                    {label}
+                  </p>
+                  <p className="mt-0.5 text-[10px] text-app-faint">+ ещё {lockedCount} в полной рутине</p>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-app-track px-2 py-1 text-[10px] font-semibold text-app-muted">
+                  <Lock size={10} />
+                  Подписка
+                </span>
+              </div>
+            ))}
+          </div>
+          {onSubscribe && (
+            <button type="button" onClick={onSubscribe} className="btn-dark !py-3.5 text-[14px]">
+              Подписка — 400 ₽/мес
+            </button>
+          )}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section>
       <div className="mb-3 flex items-center justify-between px-1">
@@ -100,7 +153,7 @@ export default function SkincareRoutineSection({
         <p className="text-[14px] leading-relaxed text-app-muted">
           Пример из подборки WB и Ozon. Полная рутина с артикулами и ссылками — только по подписке.
         </p>
-        <div className="rounded-2xl border border-app-border overflow-hidden">
+        <div className="overflow-hidden rounded-2xl border border-app-border">
           <p className="bg-app-track/60 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-app-muted">
             Пример · 1 из {SKINCARE_PRODUCT_CATALOG.length}
           </p>
@@ -118,7 +171,7 @@ export default function SkincareRoutineSection({
                 </p>
                 <p className="mt-1 text-[11px] text-app-faint">Артикул · •••••••</p>
               </div>
-              <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-app-track px-2 py-1 text-[10px] font-semibold text-app-muted">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-app-track px-2 py-1 text-[10px] font-semibold text-app-muted">
                 <Lock size={10} />
                 Подписка
               </span>

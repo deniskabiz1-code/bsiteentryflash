@@ -301,6 +301,7 @@ export default function Home() {
           routine={skincare}
           subscribed={Boolean(user?.subscriptionActive)}
           onSubscribe={user?.subscriptionActive ? undefined : handleSubscribe}
+          compact
         />
     </ConditionalScrollPage>
   );
