@@ -1,6 +1,6 @@
 import { Check, Crown, Lock, Sparkles, X } from 'lucide-react';
 import WildberriesProductCard from '@/components/WildberriesProductCard';
-import { selectPersonalizedSkincare } from '@/data/wildberriesSkincare';
+import { selectPersonalizedSkincare, skincareStepBadge } from '@/data/wildberriesSkincare';
 import { SCORE_LABELS, SKIN_TYPE_LABELS } from '@/types';
 
 type AnalysisPaywallBannerProps = {
@@ -196,10 +196,9 @@ export default function AnalysisPaywallBanner({
           <WildberriesProductCard
             product={head.product}
             previewOnly
-            whenLabel={head.whenLabel}
             howToUse={head.howToUse}
             whyFits={head.whyFits}
-            stepLabel={head.step}
+            stepLabel={skincareStepBadge(head.step, head.product)}
           />
           {rest.map((pick) => (
             <div
@@ -208,8 +207,7 @@ export default function AnalysisPaywallBanner({
             >
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-semibold text-brand-greenDark">
-                  {pick.whenLabel}
-                  {pick.step ? ` · ${pick.step}` : ''}
+                  {skincareStepBadge(pick.step, pick.product)}
                 </p>
                 <p className="mt-0.5 truncate text-[13px] font-medium text-app-muted/80 blur-[2.5px] select-none">
                   {pick.product!.name}

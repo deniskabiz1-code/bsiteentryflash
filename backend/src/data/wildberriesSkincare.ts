@@ -312,7 +312,8 @@ function pickContextualProduct(
 
   const candidates: WildberriesProduct[] = [];
 
-  if (/век|глаз|подглаз/.test(step.toLowerCase()) || hasPuffiness) {
+  // Eye cream only for eye-care steps (not every step when user has puffiness)
+  if (/век|глаз|подглаз/.test(step.toLowerCase())) {
     candidates.push(catalogProductById(696701797)!);
   }
   if (/энзим|пудр|отшелуш/.test(step.toLowerCase()) || /текстур|комедон/.test(text)) {

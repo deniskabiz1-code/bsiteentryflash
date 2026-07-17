@@ -312,7 +312,8 @@ function pickContextualProduct(
 
   const candidates: WildberriesProduct[] = [];
 
-  if (/век|глаз|подглаз/.test(step.toLowerCase()) || hasPuffiness) {
+  // Eye cream only for eye-care steps (not every step when user has puffiness)
+  if (/век|глаз|подглаз/.test(step.toLowerCase())) {
     candidates.push(catalogProductById(696701797)!);
   }
   if (/энзим|пудр|отшелуш/.test(step.toLowerCase()) || /текстур|комедон/.test(text)) {
@@ -485,6 +486,13 @@ function whenLabelFromStep(step: string, product: WildberriesProduct | null): st
   if (/утр/.test(s)) return 'Утро';
   if (/вечер|ноч/.test(s)) return 'Вечер';
   return product?.whenToUse || 'Ежедневно';
+}
+
+/** Single UI label for a step. Avoids "Утро · Утро: сыворотка" duplication. */
+export function skincareStepBadge(step: string, product?: WildberriesProduct | null): string {
+  const trimmed = step.trim();
+  if (trimmed) return trimmed;
+  return whenLabelFromStep(step, product ?? null);
 }
 
 /**

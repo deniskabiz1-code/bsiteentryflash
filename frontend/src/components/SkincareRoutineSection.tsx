@@ -9,6 +9,7 @@ import {
   enrichSkincareRoutine,
   normalizeSkincareRoutine,
   selectPersonalizedSkincare,
+  skincareStepBadge,
 } from '@/data/wildberriesSkincare';
 
 type SkincareRoutineSectionProps = {
@@ -64,10 +65,9 @@ export default function SkincareRoutineSection({
               <div key={item.product?.id ?? i} className="border-b border-app-border last:border-0">
                 <WildberriesProductCard
                   product={item.product!}
-                  whenLabel={pick?.whenLabel}
                   howToUse={pick?.howToUse || item.tip}
                   whyFits={item.product_type || pick?.whyFits}
-                  stepLabel={item.step}
+                  stepLabel={skincareStepBadge(item.step, item.product)}
                 />
               </div>
             );
@@ -106,9 +106,8 @@ export default function SkincareRoutineSection({
                 product={head.product}
                 previewOnly
                 compact
-                whenLabel={head.whenLabel}
                 howToUse={head.howToUse}
-                stepLabel={head.step}
+                stepLabel={skincareStepBadge(head.step, head.product)}
               />
             )}
             {restLocked.map((pick) => (
@@ -117,7 +116,9 @@ export default function SkincareRoutineSection({
                 className="flex items-center justify-between gap-3 border-t border-app-border bg-app-canvas/40 px-3 py-2.5"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold text-brand-greenDark">{pick.whenLabel}</p>
+                  <p className="text-[11px] font-semibold text-brand-greenDark">
+                    {skincareStepBadge(pick.step, pick.product)}
+                  </p>
                   <p className="mt-0.5 truncate text-[13px] font-medium text-app-muted/80 blur-[2.5px] select-none">
                     {pick.product!.name}
                   </p>
@@ -157,10 +158,9 @@ export default function SkincareRoutineSection({
             <WildberriesProductCard
               product={head.product}
               previewOnly
-              whenLabel={head.whenLabel}
               howToUse={head.howToUse}
               whyFits={head.whyFits}
-              stepLabel={head.step}
+              stepLabel={skincareStepBadge(head.step, head.product)}
             />
           )}
           {restLocked.map((pick) => (
@@ -170,8 +170,7 @@ export default function SkincareRoutineSection({
             >
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-semibold text-brand-greenDark">
-                  {pick.whenLabel}
-                  {pick.step ? ` · ${pick.step}` : ''}
+                  {skincareStepBadge(pick.step, pick.product)}
                 </p>
                 <p className="mt-0.5 truncate text-[14px] font-medium text-app-muted/80 blur-[2.5px] select-none">
                   {pick.product!.name}

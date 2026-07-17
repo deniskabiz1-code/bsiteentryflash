@@ -31,24 +31,18 @@ function ProductDetails({
   whyFits?: string;
   stepLabel?: string;
 }) {
-  const when = whenLabel || product.whenToUse;
   const how = howToUse || product.howToUse;
+  // One badge only: step already includes time ("Утро: очищение"); don't also show "Утро"
+  const badge = (stepLabel || whenLabel || product.whenToUse || '').trim();
 
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0 flex-1">
-        {(stepLabel || when) && (
+        {badge && (
           <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-            {stepLabel && (
-              <span className="rounded-full bg-brand-greenLight px-2 py-0.5 text-[10px] font-semibold text-brand-greenDark">
-                {stepLabel}
-              </span>
-            )}
-            {when && (
-              <span className="rounded-full bg-app-track px-2 py-0.5 text-[10px] font-semibold text-app-muted">
-                {when}
-              </span>
-            )}
+            <span className="rounded-full bg-brand-greenLight px-2 py-0.5 text-[10px] font-semibold text-brand-greenDark">
+              {badge}
+            </span>
           </div>
         )}
         <p className={`font-semibold leading-snug ${compact ? 'text-[14px]' : 'text-[15px]'}`}>
