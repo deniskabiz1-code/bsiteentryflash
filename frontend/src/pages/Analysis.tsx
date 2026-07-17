@@ -90,15 +90,22 @@ export default function Analysis() {
     : photo
       ? isFirstAnalysis
         ? 'Получить оценку бесплатно'
-        : 'Начать анализ'
-      : 'Сначала сделайте селфи';
+        : 'Анализ'
+      : 'Анализ';
 
+  const analyzeReady = Boolean(photo) && !loading;
   const analyzeButton = (
     <button
       type="button"
       onClick={handleAnalyze}
       disabled={!photo || loading}
-      className={isMandatoryFirstFlow ? 'btn-accent' : 'btn-dark'}
+      className={
+        analyzeReady
+          ? isMandatoryFirstFlow
+            ? 'btn-accent'
+            : 'btn-dark'
+          : 'w-full rounded-full bg-app-track px-6 py-4 text-[15px] font-semibold text-app-muted'
+      }
     >
       {analyzeLabel}
     </button>
