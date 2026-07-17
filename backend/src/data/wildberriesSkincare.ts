@@ -23,24 +23,24 @@ export interface WildberriesProduct {
   store: SkincareProductStore;
   description: string;
   bestFor: string;
-  /** When to use — shown in personalized picks */
+  /** When to use: shown in personalized picks */
   whenToUse: string;
-  /** How to apply — short practical line */
+  /** How to apply: short practical line */
   howToUse: string;
 }
 
 const USAGE: Record<SkincareProductCategory, { whenToUse: string; howToUse: string }> = {
   cleanser_synergetic: {
     whenToUse: 'Утро и вечер',
-    howToUse: 'На влажное лицо, мягко вспеньте 30–40 сек, смойте тёплой водой',
+    howToUse: 'На влажное лицо, мягко вспеньте 30-40 сек, смойте тёплой водой',
   },
   cleanser_orele: {
     whenToUse: 'Утро и вечер',
     howToUse: 'Нанесите на влажную кожу, помассируйте 30 сек, тщательно смойте',
   },
   cleanser_enzyme: {
-    whenToUse: '1–2 раза в неделю, вечер',
-    howToUse: 'Смешайте с водой до кашицы, круговыми движениями 20–30 сек, смойте — не каждый день',
+    whenToUse: '1-2 раза в неделю, вечер',
+    howToUse: 'Смешайте с водой до кашицы, круговыми движениями 20-30 сек, смойте. Не каждый день',
   },
   serum_salicylic: {
     whenToUse: 'Вечер',
@@ -48,7 +48,7 @@ const USAGE: Record<SkincareProductCategory, { whenToUse: string; howToUse: stri
   },
   serum_azelaic: {
     whenToUse: 'Вечер',
-    howToUse: '2–3 капли на всё лицо после очищения; начинайте через день, если кожа чувствительная',
+    howToUse: '2-3 капли на всё лицо после очищения; начинайте через день, если кожа чувствительная',
   },
   serum_azeloglicin: {
     whenToUse: 'Утро или вечер',
@@ -56,11 +56,11 @@ const USAGE: Record<SkincareProductCategory, { whenToUse: string; howToUse: stri
   },
   serum_vitc: {
     whenToUse: 'Утро',
-    howToUse: '2–3 капли на сухое лицо, дайте впитаться, сверху крем; днём желателен SPF',
+    howToUse: '2-3 капли на сухое лицо, дайте впитаться, сверху крем; днём желателен SPF',
   },
   serum_recovery: {
     whenToUse: 'Вечер',
-    howToUse: 'После очищения на всё лицо — особенно если кожа сухая или после активов',
+    howToUse: 'После очищения на всё лицо. Особенно если кожа сухая или после активов',
   },
   moisturizer_orele: {
     whenToUse: 'Утро',
@@ -71,7 +71,7 @@ const USAGE: Record<SkincareProductCategory, { whenToUse: string; howToUse: stri
     howToUse: 'Лёгкий слой на всё лицо после сыворотки, не втирать агрессивно',
   },
   eye_cream: {
-    whenToUse: 'Утро (и при отёках — вечером)',
+    whenToUse: 'Утро (и при отёках вечером)',
     howToUse: 'Лёгкими движениями от внешнего уголка к внутреннему, не растягивая кожу',
   },
 };
@@ -132,8 +132,8 @@ export const SKINCARE_PRODUCT_CATALOG: WildberriesProduct[] = (
       priceRub: 500,
       category: 'cleanser_enzyme' as const,
       store: 'wildberries' as const,
-      description: 'Деликатное отшелушивание 1–2 раза в неделю',
-      bestFor: 'неровная текстура, закрытые комедоны, отшелушивание 1–2 раза в неделю',
+      description: 'Деликатное отшелушивание 1-2 раза в неделю',
+      bestFor: 'неровная текстура, закрытые комедоны, отшелушивание 1-2 раза в неделю',
     },
     {
       id: 408376110,
@@ -243,11 +243,11 @@ AVAILABLE PRODUCTS (use ONLY these product_id values in skincare_routine):
 ${JSON.stringify(products, null, 2)}
 
 SKINCARE ROUTINE RULES:
-- Include exactly 4-5 steps — only the best-fitting products for THIS user (morning + evening). Never pad the list.
+- Include exactly 4-5 steps. Only the best-fitting products for THIS user (morning + evening). Never pad the list.
 - Every step MUST include product_id copied exactly from AVAILABLE PRODUCTS above.
-- Pick products for THIS specific user based on their skin_type, problem_zones, puffiness, and skin score — never use a one-size-fits-all template.
+- Pick products for THIS specific user based on their skin_type, problem_zones, puffiness, and skin score. Never use a one-size-fits-all template.
 - product_type: one sentence in Russian naming the product and explaining why it fits THIS user's visible issues.
-- tip: practical personalized advice — when to use (утро/вечер) and how to apply; reference their problem zones or skin type.
+- tip: practical personalized advice. When to use (утро/вечер) and how to apply; reference their problem zones or skin type.
 - Do not invent product_id values. Do not use the same product_id twice.
 - Never mention how many products are in the catalog.
 - Matching guide:
@@ -365,7 +365,7 @@ function personalizeStepCopy(
     ...step,
     product_id: product.id,
     product_type: generic
-      ? `${product.brand} — подходит при ${product.bestFor}${zoneHint ? ` (акцент: ${zoneHint})` : ''}`
+      ? `${product.brand}: подходит при ${product.bestFor}${zoneHint ? ` (акцент: ${zoneHint})` : ''}`
       : step.product_type,
     tip: step.tip
       || `${product.whenToUse}. ${product.howToUse}${zoneHint ? ` Акцент: ${zoneHint}.` : ''}`,
@@ -480,7 +480,7 @@ export type PersonalizedSkincarePick = EnrichedSkincareStep & {
 
 function whenLabelFromStep(step: string, product: WildberriesProduct | null): string {
   const s = step.toLowerCase();
-  if (/недел|энзим|пудр/.test(s)) return product?.whenToUse || '1–2 раза в неделю';
+  if (/недел|энзим|пудр/.test(s)) return product?.whenToUse || '1-2 раза в неделю';
   if (/утр/.test(s) && /вечер|ноч/.test(s)) return 'Утро и вечер';
   if (/утр/.test(s)) return 'Утро';
   if (/вечер|ноч/.test(s)) return 'Вечер';
@@ -488,7 +488,7 @@ function whenLabelFromStep(step: string, product: WildberriesProduct | null): st
 }
 
 /**
- * Rule-based pick of 4–5 best products for this face analysis.
+ * Rule-based pick of 4-5 best products for this face analysis.
  * Preferable to AI for free preview: free, fast, deterministic, same catalog as full routine.
  */
 export function selectPersonalizedSkincare(

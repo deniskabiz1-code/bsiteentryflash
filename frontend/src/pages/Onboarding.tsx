@@ -241,7 +241,7 @@ export default function Onboarding() {
                 disabled={checking}
                 className="btn-light"
               >
-                {checking ? 'Проверяем...' : subscribed ? '✓ Подписка подтверждена' : 'Я подписался — проверить'}
+                {checking ? 'Проверяем...' : subscribed ? '✓ Подписка подтверждена' : 'Я подписался, проверить'}
               </button>
             </>
           )}

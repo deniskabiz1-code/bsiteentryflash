@@ -45,7 +45,7 @@ export function forceScrollToTop() {
 }
 
 /**
- * Scroll to top now, after paint, and a few short delays —
+ * Scroll to top now, after paint, and a few short delays : 
  * covers async page content that mounts after the first navigation frame.
  */
 export function scheduleScrollToTop(): () => void {

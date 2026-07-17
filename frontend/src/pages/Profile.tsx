@@ -174,7 +174,7 @@ export default function Profile() {
           )}
           {!user?.subscriptionActive && (
             <p className="text-[13px] leading-snug text-app-muted">
-              Оценки и обзор — бесплатно всегда. Подписка открывает полный ИИ-разбор.
+              Оценки и обзор бесплатны всегда. Подписка открывает полный ИИ-разбор.
             </p>
           )}
           <ul className="space-y-2 text-[14px] text-app-muted">
@@ -222,9 +222,9 @@ export default function Profile() {
             </div>
           ) : (
             <div className="space-y-0">
-              <div className="list-row"><span className="text-app-muted">Имя</span><span className="font-semibold">{user?.name || '—'}</span></div>
-              <div className="list-row"><span className="text-app-muted">Возраст</span><span className="font-semibold">{user?.age || '—'}</span></div>
-              <div className="list-row"><span className="text-app-muted">Цели</span><span className="font-semibold">{user?.goals?.map((g) => GOAL_LABELS[g]).join(', ') || '—'}</span></div>
+              <div className="list-row"><span className="text-app-muted">Имя</span><span className="font-semibold">{user?.name || '-'}</span></div>
+              <div className="list-row"><span className="text-app-muted">Возраст</span><span className="font-semibold">{user?.age || '-'}</span></div>
+              <div className="list-row"><span className="text-app-muted">Цели</span><span className="font-semibold">{user?.goals?.map((g) => GOAL_LABELS[g]).join(', ') || '-'}</span></div>
             </div>
           )}
         </section>
@@ -309,7 +309,7 @@ export default function Profile() {
         </section>
 
         <section className="card space-y-0">
-          <div className="list-row"><span className="text-app-muted">Telegram</span><span className="font-semibold">@{user?.username || '—'}</span></div>
+          <div className="list-row"><span className="text-app-muted">Telegram</span><span className="font-semibold">@{user?.username || '-'}</span></div>
           <div className="list-row"><span className="text-app-muted">ID</span><span className="font-semibold">{user?.telegramId}</span></div>
         </section>
 

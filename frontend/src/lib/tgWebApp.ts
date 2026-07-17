@@ -322,7 +322,7 @@ export function normalizeTmeUrl(url: string, usernameFallback?: string): string 
   return normalized.replace('https://telegram.me/', 'https://t.me/');
 }
 
-/** Opens a t.me link inside Telegram — never uses external browser. */
+/** Opens a t.me link inside Telegram: never uses external browser. */
 export function openTmeLink(url: string, usernameFallback?: string): void {
   const normalized = normalizeTmeUrl(url, usernameFallback);
   const webApp = getTgWebApp();

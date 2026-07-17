@@ -61,7 +61,7 @@ export default function FreeAnalysis() {
             <div className="space-y-1">
               <p className="text-[15px] font-bold text-brand-greenDark">Как это работает</p>
               <p className="text-[13px] leading-snug text-app-muted">
-                Анализ лица всегда бесплатный — оценки и краткий обзор без ограничений.
+                Анализ лица всегда бесплатный. Оценки и краткий обзор без ограничений.
                 Подписка открывает полный разбор: советы, стрижки, динамику и рутину ухода.
               </p>
             </div>
@@ -71,7 +71,7 @@ export default function FreeAnalysis() {
         <section className="card space-y-3">
           <h2 className="text-[17px] font-bold">Подписка</h2>
           <p className="text-[14px] text-app-muted">
-            400 ₽/мес — безлимит полных анализов, причёска, динамика и персональная рутина ухода.
+            400 ₽/мес: безлимит полных анализов, причёска, динамика и персональная рутина ухода.
           </p>
           <button type="button" onClick={handleSubscribe} className="btn-dark">
             {user?.subscriptionActive ? 'Продлить подписку' : 'Оформить подписку'}
@@ -84,7 +84,7 @@ export default function FreeAnalysis() {
             Реферальная ссылка
           </h2>
           <p className="text-[14px] text-app-muted">
-            Пригласите друга — когда он оформит подписку, вы получите 1 полный анализ бесплатно.
+            Пригласите друга. Когда он оформит подписку, вы получите 1 полный анализ бесплатно.
           </p>
           {(referral?.referralCredits ?? user?.referralCredits ?? 0) > 0 && (
             <p className="text-[13px] font-semibold text-brand-greenDark">

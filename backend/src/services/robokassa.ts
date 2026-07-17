@@ -15,7 +15,7 @@ export function generatePaymentUrl(userId: number): string {
 
   const outSum = SUBSCRIPTION_PRICE.toFixed(2);
   const invId = 0;
-  const description = encodeURIComponent('Подписка Primeform — 1 месяц');
+  const description = encodeURIComponent('Подписка Primeform. 1 месяц');
   const shpUserId = `shp_userId=${userId}`;
 
   const signatureBase = `${login}:${outSum}:${invId}:${password1}:${shpUserId}`;
@@ -25,7 +25,7 @@ export function generatePaymentUrl(userId: number): string {
     MerchantLogin: login,
     OutSum: outSum,
     InvId: String(invId),
-    Description: 'Подписка Primeform — 1 месяц',
+    Description: 'Подписка Primeform. 1 месяц',
     SignatureValue: signature,
     'shp_userId': String(userId),
     SuccessURL: `${appUrl}/payment/success`,

@@ -152,7 +152,7 @@ export default function Home() {
         <section className="pt-2 pb-1 text-center">
           <p className="label-sm mb-3">Твой балл</p>
           <p className="heading-xl">
-            <span className="anim-score-pop tabular-nums">{score ?? '—'}</span>
+            <span className="anim-score-pop tabular-nums">{score ?? '-'}</span>
             <span className="text-[20px] font-semibold text-app-muted">/100</span>
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
@@ -188,7 +188,7 @@ export default function Home() {
             <>
               <p className="label-sm mb-1">Твой рост</p>
               <p className="mb-4 text-[28px] font-bold tracking-tight">
-                {score ?? '—'}
+                {score ?? '-'}
                 {score != null && (
                   <span className="text-lg font-semibold text-app-muted">
                     {' '}
@@ -291,7 +291,7 @@ export default function Home() {
           <section className="card">
             <p className="label-sm mb-2">Фокус на сегодня</p>
             <p className="text-[15px] leading-relaxed text-app-muted">
-              После первого анализа здесь появится персональный план на день — до 5 задач из ваших результатов.
+              После первого анализа здесь появится персональный план на день. До 5 задач из ваших результатов.
             </p>
           </section>
         )}

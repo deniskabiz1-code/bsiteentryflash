@@ -75,7 +75,7 @@ export default function AnalysisPaywallBanner({
               </h2>
               <p className="text-[13px] leading-snug text-white/75">
                 {skinLabel
-                  ? `Подписка соберёт план под ${skinLabel.toLowerCase()} кожу и ваши оценки — не общие советы из интернета.`
+                  ? `Подписка соберёт план под ${skinLabel.toLowerCase()} кожу и ваши оценки. Не общие советы из интернета.`
                   : 'Подписка открывает персональный план, стрижки и уход под ваше фото.'}
               </p>
             </div>
@@ -103,7 +103,7 @@ export default function AnalysisPaywallBanner({
 
         <div className="space-y-3 px-5 py-4">
           <button type="button" onClick={onSubscribe} className="btn-dark w-full">
-            Получить полный разбор — 400 ₽/мес
+            Получить полный разбор, 400 ₽/мес
           </button>
           <p className="text-center text-[11px] text-app-muted">
             Доступ сразу после оплаты · отмена в любой момент

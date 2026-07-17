@@ -32,7 +32,7 @@ export default function SkincareRoutineSection({
   skinContext,
   subscribed,
   onSubscribe,
-  emptyMessage = 'Сделайте анализ лица — персональная рутина появится здесь',
+  emptyMessage = 'Сделайте анализ лица. Персональная рутина появится здесь',
   compact = false,
 }: SkincareRoutineSectionProps) {
   const personalized = selectPersonalizedSkincare(skinContext ?? {}, 5);
@@ -55,7 +55,7 @@ export default function SkincareRoutineSection({
           <span className="pill-green">Под вашу кожу</span>
         </div>
         <p className="mb-3 px-1 text-[13px] leading-snug text-app-muted">
-          Несколько средств, которые лучше всего подходят по анализу — когда и как наносить, ссылки на WB и Ozon.
+          Несколько средств, которые лучше всего подходят по анализу. Когда и как наносить, ссылки на WB и Ozon.
         </p>
         <div className="card !p-0 overflow-hidden">
           {enrichedRoutine.map((item, i) => {
@@ -98,7 +98,7 @@ export default function SkincareRoutineSection({
         </div>
         <div className="card space-y-3 !py-4">
           <p className="text-[13px] leading-snug text-app-muted">
-            Средства под ваш тип кожи: когда наносить и как — после анализа и подписки.
+            Средства под ваш тип кожи: когда наносить и как. После анализа и подписки.
           </p>
           <div className="overflow-hidden rounded-2xl border border-app-border">
             {head?.product && (
@@ -131,7 +131,7 @@ export default function SkincareRoutineSection({
           </div>
           {onSubscribe && (
             <button type="button" onClick={onSubscribe} className="btn-dark !py-3.5 text-[14px]">
-              Подписка — 400 ₽/мес
+              Подписка, 400 ₽/мес
             </button>
           )}
         </div>
@@ -188,11 +188,11 @@ export default function SkincareRoutineSection({
           ))}
         </div>
         <p className="text-[12px] leading-snug text-app-faint">
-          После подписки — полные названия, артикулы и прямые ссылки на товары.
+          После подписки: полные названия, артикулы и прямые ссылки на товары.
         </p>
         {onSubscribe && (
           <button type="button" onClick={onSubscribe} className="btn-dark">
-            Оформить подписку — 400 ₽/мес
+            Оформить подписку, 400 ₽/мес
           </button>
         )}
       </div>

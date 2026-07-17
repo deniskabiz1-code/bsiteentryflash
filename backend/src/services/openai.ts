@@ -121,15 +121,15 @@ function modelSupportsReasoning(model: string): boolean {
 export function toUserFacingAiError(detail: string): string {
   const lower = detail.toLowerCase();
   if (lower.includes('timeout')) {
-    return 'ИИ слишком долго отвечает — попробуйте ещё раз через минуту';
+    return 'ИИ слишком долго отвечает. Попробуйте ещё раз через минуту';
   }
   if (lower.includes('html') || lower.includes('openai_base_url')) {
     return 'Ошибка настройки ИИ на сервере';
   }
   if (lower.includes('api key') || lower.includes('authentication') || lower.includes('401')) {
-    return 'ИИ временно недоступен — проверьте ключ API на сервере';
+    return 'ИИ временно недоступен. Проверьте ключ API на сервере';
   }
-  return 'ИИ временно недоступен — попробуйте позже';
+  return 'ИИ временно недоступен. Попробуйте позже';
 }
 
 export type AnalysisRunResult = {
@@ -165,7 +165,7 @@ function parseCompletionResponse(response: unknown): OpenAI.Chat.ChatCompletion 
   if (typeof response === 'string') {
     const trimmed = response.trim();
     if (trimmed.startsWith('<')) {
-      throw new Error('AI provider returned HTML — check OPENAI_BASE_URL (needs /v1)');
+      throw new Error('AI provider returned HTML. Check OPENAI_BASE_URL (needs /v1)');
     }
     return JSON.parse(trimmed) as OpenAI.Chat.ChatCompletion;
   }
@@ -203,7 +203,7 @@ const FACE_ANALYSIS_PROMPT = `You are an expert aesthetician and facial analyst.
 "symmetry": <integer 0-100>,
 "hairstyle": <integer 0-100>
 },
-"summary": "<2-3 sentences in Russian: honest personalized overview of what you see in THIS photo — mention skin, strongest feature, and main area to improve>",
+"summary": "<2-3 sentences in Russian: honest personalized overview of what you see in THIS photo. Mention skin, strongest feature, and main area to improve>",
 "strengths": ["<2-4 specific visible positives in Russian>"],
 "quick_wins": [
 { "action": "<habit or grooming step doable this week, Russian>", "impact": "<what it improves, Russian>" }
@@ -212,7 +212,7 @@ const FACE_ANALYSIS_PROMPT = `You are an expert aesthetician and facial analyst.
 "hair_notes": "<1-2 sentences about current hairstyle: what works, what to change, Russian>",
 "face_shape": "oval" | "square" | "round" | "heart" | "oblong",
 "best_haircuts": [
-{ "name": "<haircut name in Russian>", "description": "<why it fits THIS person's face shape, jawline, and proportions — specific, Russian>" },
+{ "name": "<haircut name in Russian>", "description": "<why it fits THIS person's face shape, jawline, and proportions. Specific, Russian>" },
 { "name": "<Russian>", "description": "<Russian>" },
 { "name": "<Russian>", "description": "<Russian>" }
 ],
@@ -244,14 +244,14 @@ const FACE_ANALYSIS_PROMPT = `You are an expert aesthetician and facial analyst.
 }
 }
 
-SCORING RULES (mandatory — follow strictly):
-- Use the full range. Do NOT default every score to the low 70s. Typical overall_score spread: 48–88 depending on the photo.
-- Score skin, jawline, symmetry, and hairstyle INDEPENDENTLY from what you see. They should often differ by 10–25 points (e.g. skin 54, jawline 79, symmetry 71, hairstyle 63).
+SCORING RULES (mandatory. Follow strictly):
+- Use the full range. Do NOT default every score to the low 70s. Typical overall_score spread: 48-88 depending on the photo.
+- Score skin, jawline, symmetry, and hairstyle INDEPENDENTLY from what you see. They should often differ by 10-25 points (e.g. Skin 54, jawline 79, symmetry 71, hairstyle 63).
 - Calibration guide:
-  • 85–95: clearly strong in this area, visibly above average
-  • 72–84: solid / slightly above average
-  • 58–71: average with visible room to improve
-  • 45–57: noticeable issues in this area
+  • 85-95: clearly strong in this area, visibly above average
+  • 72-84: solid / slightly above average
+  • 58-71: average with visible room to improve
+  • 45-57: noticeable issues in this area
   • below 45: only for severe visible problems
 - overall_score = rounded mean of the four sub-scores, then adjust by at most ±5 if the holistic impression differs.
 - Scores above 82 or below 50 on any metric must match something clearly visible in the photo.
@@ -261,22 +261,22 @@ CONTINUITY RULES (when prior analyses are provided in the user message):
 - Treat this as a follow-up check-in, not a standalone rating.
 - Compare the new photo to the most recent prior analysis. Adjust sub-scores to reflect visible improvement (+2 to +10), regression (-2 to -10), or stability (±2).
 - overall_score must be consistent with sub-scores and the visible change since last time.
-- improvement_tips: personalize — reference progress or persistent issues from prior tips/problem_zones; avoid repeating the exact same tip unless still the top priority.
-- growth_plan: evolve prior steps — mark what to keep, intensify, or replace based on progress.
-- progress_vs_last: fill honestly. overall_delta and metric_deltas must match your scoring vs the last entry in history.
+- improvement_tips: personalize. Reference progress or persistent issues from prior tips/problem_zones; avoid repeating the exact same tip unless still the top priority.
+- growth_plan: evolve prior steps. Mark what to keep, intensify, or replace based on progress.
+- progress_vs_last: fill honestly. Overall_delta and metric_deltas must match your scoring vs the last entry in history.
 - If no real change is visible, say so in summary and keep deltas near 0.
 
 When no prior analyses are provided: set has_previous to false, overall_delta and all metric_deltas to 0, progress_vs_last.summary to "".
 
 INSIGHT RULES (make the analysis useful, not just scores):
 - summary, strengths, quick_wins, photo_feedback, and hair_notes are mandatory and must be specific to THIS photo.
-- strengths: real positives only — do not invent compliments.
-- quick_wins: 2-3 items — mix lifestyle (сон, вода, соль) and grooming; at least one about photo conditions.
+- strengths: real positives only. Do not invent compliments.
+- quick_wins: 2-3 items. Mix lifestyle (сон, вода, соль) and grooming; at least one about photo conditions.
 - photo_feedback: always mention lighting and camera angle honestly if they limit accuracy.
-- improvement_tips: 3-5 tips — each must reference a visible issue from problem_zones or scores, not generic advice.
+- improvement_tips: 3-5 tips. Each must reference a visible issue from problem_zones or scores, not generic advice.
 - problem_zones: at least 2 zones with concrete descriptions.
 - face_shape: infer from visible bone structure (forehead, cheekbones, jaw, face length).
-- best_haircuts: exactly 3 options — each must explain why it suits THIS face shape and current hairstyle score; reference jawline/symmetry when relevant.
+- best_haircuts: exactly 3 options. Each must explain why it suits THIS face shape and current hairstyle score; reference jawline/symmetry when relevant.
 - haircuts_to_avoid: 2-3 styles that would work poorly for this face shape.
 
 All text fields must be in Russian. Be honest but encouraging. Do not include any text outside the JSON object.`;
@@ -301,7 +301,7 @@ const FACE_ANALYSIS_LITE_PROMPT = `You are an expert facial analyst. Analyze the
 }
 
 SCORING RULES (mandatory):
-- Use the full range 48–88 for overall_score. Sub-scores should often differ by 10–25 points.
+- Use the full range 48-88 for overall_score. Sub-scores should often differ by 10-25 points.
 - overall_score = rounded mean of the four sub-scores (±5 max adjustment).
 - Be honest, not flattering.
 
@@ -575,7 +575,7 @@ export async function analyzeFace(
     : buildFaceAnalysisUserMessage(context);
 
   if (shouldUseDemoAnalysis()) {
-    console.log(`[demo] Face analysis (${mode}) — demo mode`);
+    console.log(`[demo] Face analysis (${mode}). Demo mode`);
     await demoDelay();
     return {
       data: lite
@@ -603,7 +603,7 @@ export async function analyzeFace(
     const detail = err instanceof Error ? err.message : String(err);
     console.error('[ai] Face analysis failed:', detail);
     if (shouldFallbackToDemoOnError()) {
-      console.warn('[ai] AI_FALLBACK_DEMO=true — returning demo face result');
+      console.warn('[ai] AI_FALLBACK_DEMO=true. Returning demo face result');
       await demoDelay();
       return {
         data: lite
@@ -624,7 +624,7 @@ export async function analyzeHairstyle(
   sidePath: string
 ): Promise<AnalysisRunResult> {
   if (shouldUseDemoAnalysis()) {
-    console.log('[demo] Hairstyle analysis — demo mode');
+    console.log('[demo] Hairstyle analysis. Demo mode');
     await demoDelay();
     return { data: { ...DEMO_HAIRSTYLE_RESULT }, demo: true };
   }

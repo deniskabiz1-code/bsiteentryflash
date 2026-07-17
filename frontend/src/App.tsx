@@ -38,7 +38,7 @@ function AppRoutes() {
           </h1>
           <p className="text-[15px] leading-relaxed text-app-muted">
             {error === 'session_expired'
-              ? 'Закройте приложение и откройте Primeform снова из бота в Telegram — профиль на месте.'
+              ? 'Закройте приложение и откройте Primeform снова из бота в Telegram. Профиль на месте.'
               : 'Проверьте интернет и попробуйте снова.'}
           </p>
           <button type="button" onClick={() => refreshUser()} className="btn-light">

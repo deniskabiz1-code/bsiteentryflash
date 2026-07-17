@@ -105,7 +105,7 @@ body {
   to { opacity: 1; }
 }
 
-/* Route / tab window transitions — keep travel large enough to notice on phone */
+/* Route / tab window transitions: keep travel large enough to notice on phone */
 @keyframes pf-page-tab-right {
   from {
     opacity: 0;

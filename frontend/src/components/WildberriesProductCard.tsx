@@ -6,7 +6,7 @@ import { useTelegram } from '@/hooks/useTelegram';
 type WildberriesProductCardProps = {
   product: WildberriesProduct;
   compact?: boolean;
-  /** Preview teaser — show info but no WB link */
+  /** Preview teaser: show info but no WB link */
   previewOnly?: boolean;
   whenLabel?: string;
   howToUse?: string;

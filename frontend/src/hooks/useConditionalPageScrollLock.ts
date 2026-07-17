@@ -19,7 +19,7 @@ function readViewportBottom(): number {
   return vv.offsetTop + vv.height;
 }
 
-/** Content bottom in document coordinates — stable while the user scrolls. */
+/** Content bottom in document coordinates: stable while the user scrolls. */
 function readContentDocumentBottom(content: HTMLElement): number {
   const rect = content.getBoundingClientRect();
   return rect.top + window.scrollY + content.offsetHeight;
@@ -64,7 +64,7 @@ export function useConditionalPageScrollLock(
         return;
       }
 
-      // Phone/Telegram: viewport can shrink while touch-scrolling — never re-lock once overflow was seen.
+      // Phone/Telegram: viewport can shrink while touch-scrolling .  never re-lock once overflow was seen.
       if (hadOverflowRef.current) {
         setAllowScroll(true);
         return;

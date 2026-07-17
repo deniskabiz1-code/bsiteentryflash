@@ -163,7 +163,7 @@ export default function AnalysisResult() {
 
         {Object.keys(scores).length > 0 && (
           <div className="relative">
-            {/* Center watermark in the existing space-y-5 gap (1.25rem) — does not change gap size */}
+            {/* Center watermark in the existing space-y-5 gap (1.25rem). Does not change gap size */}
             <p
               className="pointer-events-none absolute left-0 right-0 top-0 z-10 -mt-2.5 -translate-y-1/2 text-center text-[10px] font-medium leading-none tracking-wide text-app-text opacity-50 select-none"
               aria-hidden
@@ -331,7 +331,7 @@ export default function AnalysisResult() {
         )}
 
         {showFullSections && result.haircuts_to_avoid && result.haircuts_to_avoid.length > 0 && (
-          <AnalysisResultSection title="Стрижки — избегать">
+          <AnalysisResultSection title="Избегать">
             <ul className="card space-y-3">
               {result.haircuts_to_avoid.map((item, i) => (
                 <li key={i} className="text-[14px] leading-snug text-red-500">

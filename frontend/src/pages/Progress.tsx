@@ -83,7 +83,7 @@ export default function Progress() {
           <p className="label-sm mb-3">Текущий балл</p>
           <div className="flex min-h-[40px] items-baseline justify-center gap-0.5">
             <span className="anim-score-pop font-display text-[34px] font-bold leading-none tracking-tight text-app-text tabular-nums">
-              {latest?.overallScore ?? '—'}
+              {latest?.overallScore ?? '-'}
             </span>
             <span className="text-[20px] font-semibold text-app-muted">/100</span>
           </div>
@@ -107,7 +107,7 @@ export default function Progress() {
             <p className="text-[13px] text-app-muted mt-1">Чек-инов</p>
           </div>
           <div className="card flex-1 text-center !py-4">
-            <p className="text-[28px] font-bold">{latest?.overallScore ?? '—'}</p>
+            <p className="text-[28px] font-bold">{latest?.overallScore ?? '-'}</p>
             <p className="text-[13px] text-app-muted mt-1">Сейчас</p>
           </div>
         </div>

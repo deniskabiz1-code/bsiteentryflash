@@ -13,7 +13,7 @@ const VALID_FACE_SHAPES = new Set(['oval', 'square', 'round', 'heart', 'oblong']
 const HAIRCUTS_BY_FACE_SHAPE: Record<string, { best: HaircutPick[]; avoid: string[] }> = {
   oval: {
     best: [
-      { name: 'Текстурированный кроп', description: 'Подчёркивает скулы и линию челюсти — универсален для овала' },
+      { name: 'Текстурированный кроп', description: 'Подчёркивает скулы и линию челюсти. Универсален для овала' },
       { name: 'Фейд с чёлкой', description: 'Смягчает пропорции и добавляет объём сверху' },
       { name: 'Сайд-парт', description: 'Классика, которая не перегружает овальное лицо' },
     ],
@@ -86,13 +86,13 @@ function buildFallbackStrengths(scores: unknown): string[] {
   const entries = scoreEntries(scores).sort((a, b) => b[1] - a[1]);
   const top = entries.slice(0, 3).filter(([, value]) => value >= 60);
   if (top.length === 0) {
-    return ['Есть база для улучшения — начните с простого ежедневного ухода'];
+    return ['Есть база для улучшения. Начните с простого ежедневного ухода'];
   }
   return top.map(([key, value]) => {
     const label = SCORE_LABELS[key] ?? key;
-    if (value >= 82) return `${label.charAt(0).toUpperCase() + label.slice(1)} — явная сильная сторона (${value}/100)`;
+    if (value >= 82) return `${label.charAt(0).toUpperCase() + label.slice(1)}. Явная сильная сторона (${value}/100)`;
     if (value >= 72) return `${label.charAt(0).toUpperCase() + label.slice(1)} выглядит хорошо (${value}/100)`;
-    return `${label.charAt(0).toUpperCase() + label.slice(1)} — относительно лучший параметр (${value}/100)`;
+    return `${label.charAt(0).toUpperCase() + label.slice(1)}. Относительно лучший параметр (${value}/100)`;
   });
 }
 
@@ -108,7 +108,7 @@ function buildFallbackQuickWins(data: Record<string, unknown>): QuickWin[] {
   }
 
   wins.push({
-    action: 'Следующее селфи — при дневном свете у окна, камера на уровне глаз',
+    action: 'Следующее селфи. При дневном свете у окна, камера на уровне глаз',
     impact: 'Баллы станут стабильнее между анализами',
   });
 
@@ -130,15 +130,15 @@ function buildFallbackPhotoFeedback(): string {
 function buildFallbackHairNotes(scores: unknown): string {
   const hairstyle = scoreEntries(scores).find(([key]) => key === 'hairstyle')?.[1];
   if (hairstyle === undefined) {
-    return 'Причёска влияет на общее впечатление — аккуратная укладка и свежая стрижка могут поднять оценку на следующем фото.';
+    return 'Причёска влияет на общее впечатление. Аккуратная укладка и свежая стрижка могут поднять оценку на следующем фото.';
   }
   if (hairstyle >= 75) {
-    return 'Причёска хорошо подчёркивает лицо — сохраняйте текущую форму и объём.';
+    return 'Причёска хорошо подчёркивает лицо. Сохраняйте текущую форму и объём.';
   }
   if (hairstyle >= 60) {
-    return 'Причёска нейтральная — текстурный кроп или лёгкий объём сверху визуально улучшат пропорции.';
+    return 'Причёска нейтральная. Текстурный кроп или лёгкий объём сверху визуально улучшат пропорции.';
   }
-  return 'Причёска сейчас тянет оценку вниз — стоит обновить стрижку и уделять 2–3 минуты укладке перед фото.';
+  return 'Причёска сейчас тянет оценку вниз. Стоит обновить стрижку и уделять 2-3 минуты укладке перед фото.';
 }
 
 function normalizeQuickWins(raw: unknown, data: Record<string, unknown>): QuickWin[] {

@@ -37,7 +37,7 @@ export async function rewardReferrerOnSubscriptionPurchase(userId: number): Prom
 
   sendBotMessage(
     Number(referrer.telegramId),
-    '🎉 <b>Реферальный бонус!</b>\n\nВаш друг оформил подписку — вам начислен +1 полный анализ.',
+    '🎉 <b>Реферальный бонус!</b>\n\nВаш друг оформил подписку. Вам начислен +1 полный анализ.',
     { buttonText: 'Сделать анализ' },
   ).catch((err) => {
     console.error('[referral] Referrer notify failed:', err);

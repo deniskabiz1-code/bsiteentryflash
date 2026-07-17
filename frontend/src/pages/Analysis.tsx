@@ -61,13 +61,13 @@ export default function Analysis() {
       if (err instanceof Error && err.message.startsWith('Не удалось')) {
         setError(err.message);
       } else if (ax.code === 'ECONNABORTED') {
-        setError('Сервер долго отвечает — подождите и повторите');
+        setError('Сервер долго отвечает. Подождите и повторите');
       } else if (!ax.response) {
         setError('Ошибка связи с сервером. Проверьте интернет и повторите.');
       } else if (ax.response.status === 503) {
-        setError(msg || 'ИИ временно недоступен — попробуйте позже');
+        setError(msg || 'ИИ временно недоступен. Попробуйте позже');
       } else if (ax.response.status === 401) {
-        setError('Сессия Telegram устарела — закройте и снова откройте приложение');
+        setError('Сессия Telegram устарела. Закройте и снова откройте приложение');
       } else {
         setError(msg || 'Ошибка анализа');
       }
@@ -138,7 +138,7 @@ export default function Analysis() {
               {greeting}
             </h1>
             <p className="text-[14px] leading-snug text-app-muted">
-              Сделайте селфи — бесплатно получите оценки и краткий обзор.
+              Сделайте селфи. Бесплатно получите оценки и краткий обзор.
             </p>
             <AnalysisPhotoDisclaimer compact className="pt-1" />
           </div>

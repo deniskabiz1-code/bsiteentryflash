@@ -87,7 +87,7 @@ router.post(
       }
       if (files.length !== TIKTOK_PROOF_SCREENSHOTS) {
         res.status(400).json({
-          error: `Нужно ровно ${TIKTOK_PROOF_SCREENSHOTS} скриншотов — по одному на каждый комментарий`,
+          error: `Нужно ровно ${TIKTOK_PROOF_SCREENSHOTS} скриншотов. По одному на каждый комментарий`,
         });
         return;
       }
@@ -222,7 +222,7 @@ router.post('/admin/approve', async (req: Request, res: Response) => {
       });
       sendBotMessage(
         Number(proof.user.telegramId),
-        '❌ <b>Заявка отклонена</b>\n\nСкриншоты не прошли проверку. Нужны 5 скриншотов комментариев в TikTok — в каждом должен быть @primeform_app_bot.',
+        '❌ <b>Заявка отклонена</b>\n\nСкриншоты не прошли проверку. Нужны 5 скриншотов комментариев в TikTok. В каждом должен быть @primeform_app_bot.',
         { appButton: false },
       ).catch(() => {});
       res.json({ success: true, message: 'Заявка отклонена' });
