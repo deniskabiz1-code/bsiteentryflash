@@ -212,7 +212,7 @@ const FACE_ANALYSIS_PROMPT = `You are an expert aesthetician and facial analyst.
 "hair_notes": "<1-2 sentences about current hairstyle: what works, what to change, Russian>",
 "face_shape": "oval" | "square" | "round" | "heart" | "oblong",
 "best_haircuts": [
-{ "name": "<haircut name in Russian>", "description": "<why it fits THIS person's face shape, jawline, and proportions. Specific, Russian>" },
+{ "name": "<haircut name in Russian>", "description": "<why it fits THIS person's face shape, линия челюсти, and proportions. Specific, Russian>" },
 { "name": "<Russian>", "description": "<Russian>" },
 { "name": "<Russian>", "description": "<Russian>" }
 ],
@@ -244,9 +244,14 @@ const FACE_ANALYSIS_PROMPT = `You are an expert aesthetician and facial analyst.
 }
 }
 
+LANGUAGE RULES (mandatory for ALL user-visible text in Russian):
+- Never write the English word "jawline" (any casing) in summary, strengths, tips, zones, haircuts, growth_plan, or any other free-text field.
+- In Russian always say «линия челюсти» (or «челюсть» / «контур челюсти» when natural). Never transliterate as «джавлайн» or similar.
+- JSON keys must stay exactly as above (scores.jawline is the key name only; do not put English "jawline" into string values).
+
 SCORING RULES (mandatory. Follow strictly):
 - Use the full range. Do NOT default every score to the low 70s. Typical overall_score spread: 48-88 depending on the photo.
-- Score skin, jawline, symmetry, and hairstyle INDEPENDENTLY from what you see. They should often differ by 10-25 points (e.g. Skin 54, jawline 79, symmetry 71, hairstyle 63).
+- Score skin, линия челюсти (JSON key jawline), symmetry, and hairstyle INDEPENDENTLY from what you see. They should often differ by 10-25 points (e.g. skin 54, jawline 79, symmetry 71, hairstyle 63).
 - Calibration guide:
   • 85-95: clearly strong in this area, visibly above average
   • 72-84: solid / slightly above average
@@ -274,9 +279,9 @@ INSIGHT RULES (make the analysis useful, not just scores):
 - quick_wins: 2-3 items. Mix lifestyle (сон, вода, соль) and grooming; at least one about photo conditions.
 - photo_feedback: always mention lighting and camera angle honestly if they limit accuracy.
 - improvement_tips: 3-5 tips. Each must reference a visible issue from problem_zones or scores, not generic advice.
-- problem_zones: at least 2 zones with concrete descriptions.
+- problem_zones: at least 2 zones with concrete descriptions. Zone names in Russian only (e.g. «линия челюсти», not jawline).
 - face_shape: infer from visible bone structure (forehead, cheekbones, jaw, face length).
-- best_haircuts: exactly 3 options. Each must explain why it suits THIS face shape and current hairstyle score; reference jawline/symmetry when relevant.
+- best_haircuts: exactly 3 options. Each must explain why it suits THIS face shape and current hairstyle score; reference линия челюсти / симметрия when relevant (never the English word jawline).
 - haircuts_to_avoid: 2-3 styles that would work poorly for this face shape.
 
 All text fields must be in Russian. Be honest but encouraging. Do not include any text outside the JSON object.`;
@@ -305,18 +310,43 @@ SCORING RULES (mandatory):
 - overall_score = rounded mean of the four sub-scores (±5 max adjustment).
 - Be honest, not flattering.
 
+LANGUAGE: All free-text must be Russian. Never use the English word "jawline" in summary; say «линия челюсти» instead. JSON key scores.jawline stays as-is.
+
 All text must be in Russian. Do not include any text outside the JSON object.`;
+
+/** Strip English "jawline" from AI free text; keep JSON score keys intact. */
+function replaceJawlineInRussianText(text: string): string {
+  return text
+    .replace(/\bjawline\b/gi, 'линия челюсти')
+    .replace(/\bJawline\b/g, 'Линия челюсти')
+    .replace(/\bJAWLINE\b/g, 'линия челюсти')
+    .replace(/джавлайн/gi, 'линия челюсти');
+}
+
+function scrubJawlineFromAiText(value: unknown): unknown {
+  if (typeof value === 'string') return replaceJawlineInRussianText(value);
+  if (Array.isArray(value)) return value.map(scrubJawlineFromAiText);
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+      // Keep structural score keys; only clean string values nested under them
+      out[key] = scrubJawlineFromAiText(child);
+    }
+    return out;
+  }
+  return value;
+}
 
 function normalizeLiteFaceAnalysisResult(
   data: Record<string, unknown>,
 ): Record<string, unknown> {
-  return {
+  return scrubJawlineFromAiText({
     overall_score: data.overall_score,
     scores: data.scores,
     skin_type: data.skin_type,
     puffiness: data.puffiness,
     summary: data.summary,
-  };
+  }) as Record<string, unknown>;
 }
 
 function toLiteDemoResult(): Record<string, unknown> {
@@ -327,20 +357,21 @@ function toLiteDemoResult(): Record<string, unknown> {
 function normalizeFaceAnalysisResult(
   data: Record<string, unknown>,
 ): Record<string, unknown> {
+  const scrubbed = scrubJawlineFromAiText(data) as Record<string, unknown>;
   const context: SkincareAnalysisContext = {
-    skin_type: typeof data.skin_type === 'string' ? data.skin_type : undefined,
-    puffiness: typeof data.puffiness === 'string' ? data.puffiness : undefined,
-    problem_zones: Array.isArray(data.problem_zones)
-      ? (data.problem_zones as { zone: string; description?: string }[])
+    skin_type: typeof scrubbed.skin_type === 'string' ? scrubbed.skin_type : undefined,
+    puffiness: typeof scrubbed.puffiness === 'string' ? scrubbed.puffiness : undefined,
+    problem_zones: Array.isArray(scrubbed.problem_zones)
+      ? (scrubbed.problem_zones as { zone: string; description?: string }[])
       : undefined,
-    scores: data.scores && typeof data.scores === 'object'
-      ? (data.scores as { skin?: number })
+    scores: scrubbed.scores && typeof scrubbed.scores === 'object'
+      ? (scrubbed.scores as { skin?: number })
       : undefined,
   };
 
   return enrichAnalysisInsights({
-    ...data,
-    skincare_routine: normalizeSkincareRoutine(data.skincare_routine, context),
+    ...scrubbed,
+    skincare_routine: normalizeSkincareRoutine(scrubbed.skincare_routine, context),
   });
 }
 
@@ -357,6 +388,8 @@ const HAIRSTYLE_ANALYSIS_PROMPT = `You are an expert barber and facial analyst. 
 "beard_recommendation": { "recommended": true | false, "shape": "<Russian or empty>" },
 "barber_brief": "<short text in Russian the user can show to a barber>"
 }
+
+LANGUAGE: All free-text in Russian. Never use the English word "jawline"; write «линия челюсти» instead.
 
 All text fields must be in Russian. Be honest but encouraging. Do not include any text outside the JSON object.`;
 
@@ -630,7 +663,9 @@ export async function analyzeHairstyle(
   }
 
   try {
-    const data = await callVision(HAIRSTYLE_ANALYSIS_PROMPT, [frontPath, sidePath]);
+    const data = scrubJawlineFromAiText(
+      await callVision(HAIRSTYLE_ANALYSIS_PROMPT, [frontPath, sidePath]),
+    ) as Record<string, unknown>;
     return { data, demo: false };
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);

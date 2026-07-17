@@ -75,10 +75,12 @@ export function buildFaceAnalysisUserMessage(context?: FaceAnalysisUserContext):
     profileBits.push(`Цели: ${goals}`);
   }
 
+  // Present score keys for the model with Russian labels in a note; keep JSON keys as-is for structure
   const historyJson = JSON.stringify(context.previousAnalyses, null, 2);
   const profileLine = profileBits.length ? `${profileBits.join('. ')}.\n` : '';
 
   return `${profileLine}Это повторный чек-ин. Ниже прошлые анализы (от нового к старому). Сравни новое фото с динамикой и верни JSON.
+В scores: jawline = линия челюсти (в русском тексте пиши только «линия челюсти», никогда английское jawline).
 
 Прошлые анализы:
 ${historyJson}`;
