@@ -1,4 +1,5 @@
 import { useRef, type ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useConditionalPageScrollLock } from '@/hooks/useConditionalPageScrollLock';
 
 type ConditionalScrollPageProps = {
@@ -14,14 +15,19 @@ export default function ConditionalScrollPage({
   ready = true,
   remeasureKey = 0,
   className = 'page',
-  innerClassName = 'page-inner space-y-6',
+  innerClassName = 'page-inner space-y-6 page-animate',
 }: ConditionalScrollPageProps) {
+  const location = useLocation();
   const contentRef = useRef<HTMLDivElement>(null);
   useConditionalPageScrollLock(contentRef, ready, remeasureKey);
 
   return (
     <div className={className}>
-      <div ref={contentRef} className={innerClassName}>
+      <div
+        key={`${location.pathname}-${ready ? 'ready' : 'wait'}`}
+        ref={contentRef}
+        className={innerClassName}
+      >
         {children}
       </div>
     </div>

@@ -9,7 +9,7 @@ const HYSTERESIS_PX = 24;
 function isInteractiveTouchTarget(target: EventTarget | null): boolean {
   return (
     target instanceof Element
-    && Boolean(target.closest('input, textarea, select, button, label, [data-touch-interactive]'))
+    && Boolean(target.closest('input, textarea, select, button, label, a, [data-touch-interactive]'))
   );
 }
 

@@ -10,7 +10,10 @@ export default function FreeAnalysis() {
   const { user } = useApp();
   const { haptic, openLink } = useTelegram();
 
-  const [referral, setReferral] = useState<{ referralLink: string } | null>(null);
+  const [referral, setReferral] = useState<{
+    referralLink: string;
+    referralCredits: number;
+  } | null>(null);
 
   useEffect(() => {
     getReferralInfo().then(setReferral).catch(() => {});
@@ -34,7 +37,7 @@ export default function FreeAnalysis() {
 
   return (
     <div className="page">
-      <div className="page-inner space-y-6 pb-8">
+      <div className="page-inner page-animate space-y-6 pb-8">
         <header className="flex items-center gap-3 pt-1">
           <button
             type="button"
@@ -81,8 +84,13 @@ export default function FreeAnalysis() {
             Реферальная ссылка
           </h2>
           <p className="text-[14px] text-app-muted">
-            Поделитесь Primeform с другом — помогите ему начать путь к улучшению внешности.
+            Пригласите друга — когда он оформит подписку, вы получите 1 полный анализ бесплатно.
           </p>
+          {(referral?.referralCredits ?? user?.referralCredits ?? 0) > 0 && (
+            <p className="text-[13px] font-semibold text-brand-greenDark">
+              Доступно полных анализов: {referral?.referralCredits ?? user?.referralCredits}
+            </p>
+          )}
           <button type="button" onClick={copyReferralLink} className="btn-light flex items-center justify-center gap-2">
             <Copy size={16} />
             Копировать ссылку

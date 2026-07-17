@@ -2,6 +2,7 @@ import { Router, Response, Request } from 'express';
 import { AuthRequest, validateTelegramAuth } from '../middleware/validateTelegramAuth';
 import { findOrCreateUser, isSubscriptionActive, sendBotMessage } from '../services/telegram';
 import { generatePaymentUrl, verifyWebhookSignature, getSubscriptionDays } from '../services/robokassa';
+import { rewardReferrerOnSubscriptionPurchase } from '../services/referralReward';
 import { prisma } from '../utils/prisma';
 
 const router = Router();
@@ -59,6 +60,8 @@ router.post('/webhook', async (req: Request, res: Response) => {
       where: { id: userId },
       data: { subscriptionEnd: newEnd },
     });
+
+    await rewardReferrerOnSubscriptionPurchase(userId);
 
     await sendBotMessage(
       Number(user.telegramId),

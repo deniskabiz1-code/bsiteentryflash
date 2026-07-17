@@ -14,6 +14,7 @@ import { Analysis } from '@/types';
 import AnalysisPhoto from '@/components/AnalysisPhoto';
 import { ChartPeriod, scoresForPeriod } from '@/utils/progressChart';
 import { formatScoreWithBalls } from '@/utils/russianPlural';
+import { forceScrollToTop } from '@/utils/scroll';
 
 export default function Progress() {
   const navigate = useNavigate();
@@ -46,6 +47,7 @@ export default function Progress() {
 
   const openAnalysis = (analysis: Analysis) => {
     haptic('light');
+    forceScrollToTop();
     navigate(`/analysis/result/${analysis.id}`);
   };
 
@@ -68,19 +70,19 @@ export default function Progress() {
 
   if (loading) {
     return (
-      <div className="page flex justify-center items-center">
-        <div className="w-8 h-8 border-2 border-app-text border-t-transparent rounded-full animate-spin" />
+      <div className="page flex min-h-[60vh] items-center justify-center">
+        <div className="spinner" />
       </div>
     );
   }
 
   return (
     <>
-    <ConditionalScrollPage ready={!loading} remeasureKey={remeasureKey}>
-        <section className="text-center pt-2">
+    <ConditionalScrollPage ready={!loading} remeasureKey={`${remeasureKey}-ready`}>
+        <section className="pt-2 text-center">
           <p className="label-sm mb-3">Текущий балл</p>
           <div className="flex min-h-[40px] items-baseline justify-center gap-0.5">
-            <span className="font-display text-[34px] font-bold leading-none tracking-tight text-app-text">
+            <span className="anim-score-pop font-display text-[34px] font-bold leading-none tracking-tight text-app-text tabular-nums">
               {latest?.overallScore ?? '—'}
             </span>
             <span className="text-[20px] font-semibold text-app-muted">/100</span>
@@ -116,7 +118,7 @@ export default function Progress() {
             <p className="text-[28px] font-bold tracking-tight mb-4">
               {formatScoreWithBalls(latest?.overallScore ?? 0)}
             </p>
-            <MiniBarChart points={chartSeries.points} />
+            <MiniBarChart points={chartSeries.points} period={period} />
             <div className="mt-4">
               <SegmentedControl
                 options={['День', 'Неделя', 'Месяц', 'Год']}
@@ -160,7 +162,7 @@ export default function Progress() {
                   <button
                     type="button"
                     onClick={() => openAnalysis(a)}
-                    className="flex min-w-0 flex-1 items-center gap-3 px-5 py-4 text-left active:bg-app-canvas"
+                    className="flex min-w-0 flex-1 items-center gap-3 px-5 py-4 text-left transition-colors duration-150 active:bg-app-canvas"
                   >
                     <AnalysisPhoto
                       analysisId={a.id}

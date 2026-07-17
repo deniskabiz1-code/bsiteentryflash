@@ -12,7 +12,7 @@ export default function AnalysisResultSection({
   className = '',
 }: AnalysisResultSectionProps) {
   return (
-    <section className={className}>
+    <section className={`anim-fade-in ${className}`.trim()}>
       <h2 className="mb-2 px-1 text-[12px] font-bold uppercase tracking-wide text-app-muted">
         {title}
       </h2>

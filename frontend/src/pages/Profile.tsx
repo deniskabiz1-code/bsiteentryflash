@@ -3,13 +3,11 @@ import { Bell, Moon, Settings, Trash2 } from 'lucide-react';
 import Modal from '@/components/Modal';
 import {
   createPayment,
-  updateProfile, updateReminders, getSkincareRoutine,
+  updateProfile, updateReminders,
   getLastCheckin, deleteAccount,
 } from '@/api/client';
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import FreeAnalysisEntryCard from '@/components/FreeAnalysisEntryCard';
-import SkincareRoutineSection from '@/components/SkincareRoutineSection';
-import type { EnrichedSkincareStep } from '@/data/wildberriesSkincare';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useTelegramPhoto } from '@/hooks/useTelegramPhoto';
@@ -31,7 +29,6 @@ export default function Profile() {
   const [name, setName] = useState(user?.name || '');
   const [age, setAge] = useState(String(user?.age || ''));
   const [goals, setGoals] = useState<string[]>(user?.goals || []);
-  const [skincare, setSkincare] = useState<EnrichedSkincareStep[]>([]);
   const [lastCheckin, setLastCheckin] = useState<{
     id: number;
     photoUrl: string;
@@ -68,11 +65,6 @@ export default function Profile() {
   }, [user?.reminderEnabled, user?.reminderTime, user?.reminderTimezone, deviceTimezone]);
 
   useEffect(() => {
-    if (user?.subscriptionActive) {
-      getSkincareRoutine().then((d) => setSkincare(d.routine || [])).catch(() => {});
-    } else {
-      setSkincare([]);
-    }
     getLastCheckin().then((d) => setLastCheckin(d.checkin)).catch(() => {});
   }, [user]);
 
@@ -133,7 +125,7 @@ export default function Profile() {
   };
 
   const fallbackLetter = user?.name || 'P';
-  const remeasureKey = `${editing}-${reminderEnabled}-${personalizedAnalysis}-${darkTheme}-${lastCheckin?.createdAt ?? 0}-${skincare.length}-${user?.subscriptionActive}`;
+  const remeasureKey = `${editing}-${reminderEnabled}-${personalizedAnalysis}-${darkTheme}-${lastCheckin?.createdAt ?? 0}-${user?.subscriptionActive}`;
 
   return (
     <>
@@ -143,7 +135,7 @@ export default function Profile() {
             photoUrl={photoUrl}
             fallbackLetter={fallbackLetter}
             size="md"
-            className="mx-auto mb-4"
+            className="anim-scale-in mx-auto mb-4"
           />
           <span className="pill-gray">@{user?.username || 'user'}</span>
           <h1 className="heading-md mt-4">{user?.name || 'Профиль'}</h1>
@@ -167,13 +159,6 @@ export default function Profile() {
             </div>
           </section>
         )}
-
-        <SkincareRoutineSection
-          title="Мой уход за кожей"
-          routine={skincare}
-          subscribed={Boolean(user?.subscriptionActive)}
-          onSubscribe={user?.subscriptionActive ? undefined : handleSubscribe}
-        />
 
         <section className="card space-y-4">
           <div className="flex items-center justify-between">

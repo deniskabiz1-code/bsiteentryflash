@@ -85,6 +85,385 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: -0.01em;
+  transition: background-color 0.28s ease, color 0.28s ease;
+}
+
+/* ── Motion system ─────────────────────────────────────────── */
+@keyframes pf-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pf-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Route / tab window transitions — keep travel large enough to notice on phone */
+@keyframes pf-page-tab-right {
+  from {
+    opacity: 0;
+    transform: translate3d(48px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes pf-page-tab-left {
+  from {
+    opacity: 0;
+    transform: translate3d(-48px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes pf-page-push {
+  from {
+    opacity: 0;
+    transform: translate3d(56px, 8px, 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes pf-page-pop {
+  from {
+    opacity: 0;
+    transform: translate3d(-36px, 0, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes pf-page-fade {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.page-transition {
+  min-height: 100%;
+  width: 100%;
+  backface-visibility: hidden;
+}
+
+.page-transition--tab-right {
+  animation: pf-page-tab-right 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.page-transition--tab-left {
+  animation: pf-page-tab-left 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.page-transition--push {
+  animation: pf-page-push 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.page-transition--pop {
+  animation: pf-page-pop 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.page-transition--fade {
+  animation: pf-page-fade 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Native View Transitions API (Chrome / modern WebViews) */
+@supports (view-transition-name: none) {
+  html {
+    view-transition-name: none;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.32s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  ::view-transition-old(root) {
+    animation-name: pf-vt-out;
+  }
+
+  ::view-transition-new(root) {
+    animation-name: pf-vt-in;
+  }
+}
+
+@keyframes pf-vt-out {
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+@keyframes pf-vt-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.99);
+  }
+}
+
+@keyframes pf-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pf-score-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pf-bar-grow {
+  from {
+    transform: scaleY(0);
+    opacity: 0.4;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: var(--bar-opacity, 1);
+  }
+}
+
+@keyframes pf-score-bar {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes pf-check-pop {
+  0% { transform: scale(0.6); }
+  55% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pf-sheet-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pf-sheet-down {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+}
+
+@keyframes pf-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pf-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes pf-nav-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pf-pulse-soft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.96); }
+}
+
+@keyframes pf-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes pf-spin {
+  to { transform: rotate(360deg); }
+}
+
+.page-animate > * {
+  animation: pf-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.page-animate > *:nth-child(1) { animation-delay: 0.04s; }
+.page-animate > *:nth-child(2) { animation-delay: 0.09s; }
+.page-animate > *:nth-child(3) { animation-delay: 0.14s; }
+.page-animate > *:nth-child(4) { animation-delay: 0.19s; }
+.page-animate > *:nth-child(5) { animation-delay: 0.24s; }
+.page-animate > *:nth-child(6) { animation-delay: 0.29s; }
+.page-animate > *:nth-child(7) { animation-delay: 0.34s; }
+.page-animate > *:nth-child(8) { animation-delay: 0.39s; }
+.page-animate > *:nth-child(9) { animation-delay: 0.44s; }
+.page-animate > *:nth-child(10) { animation-delay: 0.48s; }
+.page-animate > *:nth-child(n + 11) { animation-delay: 0.5s; }
+
+.anim-fade-in {
+  animation: pf-fade-in 0.35s ease both;
+}
+
+.anim-scale-in {
+  animation: pf-scale-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.anim-score-pop {
+  animation: pf-score-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  display: inline-block;
+}
+
+.anim-check-pop {
+  animation: pf-check-pop 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.chart-bar {
+  transform-origin: bottom center;
+  opacity: var(--bar-opacity, 1);
+  animation: pf-bar-grow 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--bar-delay, 0ms);
+}
+
+.score-bar-fill {
+  transform-origin: left center;
+  animation: pf-score-bar 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--bar-delay, 0ms);
+}
+
+.spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--app-border);
+  border-top-color: var(--app-text);
+  border-radius: 9999px;
+  animation: pf-spin 0.7s linear infinite;
+}
+
+.spinner-lg {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.modal-backdrop {
+  animation: pf-backdrop-in 0.22s ease both;
+}
+
+.modal-backdrop-out {
+  animation: pf-backdrop-out 0.2s ease both;
+}
+
+.modal-sheet {
+  animation: pf-sheet-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.modal-sheet-out {
+  animation: pf-sheet-down 0.22s ease both;
+}
+
+.bottom-nav-enter {
+  animation: pf-nav-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.15s;
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--app-track) 25%,
+    color-mix(in srgb, var(--app-surface) 80%, var(--app-track)) 50%,
+    var(--app-track) 75%
+  );
+  background-size: 200% 100%;
+  animation: pf-shimmer 1.4s ease infinite;
+}
+
+.pulse-soft {
+  animation: pf-pulse-soft 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Keep a short fade so navigation still feels intentional; drop large motion only */
+  .page-transition--tab-right,
+  .page-transition--tab-left,
+  .page-transition--push,
+  .page-transition--pop,
+  .page-transition--fade {
+    animation: pf-fade-in 0.2s ease both !important;
+  }
+
+  .page-animate > * {
+    animation: pf-fade-in 0.2s ease both !important;
+    animation-delay: 0s !important;
+  }
+
+  .anim-fade-in,
+  .anim-scale-in,
+  .anim-score-pop,
+  .anim-check-pop,
+  .chart-bar,
+  .score-bar-fill,
+  .modal-backdrop,
+  .modal-backdrop-out,
+  .modal-sheet,
+  .modal-sheet-out,
+  .bottom-nav-enter,
+  .shimmer {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .spinner,
+  .spinner-lg {
+    animation: pf-spin 1.2s linear infinite;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
 }
 
 #root {
@@ -265,6 +644,11 @@ html.pf-onboarding-lock #root {
     border-radius: 1.5rem;
     padding: 1.25rem;
     box-shadow: var(--app-shadow-card);
+    transition:
+      background-color 0.28s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease,
+      transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .card-green {
@@ -273,6 +657,25 @@ html.pf-onboarding-lock #root {
     padding: 1.25rem;
     box-shadow: var(--app-shadow-card);
     border: 1px solid rgba(52, 199, 89, 0.12);
+    transition:
+      background-color 0.28s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease,
+      transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  button.card,
+  button.card-green,
+  a.card,
+  a.card-green {
+    cursor: pointer;
+  }
+
+  button.card:active,
+  button.card-green:active,
+  a.card:active,
+  a.card-green:active {
+    transform: scale(0.985);
   }
 
   .btn-dark {
@@ -283,11 +686,15 @@ html.pf-onboarding-lock #root {
     color: var(--app-btn-dark-text);
     font-weight: 600;
     font-size: 15px;
-    transition: transform 0.15s ease, opacity 0.15s ease;
+    transition:
+      transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.15s ease,
+      background-color 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   .btn-dark:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
   }
 
   .btn-dark:disabled {
@@ -303,11 +710,14 @@ html.pf-onboarding-lock #root {
     color: var(--app-btn-light-text);
     font-weight: 600;
     font-size: 15px;
-    transition: transform 0.15s ease;
+    transition:
+      transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.15s ease,
+      background-color 0.2s ease;
   }
 
   .btn-light:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
   }
 
   .btn-accent {
@@ -318,11 +728,15 @@ html.pf-onboarding-lock #root {
     color: #FFFFFF;
     font-weight: 600;
     font-size: 15px;
-    transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.15s ease;
+    transition:
+      transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.15s ease,
+      background-color 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   .btn-accent:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
     background-color: #248A3D;
   }
 
@@ -421,6 +835,7 @@ html.pf-onboarding-lock #root {
     color: var(--brand-green-dark);
     font-size: 13px;
     font-weight: 600;
+    transition: background-color 0.25s ease, color 0.25s ease, transform 0.2s ease;
   }
 
   .pill-gray {
@@ -432,6 +847,7 @@ html.pf-onboarding-lock #root {
     color: var(--app-text);
     font-size: 13px;
     font-weight: 500;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   .list-row {
@@ -463,26 +879,40 @@ html.pf-onboarding-lock #root {
 
   .segmented {
     display: flex;
+    width: 100%;
     background-color: color-mix(in srgb, var(--app-track) 80%, transparent);
     border-radius: 9999px;
     padding: 0.25rem;
+    transition: background-color 0.25s ease;
   }
 
   .segmented-item {
-    flex: 1;
-    padding: 0.5rem 0;
+    flex: 1 1 0;
+    min-width: 0;
+    width: 0;
+    padding: 0.5rem 0.25rem;
     text-align: center;
     font-size: 13px;
     font-weight: 500;
     border-radius: 9999px;
     color: var(--app-muted);
-    transition: all 0.15s ease;
+    touch-action: manipulation;
+    transition:
+      color 0.2s ease,
+      background-color 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.22s ease,
+      transform 0.15s ease;
+  }
+
+  .segmented-item:active {
+    transform: scale(0.96);
   }
 
   .segmented-item-active {
     background-color: var(--app-surface);
     color: var(--app-text);
     box-shadow: var(--app-shadow-pill);
+    font-weight: 600;
   }
 
   .age-slider {

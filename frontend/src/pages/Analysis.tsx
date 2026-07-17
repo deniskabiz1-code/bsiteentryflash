@@ -12,6 +12,7 @@ import { preparePhotoForUpload } from '@/utils/preparePhoto';
 import { useTelegram } from '@/hooks/useTelegram';
 import { useFirstAnalysisViewportLock } from '@/hooks/useFirstAnalysisViewportLock';
 import { resolvePersonalizedAnalysis } from '@/utils/personalizedAnalysis';
+import { forceScrollToTop } from '@/utils/scroll';
 
 export default function Analysis() {
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ export default function Analysis() {
       haptic('success');
       await refreshUser();
       const analysisId = data.analysis?.id;
+      forceScrollToTop();
       navigate(
         analysisId ? `/analysis/result/${analysisId}` : '/analysis/result',
         { state: { analysis: data.analysis }, replace: true },
@@ -165,7 +167,7 @@ export default function Analysis() {
 
   return (
     <ConditionalScrollPage
-      innerClassName="page-inner space-y-4 pt-2"
+      innerClassName="page-inner page-animate space-y-4 pt-2"
       remeasureKey={photo ? 'preview' : 'empty'}
     >
       <div className="space-y-2">

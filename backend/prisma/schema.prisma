@@ -21,8 +21,9 @@ model User {
   age             Int?
   goals           String[]  @default([])
   referralCode    String    @unique
-  referralCredits Int       @default(0)
-  referredBy      Int?
+  referralCredits           Int       @default(0)
+  referredBy                Int?
+  referralSubRewardGranted  Boolean   @default(false)
   subscriptionEnd DateTime?
   reminderEnabled      Boolean @default(false)
   reminderTime         String? // "HH:mm" in reminderTimezone

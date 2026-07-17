@@ -18,8 +18,12 @@ const PREVIEW_FIELDS = new Set([
   'resultJson',
 ]);
 
-export function resolveAccessTier(subscribed: boolean): AnalysisAccessTier {
-  return subscribed ? 'full' : 'free';
+export function resolveAccessTier(
+  subscribed: boolean,
+  referralCredits = 0,
+): AnalysisAccessTier {
+  if (subscribed || referralCredits > 0) return 'full';
+  return 'free';
 }
 
 export function resolveContentLevel(
@@ -27,6 +31,7 @@ export function resolveContentLevel(
   subscribed: boolean,
 ): AnalysisContentLevel {
   if (subscribed && accessTier === 'full') return 'premium';
+  if (accessTier === 'full') return 'full';
   return 'preview';
 }
 

@@ -5,6 +5,8 @@ import LoadingScreen from '@/components/LoadingScreen';
 import BottomNav from '@/components/BottomNav';
 import MockBanner from '@/components/MockBanner';
 import TelegramBootstrap from '@/components/TelegramBootstrap';
+import ScrollToTop from '@/components/ScrollToTop';
+import PageTransition from '@/components/PageTransition';
 import Onboarding from '@/pages/Onboarding';
 import Home from '@/pages/Home';
 import Analysis from '@/pages/Analysis';
@@ -63,24 +65,26 @@ function AppRoutes() {
 
   return (
     <>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            needsFirstAnalysis
-              ? <Navigate to="/analysis" replace state={{ firstAnalysis: true, welcome: true }} />
-              : <Home />
-          }
-        />
-        <Route path="/analysis" element={<Analysis />} />
-        <Route path="/analysis/result/:id" element={<AnalysisResult />} />
-        <Route path="/analysis/result" element={<AnalysisResult />} />
-        <Route path="/analysis/hairstyle" element={<HairstyleAnalysis />} />
-        <Route path="/progress" element={<Progress />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/free-analysis" element={<FreeAnalysis />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <PageTransition key={location.pathname}>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              needsFirstAnalysis
+                ? <Navigate to="/analysis" replace state={{ firstAnalysis: true, welcome: true }} />
+                : <Home />
+            }
+          />
+          <Route path="/analysis" element={<Analysis />} />
+          <Route path="/analysis/result/:id" element={<AnalysisResult />} />
+          <Route path="/analysis/result" element={<AnalysisResult />} />
+          <Route path="/analysis/hairstyle" element={<HairstyleAnalysis />} />
+          <Route path="/progress" element={<Progress />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/free-analysis" element={<FreeAnalysis />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </PageTransition>
       {!overlayActive && !hideNavOnAnalysisUpload && !hideNavOnOverlayPage && <BottomNav />}
     </>
   );
@@ -89,6 +93,7 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <ScrollToTop />
       <AppProvider>
         <OverlayProvider>
           <TelegramBootstrap />

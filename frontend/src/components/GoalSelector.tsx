@@ -31,13 +31,13 @@ export default function GoalSelector({ selected, onToggle, compact, dense, fill 
               key={key}
               type="button"
               onClick={() => onToggle(key)}
-              className={`w-full rounded-2xl border text-left transition-all ${
+              className={`w-full rounded-2xl border text-left transition-all duration-200 ease-out active:scale-[0.99] ${
                 fill ? 'flex min-h-0 flex-1 flex-col justify-center' : ''
               } ${
                 dense ? 'px-3.5 py-2' : compact ? 'px-4 py-3' : 'px-5 py-4'
               } ${
                 active
-                  ? 'border-brand-green bg-brand-green text-white'
+                  ? 'border-brand-green bg-brand-green text-white shadow-pill'
                   : 'border-app-border bg-app-surface text-app-text'
               }`}
             >

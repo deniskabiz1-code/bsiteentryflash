@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
 import MiniBarChart from '@/components/MiniBarChart';
 import SegmentedControl from '@/components/SegmentedControl';
-import { getDailyTasks, toggleTask, getAnalysisHistory } from '@/api/client';
+import SkincareRoutineSection from '@/components/SkincareRoutineSection';
+import { createPayment, getDailyTasks, getAnalysisHistory, getSkincareRoutine, toggleTask } from '@/api/client';
+import type { EnrichedSkincareStep } from '@/data/wildberriesSkincare';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
@@ -14,7 +16,7 @@ import { pluralizeBalls } from '@/utils/russianPlural';
 export default function Home() {
   const { user } = useApp();
   const navigate = useNavigate();
-  const { haptic } = useTelegram();
+  const { haptic, openLink } = useTelegram();
 
   const [streak, setStreak] = useState(0);
   const [dailyTip, setDailyTip] = useState('');
@@ -27,6 +29,16 @@ export default function Home() {
   const [faceAnalyses, setFaceAnalyses] = useState<Analysis[]>([]);
   const [period, setPeriod] = useState<ChartPeriod>('Месяц');
   const [weeklyDelta, setWeeklyDelta] = useState(0);
+  const [skincare, setSkincare] = useState<EnrichedSkincareStep[]>([]);
+
+  const handleSubscribe = useCallback(async () => {
+    try {
+      const data = await createPayment();
+      openLink(data.paymentUrl);
+    } catch {
+      haptic('error');
+    }
+  }, [openLink, haptic]);
 
   const chartSeries = useMemo(
     () => scoresForPeriod(faceAnalyses, period),
@@ -73,6 +85,14 @@ export default function Home() {
 
   useEffect(() => { load(); }, []);
 
+  useEffect(() => {
+    if (user?.subscriptionActive) {
+      getSkincareRoutine().then((d) => setSkincare(d.routine || [])).catch(() => {});
+    } else {
+      setSkincare([]);
+    }
+  }, [user?.subscriptionActive]);
+
   const handleToggle = async (taskKey: string) => {
     haptic('light');
     try {
@@ -105,19 +125,19 @@ export default function Home() {
     ? `По анализу от ${new Date(focusMeta.analysisDate).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}`
     : 'Под ваши цели';
 
-  const remeasureKey = `${hasAnalysis}-${neverDoOpen}-${completedCount}-${tasks.length}-${needsFirstAnalysis}-${score ?? 'x'}-${focusMeta?.fromAnalysis ?? 0}`;
+  const remeasureKey = `${hasAnalysis}-${neverDoOpen}-${completedCount}-${tasks.length}-${needsFirstAnalysis}-${score ?? 'x'}-${focusMeta?.fromAnalysis ?? 0}-${skincare.length}-${user?.subscriptionActive}-${contentLoading ? 0 : 1}`;
   useDocumentScrollLock(contentLoading);
 
   if (contentLoading) {
     return (
-      <div className="page flex justify-center items-center">
-        <div className="w-8 h-8 border-2 border-app-text border-t-transparent rounded-full animate-spin" />
+      <div className="page flex min-h-[60vh] items-center justify-center">
+        <div className="spinner" />
       </div>
     );
   }
 
   return (
-    <ConditionalScrollPage remeasureKey={remeasureKey}>
+    <ConditionalScrollPage ready={!contentLoading} remeasureKey={remeasureKey}>
         {needsFirstAnalysis && (
           <button
             type="button"
@@ -129,14 +149,14 @@ export default function Home() {
           </button>
         )}
 
-        <section className="text-center pt-2 pb-1">
+        <section className="pt-2 pb-1 text-center">
           <p className="label-sm mb-3">Твой балл</p>
           <p className="heading-xl">
-            {score ?? '—'}
+            <span className="anim-score-pop tabular-nums">{score ?? '—'}</span>
             <span className="text-[20px] font-semibold text-app-muted">/100</span>
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <span className="pill-green">
+            <span className="pill-green anim-scale-in">
               <TrendingUp size={14} />
               {weeklyDelta !== 0
                 ? `${weeklyDelta >= 0 ? '+' : ''}${weeklyDelta} за неделю`
@@ -176,7 +196,7 @@ export default function Home() {
                   </span>
                 )}
               </p>
-              <MiniBarChart points={chartSeries.points} />
+              <MiniBarChart points={chartSeries.points} period={period} />
               <div className="mt-4">
                 <SegmentedControl
                   options={['День', 'Неделя', 'Месяц', 'Год']}
@@ -214,24 +234,28 @@ export default function Home() {
                           key={task.key}
                           type="button"
                           onClick={() => handleToggle(task.key)}
-                          className={`w-full flex items-center gap-3 px-5 py-4 active:bg-app-canvas transition-colors ${
+                          className={`flex w-full items-center gap-3 px-5 py-4 transition-colors active:bg-app-canvas ${
                             index > 0 ? 'border-t border-app-border' : ''
                           }`}
                         >
                           <div
-                            className={`w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                            className={`flex h-[22px] w-[22px] flex-shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200 ${
                               task.completed
-                                ? 'bg-brand-green border-brand-green'
+                                ? 'anim-check-pop border-brand-green bg-brand-green'
                                 : 'border-app-border bg-app-surface'
                             }`}
                           >
                             {task.completed && (
-                              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="anim-scale-in">
                                 <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" />
                               </svg>
                             )}
                           </div>
-                          <span className={`text-[15px] text-left flex-1 leading-snug ${task.completed ? 'text-app-muted line-through' : 'text-app-text'}`}>
+                          <span
+                            className={`flex-1 text-left text-[15px] leading-snug transition-colors duration-200 ${
+                              task.completed ? 'text-app-muted line-through' : 'text-app-text'
+                            }`}
+                          >
                             {task.label}
                           </span>
                           {task.fromAnalysis && !task.completed && (
@@ -271,6 +295,13 @@ export default function Home() {
             </p>
           </section>
         )}
+
+        <SkincareRoutineSection
+          title="Мой уход за кожей"
+          routine={skincare}
+          subscribed={Boolean(user?.subscriptionActive)}
+          onSubscribe={user?.subscriptionActive ? undefined : handleSubscribe}
+        />
     </ConditionalScrollPage>
   );
 }

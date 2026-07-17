@@ -131,7 +131,7 @@ export const mockApi = {
     referralLink: `https://t.me/primeform_bot?start=ref_${user.referralCode}`,
   }),
 
-  applyReferralCode: async (_code: string) => ({ success: true, credits: 1 }),
+  applyReferralCode: async (_code: string) => ({ success: true }),
 
   submitReferralProof: async (files: File[]) => ({
     success: true,

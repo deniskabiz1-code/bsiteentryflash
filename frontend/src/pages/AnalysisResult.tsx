@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { createPayment, getAnalysis } from '@/api/client';
+import { forceScrollToTop, scheduleScrollToTop } from '@/utils/scroll';
 import AnalysisPaywallBanner from '@/components/AnalysisPaywallBanner';
 import AnalysisResultSection from '@/components/AnalysisResultSection';
 import SkincareRoutineSection from '@/components/SkincareRoutineSection';
@@ -70,10 +71,20 @@ export default function AnalysisResult() {
       .finally(() => setLoading(false));
   }, [id, stateAnalysis]);
 
+  // Reset scroll on enter and again when async content replaces the spinner
+  useLayoutEffect(() => {
+    forceScrollToTop();
+  }, [id]);
+
+  useLayoutEffect(() => {
+    if (loading) return;
+    return scheduleScrollToTop();
+  }, [loading, id, result?.id]);
+
   if (loading) {
     return (
-      <div className="page flex justify-center items-center">
-        <div className="w-8 h-8 border-2 border-app-text border-t-transparent rounded-full animate-spin" />
+      <div className="page flex min-h-[60vh] items-center justify-center">
+        <div className="spinner" />
       </div>
     );
   }
@@ -123,7 +134,7 @@ export default function AnalysisResult() {
 
   return (
     <div className="page">
-      <div className="page-inner space-y-5 pb-4">
+      <div key={id || 'result'} className="page-inner page-animate space-y-5 pb-4">
         <section className="card">
           <div className="flex items-center gap-4">
             {(result.photoUrl || result.id) && (
@@ -131,14 +142,14 @@ export default function AnalysisResult() {
                 analysisId={result.id}
                 photoUrl={result.photoUrl}
                 alt="Анализ"
-                className="h-24 w-24 shrink-0 rounded-2xl object-cover shadow-card"
+                className="h-24 w-24 shrink-0 rounded-2xl object-cover shadow-card anim-scale-in"
               />
             )}
             <div className="min-w-0 flex-1">
               {formattedDate && <p className="label-sm mb-1">{formattedDate}</p>}
               <p className="text-[13px] text-app-muted">Общий балл</p>
               <p className="text-[40px] font-bold leading-none tracking-tight">
-                {overall}
+                <span className="anim-score-pop tabular-nums">{overall}</span>
                 <span className="text-[18px] font-semibold text-app-muted">/100</span>
               </p>
               {showFullSections && progress?.has_previous && progress.overall_delta !== 0 && (
@@ -160,7 +171,7 @@ export default function AnalysisResult() {
             </p>
             <AnalysisResultSection title="Баллы">
             <div className="card space-y-4">
-              {Object.entries(scores).map(([key, value]) => {
+              {Object.entries(scores).map(([key, value], index) => {
                 const score = value as number;
                 const delta = metricDeltas?.[key as keyof typeof metricDeltas];
                 return (
@@ -178,13 +189,16 @@ export default function AnalysisResult() {
                             {formatDelta(delta)}
                           </span>
                         )}
-                        <span className="text-[15px] font-bold text-brand-greenDark">{score}</span>
+                        <span className="text-[15px] font-bold text-brand-greenDark tabular-nums">{score}</span>
                       </div>
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-app-track">
                       <div
-                        className={`h-full rounded-full ${scoreBarTone(score)}`}
-                        style={{ width: `${Math.max(0, Math.min(100, score))}%` }}
+                        className={`score-bar-fill h-full rounded-full ${scoreBarTone(score)}`}
+                        style={{
+                          width: `${Math.max(0, Math.min(100, score))}%`,
+                          ['--bar-delay' as string]: `${index * 60}ms`,
+                        }}
                       />
                     </div>
                   </div>

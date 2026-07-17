@@ -17,6 +17,45 @@ type ScoredAnalysis = {
   createdAt: string;
 };
 
+function startOfLocalDay(date: Date): Date {
+  const day = new Date(date);
+  day.setHours(0, 0, 0, 0);
+  return day;
+}
+
+function startOfLocalWeek(date: Date): Date {
+  const day = startOfLocalDay(date);
+  const weekday = day.getDay();
+  const mondayOffset = weekday === 0 ? -6 : 1 - weekday;
+  day.setDate(day.getDate() + mondayOffset);
+  return day;
+}
+
+function toPoint(analysis: ScoredAnalysis): ChartPoint {
+  return {
+    score: analysis.overallScore || 0,
+    date: analysis.createdAt,
+  };
+}
+
+function aggregateByBucket(
+  analyses: ScoredAnalysis[],
+  bucketKey: (date: Date) => string,
+  maxBars: number,
+): ChartPoint[] {
+  const buckets = new Map<string, ScoredAnalysis>();
+
+  for (const analysis of analyses) {
+    const key = bucketKey(new Date(analysis.createdAt));
+    buckets.set(key, analysis);
+  }
+
+  return [...buckets.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .slice(-maxBars)
+    .map(([, analysis]) => toPoint(analysis));
+}
+
 export function scoresForPeriod(
   analyses: ScoredAnalysis[],
   period: ChartPeriod,
@@ -26,27 +65,54 @@ export function scoresForPeriod(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 
+  if (chronological.length === 0) {
+    return { points: [], usedFallback: false };
+  }
+
   const cutoff = Date.now() - PERIOD_MS[period];
   const inPeriod = chronological.filter(
-    (a) => new Date(a.createdAt).getTime() >= cutoff,
+    (analysis) => new Date(analysis.createdAt).getTime() >= cutoff,
   );
 
-  const source = inPeriod.length > 0 ? inPeriod : chronological;
-  const usedFallback = inPeriod.length === 0 && chronological.length > 0;
+  if (inPeriod.length === 0) {
+    return { points: [], usedFallback: false };
+  }
 
-  return {
-    points: source.slice(-maxBars).map((a) => ({
-      score: a.overallScore || 0,
-      date: a.createdAt,
-    })),
-    usedFallback,
-  };
+  let points: ChartPoint[];
+
+  if (period === 'День') {
+    points = inPeriod.slice(-maxBars).map(toPoint);
+  } else if (period === 'Неделя' || period === 'Месяц') {
+    points = aggregateByBucket(
+      inPeriod,
+      (date) => startOfLocalDay(date).toISOString().slice(0, 10),
+      maxBars,
+    );
+  } else {
+    points = aggregateByBucket(
+      inPeriod,
+      (date) => startOfLocalWeek(date).toISOString().slice(0, 10),
+      maxBars,
+    );
+  }
+
+  return { points, usedFallback: false };
 }
 
-export function formatChartDate(iso: string, barCount: number): string {
+export function formatChartDate(
+  iso: string,
+  period: ChartPeriod,
+  barCount: number,
+): string {
   const date = new Date(iso);
+
+  if (period === 'День') {
+    return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  }
+
   if (barCount <= 3) {
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
   }
+
   return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
 }

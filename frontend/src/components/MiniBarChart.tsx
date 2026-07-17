@@ -1,39 +1,34 @@
-import { ChartPoint, formatChartDate } from '@/utils/progressChart';
+import { ChartPeriod, ChartPoint, formatChartDate } from '@/utils/progressChart';
 
 interface MiniBarChartProps {
   points: ChartPoint[];
+  period?: ChartPeriod;
   max?: number;
 }
 
-const MAX_SLOTS = 10;
+const MAX_BARS = 10;
 
-export default function MiniBarChart({ points, max = 100 }: MiniBarChartProps) {
+export default function MiniBarChart({ points, period = 'Месяц', max = 100 }: MiniBarChartProps) {
   if (points.length === 0) {
     return (
-      <p className="text-[13px] text-app-muted leading-relaxed">
+      <p className="anim-fade-in text-[13px] leading-relaxed text-app-muted">
         Нет данных за выбранный период
       </p>
     );
   }
 
-  const count = points.length;
-  const slots: (ChartPoint | null)[] = Array.from({ length: MAX_SLOTS }, (_, index) => {
-    const dataIndex = index - (MAX_SLOTS - count);
-    return dataIndex >= 0 ? points[dataIndex] : null;
-  });
+  const displayPoints = points.slice(-MAX_BARS);
+  const count = displayPoints.length;
 
   return (
     <div
-      className="grid w-full grid-cols-10 gap-0.5"
+      key={`${period}-${displayPoints.map((p) => `${p.date}-${p.score}`).join('|')}`}
+      className="grid w-full gap-1.5"
+      style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}
       role="img"
-      aria-label={`График баллов: ${points.map((p) => p.score).join(', ')}`}
+      aria-label={`График баллов: ${displayPoints.map((p) => p.score).join(', ')}`}
     >
-      {slots.map((point, slotIndex) => {
-        if (!point) {
-          return <div key={`empty-${slotIndex}`} className="min-h-[7.5rem]" aria-hidden />;
-        }
-
-        const dataIndex = slotIndex - (MAX_SLOTS - count);
+      {displayPoints.map((point, dataIndex) => {
         const isLatest = dataIndex === count - 1;
         const height = Math.max(24, (point.score / max) * 100);
         const progress = (dataIndex + 1) / count;
@@ -41,11 +36,11 @@ export default function MiniBarChart({ points, max = 100 }: MiniBarChartProps) {
 
         return (
           <div
-            key={`${point.date}-${point.score}`}
+            key={`${point.date}-${point.score}-${dataIndex}`}
             className="flex min-w-0 flex-col items-center"
           >
             <span
-              className={`mb-1 text-[12px] font-bold leading-none tabular-nums ${
+              className={`mb-1 text-[12px] font-bold leading-none tabular-nums transition-colors duration-200 ${
                 isLatest ? 'text-app-text' : 'text-app-muted'
               }`}
             >
@@ -54,17 +49,23 @@ export default function MiniBarChart({ points, max = 100 }: MiniBarChartProps) {
 
             <div className="flex h-20 w-full items-end justify-center">
               <div
-                className={`w-full max-w-[22px] rounded-full ${
+                className={`chart-bar w-full rounded-full ${
+                  count <= 3 ? 'max-w-12' : count <= 6 ? 'max-w-9' : 'max-w-7'
+                } ${
                   isLatest
                     ? 'bg-gradient-to-t from-brand-green to-brand-green/70'
                     : 'bg-brand-green'
                 }`}
-                style={{ height: `${height}%`, opacity }}
+                style={{
+                  height: `${height}%`,
+                  ['--bar-opacity' as string]: String(opacity),
+                  ['--bar-delay' as string]: `${dataIndex * 45}ms`,
+                }}
               />
             </div>
 
             <span className="mt-1.5 w-full truncate text-center text-[11px] leading-tight text-app-muted">
-              {formatChartDate(point.date, count)}
+              {formatChartDate(point.date, period, count)}
             </span>
           </div>
         );

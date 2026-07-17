@@ -8,7 +8,7 @@ export default function FreeAnalysisEntryCard() {
     <button
       type="button"
       onClick={() => navigate('/free-analysis')}
-      className="card-green w-full text-left"
+      className="card-green group w-full text-left"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
@@ -20,7 +20,10 @@ export default function FreeAnalysisEntryCard() {
             </p>
           </div>
         </div>
-        <ChevronRight size={20} className="shrink-0 text-brand-greenDark mt-1" />
+        <ChevronRight
+          size={20}
+          className="mt-1 shrink-0 text-brand-greenDark transition-transform duration-200 group-active:translate-x-0.5"
+        />
       </div>
     </button>
   );

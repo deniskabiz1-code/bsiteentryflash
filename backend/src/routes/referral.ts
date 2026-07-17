@@ -63,22 +63,12 @@ router.post('/apply', validateTelegramAuth, async (req: AuthRequest, res: Respon
       return;
     }
 
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: user.id },
-        data: { referredBy: referrer.id },
-      }),
-      prisma.user.update({
-        where: { id: referrer.id },
-        data: { referralCredits: { increment: 1 } },
-      }),
-      prisma.user.update({
-        where: { id: user.id },
-        data: { referralCredits: { increment: 1 } },
-      }),
-    ]);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { referredBy: referrer.id },
+    });
 
-    res.json({ success: true, credits: 1 });
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Ошибка применения кода' });
   }
