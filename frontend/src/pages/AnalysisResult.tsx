@@ -232,6 +232,8 @@ export default function AnalysisResult() {
             overallScore={overall}
             scores={scores}
             skinType={result.skin_type}
+            puffiness={result.puffiness}
+            problemZones={result.problem_zones}
           />
         )}
 

@@ -7,17 +7,9 @@ import type {
 } from '@/data/wildberriesSkincare';
 import {
   enrichSkincareRoutine,
-  getSkincarePreviewProducts,
   normalizeSkincareRoutine,
-  SKINCARE_PRODUCT_CATALOG,
+  selectPersonalizedSkincare,
 } from '@/data/wildberriesSkincare';
-
-const LOCKED_PLACEHOLDERS = [
-  'Пенка для умывания',
-  'Сыворотка с азелаиновой кислотой',
-  'Крем от прыщей',
-  'Сыворотка витамин C',
-];
 
 type SkincareRoutineSectionProps = {
   title?: string;
@@ -43,13 +35,16 @@ export default function SkincareRoutineSection({
   emptyMessage = 'Сделайте анализ лица — персональная рутина появится здесь',
   compact = false,
 }: SkincareRoutineSectionProps) {
-  const teaserProduct = getSkincarePreviewProducts(1)[0];
-  const lockedCount = Math.max(SKINCARE_PRODUCT_CATALOG.length - 1, 1);
-  const lockedPreviewCount = compact ? 1 : Math.min(lockedCount, 3);
+  const personalized = selectPersonalizedSkincare(skinContext ?? {}, 5);
+  const head = personalized[0];
+  const restLocked = personalized.slice(1, compact ? 2 : 4);
+
   const enrichedRoutine = subscribed
     ? (routine.length > 0 && isEnriched(routine[0])
         ? (routine as EnrichedSkincareStep[])
         : enrichSkincareRoutine(normalizeSkincareRoutine(routine, skinContext)))
+        .filter((item) => item.product)
+        .slice(0, 5)
     : [];
 
   if (subscribed && enrichedRoutine.length > 0) {
@@ -57,26 +52,26 @@ export default function SkincareRoutineSection({
       <section>
         <div className="mb-3 flex items-center justify-between px-1">
           <h2 className="text-[17px] font-bold">{title}</h2>
-          <span className="pill-green">Подписка</span>
+          <span className="pill-green">Под вашу кожу</span>
         </div>
         <p className="mb-3 px-1 text-[13px] leading-snug text-app-muted">
-          Персональная подборка под ваш тип кожи — нажмите товар, чтобы открыть на WB или Ozon.
+          Несколько средств, которые лучше всего подходят по анализу — когда и как наносить, ссылки на WB и Ozon.
         </p>
         <div className="card !p-0 overflow-hidden">
-          {enrichedRoutine.map((item, i) => (
-            <div key={i} className="border-b border-app-border last:border-0">
-              <div className="px-5 py-4">
-                <p className="font-semibold text-[15px]">{item.step}</p>
-                <p className="mt-1 text-[14px] text-app-muted">{item.product_type}</p>
-                <p className="mt-1 text-[13px] text-app-faint">{item.tip}</p>
+          {enrichedRoutine.map((item, i) => {
+            const pick = personalized.find((p) => p.product?.id === item.product?.id);
+            return (
+              <div key={item.product?.id ?? i} className="border-b border-app-border last:border-0">
+                <WildberriesProductCard
+                  product={item.product!}
+                  whenLabel={pick?.whenLabel}
+                  howToUse={pick?.howToUse || item.tip}
+                  whyFits={item.product_type || pick?.whyFits}
+                  stepLabel={item.step}
+                />
               </div>
-              {item.product && (
-                <div className="border-t border-app-border bg-app-canvas/60">
-                  <WildberriesProductCard product={item.product} />
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     );
@@ -103,29 +98,33 @@ export default function SkincareRoutineSection({
         </div>
         <div className="card space-y-3 !py-4">
           <p className="text-[13px] leading-snug text-app-muted">
-            11 товаров WB/Ozon с артикулами — по подписке после анализа.
+            Средства под ваш тип кожи: когда наносить и как — после анализа и подписки.
           </p>
           <div className="overflow-hidden rounded-2xl border border-app-border">
-            <p className="bg-app-track/60 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-app-muted">
-              Пример · 1 из {SKINCARE_PRODUCT_CATALOG.length}
-            </p>
-            {teaserProduct && (
-              <WildberriesProductCard product={teaserProduct} previewOnly compact />
+            {head?.product && (
+              <WildberriesProductCard
+                product={head.product}
+                previewOnly
+                compact
+                whenLabel={head.whenLabel}
+                howToUse={head.howToUse}
+                stepLabel={head.step}
+              />
             )}
-            {LOCKED_PLACEHOLDERS.slice(0, lockedPreviewCount).map((label) => (
+            {restLocked.map((pick) => (
               <div
-                key={label}
+                key={pick.product!.id}
                 className="flex items-center justify-between gap-3 border-t border-app-border bg-app-canvas/40 px-3 py-2.5"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium text-app-muted/80 blur-[3px] select-none">
-                    {label}
+                  <p className="text-[11px] font-semibold text-brand-greenDark">{pick.whenLabel}</p>
+                  <p className="mt-0.5 truncate text-[13px] font-medium text-app-muted/80 blur-[2.5px] select-none">
+                    {pick.product!.name}
                   </p>
-                  <p className="mt-0.5 text-[10px] text-app-faint">+ ещё {lockedCount} в полной рутине</p>
                 </div>
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-app-track px-2 py-1 text-[10px] font-semibold text-app-muted">
                   <Lock size={10} />
-                  Подписка
+                  Скрыто
                 </span>
               </div>
             ))}
@@ -151,38 +150,45 @@ export default function SkincareRoutineSection({
       </div>
       <div className="card space-y-4">
         <p className="text-[14px] leading-relaxed text-app-muted">
-          Пример из подборки WB и Ozon. Полная рутина с артикулами и ссылками — только по подписке.
+          Подборка под ваш анализ: несколько подходящих средств, когда и как их использовать, со ссылками на WB и Ozon.
         </p>
         <div className="overflow-hidden rounded-2xl border border-app-border">
-          <p className="bg-app-track/60 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-app-muted">
-            Пример · 1 из {SKINCARE_PRODUCT_CATALOG.length}
-          </p>
-          {teaserProduct && (
-            <WildberriesProductCard product={teaserProduct} previewOnly />
+          {head?.product && (
+            <WildberriesProductCard
+              product={head.product}
+              previewOnly
+              whenLabel={head.whenLabel}
+              howToUse={head.howToUse}
+              whyFits={head.whyFits}
+              stepLabel={head.step}
+            />
           )}
-          {LOCKED_PLACEHOLDERS.slice(0, Math.min(lockedCount, 3)).map((label) => (
+          {restLocked.map((pick) => (
             <div
-              key={label}
+              key={pick.product!.id}
               className="flex items-center justify-between gap-3 border-t border-app-border bg-app-canvas/40 px-4 py-3"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-medium text-app-muted/80 blur-[3px] select-none">
-                  {label}
+                <p className="text-[11px] font-semibold text-brand-greenDark">
+                  {pick.whenLabel}
+                  {pick.step ? ` · ${pick.step}` : ''}
                 </p>
-                <p className="mt-1 text-[11px] text-app-faint">Артикул · •••••••</p>
+                <p className="mt-0.5 truncate text-[14px] font-medium text-app-muted/80 blur-[2.5px] select-none">
+                  {pick.product!.name}
+                </p>
+                <p className="mt-0.5 text-[11px] text-app-faint blur-[2px] select-none">
+                  {pick.howToUse}
+                </p>
               </div>
               <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-app-track px-2 py-1 text-[10px] font-semibold text-app-muted">
                 <Lock size={10} />
-                Подписка
+                Скрыто
               </span>
             </div>
           ))}
         </div>
-        <p className="text-[13px] font-medium text-app-text">
-          + ещё {lockedCount} {lockedCount === 1 ? 'товар' : lockedCount < 5 ? 'товара' : 'товаров'} в полной рутине
-        </p>
         <p className="text-[12px] leading-snug text-app-faint">
-          После подписки и анализа — персональные шаги утро/вечер и ссылки на все товары.
+          После подписки — полные названия, артикулы и прямые ссылки на товары.
         </p>
         {onSubscribe && (
           <button type="button" onClick={onSubscribe} className="btn-dark">

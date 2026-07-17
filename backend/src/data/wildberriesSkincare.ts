@@ -1,4 +1,4 @@
-/** Curated marketplace picks for skincare routine — edit article IDs here. */
+/** Keep in sync with frontend/src/data/wildberriesSkincare.ts */
 export type SkincareProductStore = 'wildberries' | 'ozon';
 
 export type SkincareProductCategory =
@@ -23,120 +23,180 @@ export interface WildberriesProduct {
   store: SkincareProductStore;
   description: string;
   bestFor: string;
+  /** When to use — shown in personalized picks */
+  whenToUse: string;
+  /** How to apply — short practical line */
+  howToUse: string;
 }
 
-export const SKINCARE_PRODUCT_CATALOG: WildberriesProduct[] = [
-  {
-    id: 328169906,
-    name: 'Сыворотка для лица с салициловой кислотой 2% от прыщей',
-    brand: 'GELTEK',
-    priceRub: 1750,
-    category: 'serum_salicylic',
-    store: 'wildberries',
-    description: 'Точечно против воспалений и закупоренных пор',
-    bestFor: 'активные прыщи, закупоренные поры, жирная Т-зона',
+const USAGE: Record<SkincareProductCategory, { whenToUse: string; howToUse: string }> = {
+  cleanser_synergetic: {
+    whenToUse: 'Утро и вечер',
+    howToUse: 'На влажное лицо, мягко вспеньте 30–40 сек, смойте тёплой водой',
   },
-  {
-    id: 1219734384,
-    name: 'Пенка для умывания увлажняющая с гиалуроновой кислотой, 150 мл',
-    brand: 'SYNERGETIC',
-    priceRub: 250,
-    category: 'cleanser_synergetic',
-    store: 'ozon',
-    description: 'Мягкое ежедневное очищение без стянутости',
-    bestFor: 'нормальная и сухая кожа, мягкое ежедневное очищение, бюджетный уход',
+  cleanser_orele: {
+    whenToUse: 'Утро и вечер',
+    howToUse: 'Нанесите на влажную кожу, помассируйте 30 сек, тщательно смойте',
   },
-  {
-    id: 309217385,
-    name: 'Сыворотка для лица Азелаиновая кислота 10%',
-    brand: 'Elementary',
-    priceRub: 600,
-    category: 'serum_azelaic',
-    store: 'wildberries',
-    description: 'Выравнивает тон и борется с постакне',
-    bestFor: 'постакне, пигментные пятна, неровный тон',
+  cleanser_enzyme: {
+    whenToUse: '1–2 раза в неделю, вечер',
+    howToUse: 'Смешайте с водой до кашицы, круговыми движениями 20–30 сек, смойте — не каждый день',
   },
-  {
-    id: 382239531,
-    name: 'Сыворотка для проблемной кожи с азелоглицином, 35 мл',
-    brand: 'SEVEKI',
-    priceRub: 500,
-    category: 'serum_azeloglicin',
-    store: 'wildberries',
-    description: 'Снижает жирность и покраснения',
-    bestFor: 'жирная проблемная кожа, покраснения, воспаления',
+  serum_salicylic: {
+    whenToUse: 'Вечер',
+    howToUse: 'Точечно или тонким слоем на зоны воспалений после очищения, до крема',
   },
-  {
-    id: 142044104,
-    name: 'Энзимная пудра пилинг для умывания лица и тела, 220 мл',
-    brand: 'VOIS',
-    priceRub: 500,
-    category: 'cleanser_enzyme',
-    store: 'wildberries',
-    description: 'Деликатное отшелушивание 1–2 раза в неделю',
-    bestFor: 'неровная текстура, закрытые комедоны, отшелушивание 1–2 раза в неделю',
+  serum_azelaic: {
+    whenToUse: 'Вечер',
+    howToUse: '2–3 капли на всё лицо после очищения; начинайте через день, если кожа чувствительная',
   },
-  {
-    id: 408376110,
-    name: 'Матирующий крем для лица от прыщей и акне с ниацинамидом',
-    brand: 'Orele',
-    priceRub: 1200,
-    category: 'moisturizer_orele',
-    store: 'wildberries',
-    description: 'Дневной уход с матовым финишем',
-    bestFor: 'комбинированная и жирная кожа, дневной уход при акне',
+  serum_azeloglicin: {
+    whenToUse: 'Утро или вечер',
+    howToUse: 'Несколько капель на Т-зону и воспалённые участки, затем крем',
   },
-  {
-    id: 191806476,
-    name: 'Сыворотка для лица с витамином С от пигментации и постакне',
-    brand: 'Orele',
-    priceRub: 1100,
-    category: 'serum_vitc',
-    store: 'wildberries',
-    description: 'Осветление следов и ровный тон',
-    bestFor: 'тусклый тон, следы постакне, пигментация',
+  serum_vitc: {
+    whenToUse: 'Утро',
+    howToUse: '2–3 капли на сухое лицо, дайте впитаться, сверху крем; днём желателен SPF',
   },
-  {
-    id: 228767624,
-    name: 'Пенка для умывания с травами увлажняющая от прыщей и сухости',
-    brand: 'Orele',
-    priceRub: 1100,
-    category: 'cleanser_orele',
-    store: 'wildberries',
-    description: 'Очищение для проблемной и обезвоженной кожи',
-    bestFor: 'комбинированная кожа, прыщи + сухость, бережное очищение',
+  serum_recovery: {
+    whenToUse: 'Вечер',
+    howToUse: 'После очищения на всё лицо — особенно если кожа сухая или после активов',
   },
-  {
-    id: 2141553631,
-    name: 'Сыворотка для ухода за кожей Восстановление, 30 мл',
-    brand: 'KOEC lab',
-    priceRub: 1000,
-    category: 'serum_recovery',
-    store: 'ozon',
-    description: 'Восстановление барьера после активов',
-    bestFor: 'чувствительная кожа, восстановление барьера, после активов',
+  moisturizer_orele: {
+    whenToUse: 'Утро',
+    howToUse: 'Тонкий слой на лицо и шею после сыворотки; можно под макияж',
   },
-  {
-    id: 696701797,
-    name: 'Крем роллер для век и кожи вокруг глаз',
-    brand: 'Kottur',
-    priceRub: 350,
-    category: 'eye_cream',
-    store: 'wildberries',
-    description: 'Уход за отёчностью и тёмными кругами',
-    bestFor: 'отёчность под глазами, тёмные круги, утренняя отёчность',
+  moisturizer_vois: {
+    whenToUse: 'Утро и/или вечер',
+    howToUse: 'Лёгкий слой на всё лицо после сыворотки, не втирать агрессивно',
   },
-  {
-    id: 1612315196,
-    name: 'Крем для лица от прыщей с салициловой кислотой и ниацинамидом, 50 мл',
-    brand: 'VOIS',
-    priceRub: 300,
-    category: 'moisturizer_vois',
-    store: 'ozon',
-    description: 'Лёгкий крем для проблемной кожи',
-    bestFor: 'лёгкий бюджетный уход при прыщах, жирная кожа',
+  eye_cream: {
+    whenToUse: 'Утро (и при отёках — вечером)',
+    howToUse: 'Лёгкими движениями от внешнего уголка к внутреннему, не растягивая кожу',
   },
-];
+};
+
+function withUsage<T extends Omit<WildberriesProduct, 'whenToUse' | 'howToUse'>>(
+  product: T,
+): WildberriesProduct {
+  const usage = USAGE[product.category];
+  return { ...product, whenToUse: usage.whenToUse, howToUse: usage.howToUse };
+}
+
+export const SKINCARE_PRODUCT_CATALOG: WildberriesProduct[] = (
+  [
+    {
+      id: 328169906,
+      name: 'Сыворотка для лица с салициловой кислотой 2% от прыщей',
+      brand: 'GELTEK',
+      priceRub: 1750,
+      category: 'serum_salicylic' as const,
+      store: 'wildberries' as const,
+      description: 'Точечно против воспалений и закупоренных пор',
+      bestFor: 'активные прыщи, закупоренные поры, жирная Т-зона',
+    },
+    {
+      id: 1219734384,
+      name: 'Пенка для умывания увлажняющая с гиалуроновой кислотой, 150 мл',
+      brand: 'SYNERGETIC',
+      priceRub: 250,
+      category: 'cleanser_synergetic' as const,
+      store: 'ozon' as const,
+      description: 'Мягкое ежедневное очищение без стянутости',
+      bestFor: 'нормальная и сухая кожа, мягкое ежедневное очищение, бюджетный уход',
+    },
+    {
+      id: 309217385,
+      name: 'Сыворотка для лица Азелаиновая кислота 10%',
+      brand: 'Elementary',
+      priceRub: 600,
+      category: 'serum_azelaic' as const,
+      store: 'wildberries' as const,
+      description: 'Выравнивает тон и борется с постакне',
+      bestFor: 'постакне, пигментные пятна, неровный тон',
+    },
+    {
+      id: 382239531,
+      name: 'Сыворотка для проблемной кожи с азелоглицином, 35 мл',
+      brand: 'SEVEKI',
+      priceRub: 500,
+      category: 'serum_azeloglicin' as const,
+      store: 'wildberries' as const,
+      description: 'Снижает жирность и покраснения',
+      bestFor: 'жирная проблемная кожа, покраснения, воспаления',
+    },
+    {
+      id: 142044104,
+      name: 'Энзимная пудра пилинг для умывания лица и тела, 220 мл',
+      brand: 'VOIS',
+      priceRub: 500,
+      category: 'cleanser_enzyme' as const,
+      store: 'wildberries' as const,
+      description: 'Деликатное отшелушивание 1–2 раза в неделю',
+      bestFor: 'неровная текстура, закрытые комедоны, отшелушивание 1–2 раза в неделю',
+    },
+    {
+      id: 408376110,
+      name: 'Матирующий крем для лица от прыщей и акне с ниацинамидом',
+      brand: 'Orele',
+      priceRub: 1200,
+      category: 'moisturizer_orele' as const,
+      store: 'wildberries' as const,
+      description: 'Дневной уход с матовым финишем',
+      bestFor: 'комбинированная и жирная кожа, дневной уход при акне',
+    },
+    {
+      id: 191806476,
+      name: 'Сыворотка для лица с витамином С от пигментации и постакне',
+      brand: 'Orele',
+      priceRub: 1100,
+      category: 'serum_vitc' as const,
+      store: 'wildberries' as const,
+      description: 'Осветление следов и ровный тон',
+      bestFor: 'тусклый тон, следы постакне, пигментация',
+    },
+    {
+      id: 228767624,
+      name: 'Пенка для умывания с травами увлажняющая от прыщей и сухости',
+      brand: 'Orele',
+      priceRub: 1100,
+      category: 'cleanser_orele' as const,
+      store: 'wildberries' as const,
+      description: 'Очищение для проблемной и обезвоженной кожи',
+      bestFor: 'комбинированная кожа, прыщи + сухость, бережное очищение',
+    },
+    {
+      id: 2141553631,
+      name: 'Сыворотка для ухода за кожей Восстановление, 30 мл',
+      brand: 'KOEC lab',
+      priceRub: 1000,
+      category: 'serum_recovery' as const,
+      store: 'ozon' as const,
+      description: 'Восстановление барьера после активов',
+      bestFor: 'чувствительная кожа, восстановление барьера, после активов',
+    },
+    {
+      id: 696701797,
+      name: 'Крем роллер для век и кожи вокруг глаз',
+      brand: 'Kottur',
+      priceRub: 350,
+      category: 'eye_cream' as const,
+      store: 'wildberries' as const,
+      description: 'Уход за отёчностью и тёмными кругами',
+      bestFor: 'отёчность под глазами, тёмные круги, утренняя отёчность',
+    },
+    {
+      id: 1612315196,
+      name: 'Крем для лица от прыщей с салициловой кислотой и ниацинамидом, 50 мл',
+      brand: 'VOIS',
+      priceRub: 300,
+      category: 'moisturizer_vois' as const,
+      store: 'ozon' as const,
+      description: 'Лёгкий крем для проблемной кожи',
+      bestFor: 'лёгкий бюджетный уход при прыщах, жирная кожа',
+    },
+  ] as const
+).map(withUsage);
 
 export type SkincareAnalysisContext = {
   skin_type?: string;
@@ -155,6 +215,11 @@ export type SkincareRoutineStep = {
 export type EnrichedSkincareStep = SkincareRoutineStep & {
   product: WildberriesProduct | null;
 };
+
+/** @deprecated Use skincareProductUrl */
+export function wildberriesProductUrl(id: number): string {
+  return `https://www.wildberries.ru/catalog/${id}/detail.aspx`;
+}
 
 export function skincareProductUrl(product: Pick<WildberriesProduct, 'id' | 'store'>): string {
   if (product.store === 'ozon') {
@@ -178,12 +243,13 @@ AVAILABLE PRODUCTS (use ONLY these product_id values in skincare_routine):
 ${JSON.stringify(products, null, 2)}
 
 SKINCARE ROUTINE RULES:
-- Include exactly 4-6 steps covering morning and evening care.
+- Include exactly 4-5 steps — only the best-fitting products for THIS user (morning + evening). Never pad the list.
 - Every step MUST include product_id copied exactly from AVAILABLE PRODUCTS above.
 - Pick products for THIS specific user based on their skin_type, problem_zones, puffiness, and skin score — never use a one-size-fits-all template.
 - product_type: one sentence in Russian naming the product and explaining why it fits THIS user's visible issues.
-- tip: practical personalized advice (reference their problem zones or skin type when relevant).
+- tip: practical personalized advice — when to use (утро/вечер) and how to apply; reference their problem zones or skin type.
 - Do not invent product_id values. Do not use the same product_id twice.
+- Never mention how many products are in the catalog.
 - Matching guide:
   • combination/oily + acne or T-zone oiliness → Orele пенка (228767624) or SEVEKI/GELTEK serum + mattifying Orele cream
   • post-acne marks, uneven tone → Elementary azelaic (309217385) or Orele vitamin C (191806476)
@@ -302,9 +368,7 @@ function personalizeStepCopy(
       ? `${product.brand} — подходит при ${product.bestFor}${zoneHint ? ` (акцент: ${zoneHint})` : ''}`
       : step.product_type,
     tip: step.tip
-      || (zoneHint
-        ? `Наносите с учётом зоны «${zoneHint}»: ${product.description}`
-        : product.description),
+      || `${product.whenToUse}. ${product.howToUse}${zoneHint ? ` Акцент: ${zoneHint}.` : ''}`,
   };
 }
 
@@ -334,7 +398,7 @@ export function buildDefaultSkincareRoutine(context: SkincareAnalysisContext = {
     stepNames.splice(3, 0, 'Утро: уход за областью вокруг глаз');
   }
 
-  return stepNames.map((stepName) => {
+  return stepNames.slice(0, 5).map((stepName) => {
     const product = pickContextualProduct(stepName, context, used);
     if (!product) {
       return { step: stepName, product_type: '', tip: '' };
@@ -398,7 +462,7 @@ export function normalizeSkincareRoutine(
     }
   }
 
-  return normalized.slice(0, 6);
+  return normalized.slice(0, 5);
 }
 
 export function enrichSkincareRoutine(routine: SkincareRoutineStep[]): EnrichedSkincareStep[] {
@@ -408,6 +472,41 @@ export function enrichSkincareRoutine(routine: SkincareRoutineStep[]): EnrichedS
   }));
 }
 
+export type PersonalizedSkincarePick = EnrichedSkincareStep & {
+  whenLabel: string;
+  howToUse: string;
+  whyFits: string;
+};
+
+function whenLabelFromStep(step: string, product: WildberriesProduct | null): string {
+  const s = step.toLowerCase();
+  if (/недел|энзим|пудр/.test(s)) return product?.whenToUse || '1–2 раза в неделю';
+  if (/утр/.test(s) && /вечер|ноч/.test(s)) return 'Утро и вечер';
+  if (/утр/.test(s)) return 'Утро';
+  if (/вечер|ноч/.test(s)) return 'Вечер';
+  return product?.whenToUse || 'Ежедневно';
+}
+
+/**
+ * Rule-based pick of 4–5 best products for this face analysis.
+ * Preferable to AI for free preview: free, fast, deterministic, same catalog as full routine.
+ */
+export function selectPersonalizedSkincare(
+  context: SkincareAnalysisContext = {},
+  limit = 5,
+): PersonalizedSkincarePick[] {
+  const steps = normalizeSkincareRoutine(null, context).slice(0, Math.min(5, Math.max(4, limit)));
+  return enrichSkincareRoutine(steps)
+    .filter((item): item is EnrichedSkincareStep & { product: WildberriesProduct } => Boolean(item.product))
+    .map((item) => ({
+      ...item,
+      whenLabel: whenLabelFromStep(item.step, item.product),
+      howToUse: item.product.howToUse,
+      whyFits: item.product_type || item.product.bestFor,
+    }));
+}
+
+/** @deprecated Prefer selectPersonalizedSkincare(context) */
 export function getSkincarePreviewProducts(limit = 4): WildberriesProduct[] {
-  return SKINCARE_PRODUCT_CATALOG.slice(0, limit);
+  return selectPersonalizedSkincare({}, limit).map((p) => p.product!);
 }

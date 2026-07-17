@@ -1,6 +1,6 @@
 import { Check, Crown, Lock, Sparkles, X } from 'lucide-react';
 import WildberriesProductCard from '@/components/WildberriesProductCard';
-import { getSkincarePreviewProducts, SKINCARE_PRODUCT_CATALOG } from '@/data/wildberriesSkincare';
+import { selectPersonalizedSkincare } from '@/data/wildberriesSkincare';
 import { SCORE_LABELS, SKIN_TYPE_LABELS } from '@/types';
 
 type AnalysisPaywallBannerProps = {
@@ -8,13 +8,15 @@ type AnalysisPaywallBannerProps = {
   overallScore?: number;
   scores?: Record<string, number>;
   skinType?: string;
+  puffiness?: string;
+  problemZones?: { zone: string; description?: string }[];
 };
 
 const FULL_BLOCKS = [
   'Сильные стороны и зоны внимания',
   'Быстрые улучшения и советы',
   'Стрижки и план на 4 недели',
-  'Рутина ухода WB/Ozon',
+  'Персональная рутина ухода',
 ];
 
 function getFocusArea(scores: Record<string, number>): string {
@@ -34,10 +36,22 @@ export default function AnalysisPaywallBanner({
   overallScore,
   scores = {},
   skinType,
+  puffiness,
+  problemZones,
 }: AnalysisPaywallBannerProps) {
   const focusArea = getFocusArea(scores);
   const skinLabel = skinType ? SKIN_TYPE_LABELS[skinType] : null;
-  const teaserProduct = getSkincarePreviewProducts(1)[0];
+  const picks = selectPersonalizedSkincare(
+    {
+      skin_type: skinType,
+      puffiness,
+      problem_zones: problemZones,
+      scores: scores as { skin?: number },
+    },
+    5,
+  );
+  const head = picks[0];
+  const rest = picks.slice(1);
   const blurredInsights = [
     `Персональный план: что улучшить в зоне «${focusArea}»`,
     '3 стрижки под вашу форму лица с объяснением',
@@ -131,24 +145,56 @@ export default function AnalysisPaywallBanner({
         </div>
       </div>
 
-      {teaserProduct && (
+      {head?.product && (
         <div className="card !p-0 overflow-hidden">
           <div className="flex items-center justify-between gap-2 border-b border-app-border px-4 py-3">
-            <p className="text-[14px] font-semibold">Подборка ухода</p>
-            <span className="pill-gray inline-flex items-center gap-1 text-[10px] font-semibold">
+            <div className="min-w-0">
+              <p className="text-[14px] font-semibold">Уход под ваш анализ</p>
+              <p className="mt-0.5 text-[12px] text-app-muted">
+                {skinLabel
+                  ? `Подобрано под ${skinLabel.toLowerCase()} кожу и зоны внимания`
+                  : 'Средства под ваши оценки и тип кожи'}
+              </p>
+            </div>
+            <span className="pill-gray inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold">
               <Lock size={10} />
-              +{Math.max(SKINCARE_PRODUCT_CATALOG.length - 1, 1)} товаров
+              По подписке
             </span>
           </div>
-          <WildberriesProductCard product={teaserProduct} previewOnly />
-          <div className="border-t border-app-border bg-app-track/30 px-4 py-2.5">
-            <p className="blur-[3px] select-none text-[12px] text-app-muted">
-              Вечер: сыворотка с азелаиновой кислотой · артикул ••••••
-            </p>
-          </div>
-          <div className="px-4 pb-4 pt-2">
+          <WildberriesProductCard
+            product={head.product}
+            previewOnly
+            whenLabel={head.whenLabel}
+            howToUse={head.howToUse}
+            whyFits={head.whyFits}
+            stepLabel={head.step}
+          />
+          {rest.map((pick) => (
+            <div
+              key={pick.product!.id}
+              className="flex items-center justify-between gap-3 border-t border-app-border bg-app-canvas/40 px-4 py-3"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold text-brand-greenDark">
+                  {pick.whenLabel}
+                  {pick.step ? ` · ${pick.step}` : ''}
+                </p>
+                <p className="mt-0.5 truncate text-[13px] font-medium text-app-muted/80 blur-[2.5px] select-none">
+                  {pick.product!.name}
+                </p>
+                <p className="mt-0.5 text-[11px] text-app-faint blur-[2px] select-none">
+                  {pick.howToUse}
+                </p>
+              </div>
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-app-track px-2 py-1 text-[10px] font-semibold text-app-muted">
+                <Lock size={10} />
+                Скрыто
+              </span>
+            </div>
+          ))}
+          <div className="px-4 pb-4 pt-3">
             <button type="button" onClick={onSubscribe} className="btn-accent w-full">
-              Разблокировать уход и разбор
+              Открыть полный уход и разбор
             </button>
           </div>
         </div>
