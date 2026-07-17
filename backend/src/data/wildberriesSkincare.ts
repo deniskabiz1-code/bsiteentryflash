@@ -299,21 +299,20 @@ function pickContextualProduct(
   context: SkincareAnalysisContext,
   used: Set<number>,
 ): WildberriesProduct | null {
+  const stepLower = step.toLowerCase();
   const text = `${step} ${problemText(context)}`.toLowerCase();
   const skinType = context.skin_type ?? 'combination';
   const hasAcne = /прыщ|акне|воспал|жирн|т-зон|комедон/.test(text) || skinType === 'oily';
   const hasDry = skinType === 'dry' || /сух|стянут|обезвож/.test(text);
   const hasPostacne = /постакне|пигмент|пятн|след/.test(text);
-  const hasPuffiness = context.puffiness === 'high'
-    || context.puffiness === 'medium'
-    || /отёк|подглаз/.test(text);
-  const isEvening = /вечер|ноч/.test(text);
-  const isMorning = /утр/.test(text);
+  // Time of day only from the step title (not problem-zone text)
+  const isEvening = /вечер|ноч/.test(stepLower);
+  const isMorning = /утр/.test(stepLower);
 
   const candidates: WildberriesProduct[] = [];
 
-  // Eye cream only for eye-care steps (not every step when user has puffiness)
-  if (/век|глаз|подглаз/.test(step.toLowerCase())) {
+  // Eye cream only for dedicated eye-care steps
+  if (/век|глаз|подглаз/.test(stepLower)) {
     candidates.push(catalogProductById(696701797)!);
   }
   if (/энзим|пудр|отшелуш/.test(step.toLowerCase()) || /текстур|комедон/.test(text)) {
@@ -338,7 +337,6 @@ function pickContextualProduct(
     else candidates.push(catalogProductById(408376110)!);
   }
   if (isEvening && hasPostacne) candidates.unshift(catalogProductById(309217385)!);
-  if (isMorning && hasPuffiness) candidates.push(catalogProductById(696701797)!);
 
   for (const product of candidates) {
     if (product && !used.has(product.id)) return product;

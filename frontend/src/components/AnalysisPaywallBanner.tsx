@@ -184,7 +184,7 @@ export default function AnalysisPaywallBanner({
               <p className="text-[14px] font-semibold">Уход под ваш анализ</p>
               <p className="mt-0.5 text-[12px] text-app-muted">
                 {skinLabel
-                  ? `Подобрано под ${skinLabel.toLowerCase()} кожу и зоны внимания`
+                  ? `Подобрано под ${skinLabel.toLowerCase()} кожу и ваши зоны внимания`
                   : 'Средства под ваши оценки и тип кожи'}
               </p>
             </div>

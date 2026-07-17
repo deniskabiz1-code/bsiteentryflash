@@ -5,14 +5,25 @@ import MiniBarChart from '@/components/MiniBarChart';
 import SegmentedControl from '@/components/SegmentedControl';
 import SkincareRoutineSection from '@/components/SkincareRoutineSection';
 import { createPayment, getDailyTasks, getAnalysisHistory, getSkincareRoutine, toggleTask } from '@/api/client';
-import type { EnrichedSkincareStep } from '@/data/wildberriesSkincare';
+import type { EnrichedSkincareStep, SkincareAnalysisContext } from '@/data/wildberriesSkincare';
 import { useApp } from '@/context/AppContext';
 import { useTelegram } from '@/hooks/useTelegram';
 import ConditionalScrollPage from '@/components/ConditionalScrollPage';
 import { useDocumentScrollLock } from '@/hooks/useDocumentScrollLock';
-import { Analysis, DailyFocusMeta, TaskGroup } from '@/types';
+import { Analysis, DailyFocusMeta, FaceAnalysisResult, TaskGroup } from '@/types';
 import { ChartPeriod, scoresForPeriod } from '@/utils/progressChart';
 import { pluralizeBalls } from '@/utils/russianPlural';
+
+function skinContextFromAnalysis(analysis: Analysis | undefined): SkincareAnalysisContext {
+  if (!analysis) return {};
+  const json = (analysis.resultJson ?? {}) as FaceAnalysisResult;
+  return {
+    skin_type: json.skin_type,
+    puffiness: json.puffiness,
+    problem_zones: json.problem_zones,
+    scores: json.scores,
+  };
+}
 export default function Home() {
   const { user } = useApp();
   const navigate = useNavigate();
@@ -43,6 +54,12 @@ export default function Home() {
   const chartSeries = useMemo(
     () => scoresForPeriod(faceAnalyses, period),
     [faceAnalyses, period],
+  );
+
+  /** Same personalization source as analysis result page */
+  const skinContext = useMemo(
+    () => skinContextFromAnalysis(faceAnalyses[0]),
+    [faceAnalyses],
   );
 
   const load = async () => {
@@ -299,6 +316,7 @@ export default function Home() {
         <SkincareRoutineSection
           title="Мой уход за кожей"
           routine={skincare}
+          skinContext={skinContext}
           subscribed={Boolean(user?.subscriptionActive)}
           onSubscribe={user?.subscriptionActive ? undefined : handleSubscribe}
           compact
