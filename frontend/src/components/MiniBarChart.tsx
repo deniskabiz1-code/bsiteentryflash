@@ -8,14 +8,6 @@ interface MiniBarChartProps {
 
 const MAX_BARS = 10;
 
-/** Fixed column width keeps bars chunky without stretching across empty space. */
-function layoutForCount(count: number): { barPx: number; colPx: number; gapPx: number } {
-  if (count <= 3) return { barPx: 22, colPx: 52, gapPx: 10 };
-  if (count <= 5) return { barPx: 18, colPx: 44, gapPx: 8 };
-  if (count <= 7) return { barPx: 15, colPx: 38, gapPx: 6 };
-  return { barPx: 12, colPx: 32, gapPx: 4 };
-}
-
 export default function MiniBarChart({ points, period = 'Месяц', max = 100 }: MiniBarChartProps) {
   if (points.length === 0) {
     return (
@@ -27,51 +19,54 @@ export default function MiniBarChart({ points, period = 'Месяц', max = 100 
 
   const displayPoints = points.slice(-MAX_BARS);
   const count = displayPoints.length;
-  const { barPx, colPx, gapPx } = layoutForCount(count);
+  // Scale heights to the tallest score in this series so the chart fills the lane
+  const seriesPeak = Math.max(
+    1,
+    ...displayPoints.map((p) => p.score || 0),
+    Math.min(max, 40),
+  );
 
   return (
     <div
       key={`${period}-${displayPoints.map((p) => `${p.date}-${p.score}`).join('|')}`}
-      className="flex w-full items-end justify-center"
-      style={{ gap: gapPx }}
+      className="grid w-full gap-2"
+      style={{ gridTemplateColumns: `repeat(${count}, minmax(0, 1fr))` }}
       role="img"
       aria-label={`График баллов: ${displayPoints.map((p) => p.score).join(', ')}`}
     >
       {displayPoints.map((point, dataIndex) => {
         const isLatest = dataIndex === count - 1;
-        const heightPct = Math.max(28, (point.score / max) * 100);
-        // Older bars slightly softer; latest always full solid green (no transparent gradient)
-        const opacity = isLatest ? 1 : 0.45 + ((dataIndex + 1) / count) * 0.4;
+        const score = point.score || 0;
+        // 32–100% of track so short scores still look like bars, not dots
+        const heightPct = 32 + (score / seriesPeak) * 68;
 
         return (
           <div
             key={`${point.date}-${point.score}-${dataIndex}`}
-            className="flex shrink-0 flex-col items-center"
-            style={{ width: colPx }}
+            className="flex min-w-0 flex-col items-center"
           >
             <span
-              className={`mb-1 text-[12px] font-bold leading-none tabular-nums ${
+              className={`mb-1.5 text-[12px] font-bold leading-none tabular-nums ${
                 isLatest ? 'text-app-text' : 'text-app-muted'
               }`}
             >
-              {point.score}
+              {score}
             </span>
 
-            <div className="flex h-20 w-full items-end justify-center">
+            <div className="flex h-[5.5rem] w-full items-end justify-center rounded-2xl bg-app-surface/50 px-1 pt-2">
               <div
-                className={`chart-bar rounded-full ${
-                  isLatest ? 'bg-brand-greenDark' : 'bg-brand-green'
+                className={`chart-bar w-full max-w-[2rem] rounded-full bg-brand-green ${
+                  isLatest ? 'ring-2 ring-brand-greenDark/25 ring-offset-1 ring-offset-transparent' : ''
                 }`}
                 style={{
-                  width: barPx,
                   height: `${heightPct}%`,
-                  ['--bar-opacity' as string]: String(opacity),
-                  ['--bar-delay' as string]: `${dataIndex * 45}ms`,
+                  ['--bar-opacity' as string]: '1',
+                  ['--bar-delay' as string]: `${dataIndex * 40}ms`,
                 }}
               />
             </div>
 
-            <span className="mt-1.5 w-full truncate text-center text-[11px] leading-tight text-app-muted">
+            <span className="mt-2 w-full truncate text-center text-[11px] leading-tight text-app-muted">
               {formatChartDate(point.date, period, count)}
             </span>
           </div>

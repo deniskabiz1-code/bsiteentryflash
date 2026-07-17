@@ -251,11 +251,9 @@ body {
 @keyframes pf-bar-grow {
   from {
     transform: scaleY(0);
-    opacity: 0.4;
   }
   to {
     transform: scaleY(1);
-    opacity: var(--bar-opacity, 1);
   }
 }
 
@@ -362,8 +360,8 @@ body {
 
 .chart-bar {
   transform-origin: bottom center;
-  opacity: var(--bar-opacity, 1);
-  animation: pf-bar-grow 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  opacity: 1;
+  animation: pf-bar-grow 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: var(--bar-delay, 0ms);
 }
 
