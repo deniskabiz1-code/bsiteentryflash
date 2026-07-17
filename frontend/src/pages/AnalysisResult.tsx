@@ -358,11 +358,8 @@ export default function AnalysisResult() {
                   Форма лица · {FACE_SHAPE_LABELS[result.face_shape] || result.face_shape}
                 </span>
               )}
-              {result.hair_notes && (
-                <p className="text-[14px] leading-relaxed text-app-muted">{result.hair_notes}</p>
-              )}
               {result.best_haircuts!.map((cut, i) => (
-                <div key={i} className={i > 0 || result.hair_notes ? 'border-t border-app-border pt-4' : ''}>
+                <div key={i} className={i > 0 || result.face_shape ? 'border-t border-app-border pt-4' : ''}>
                   <p className="font-semibold text-[14px]">{cut.name}</p>
                   <p className="mt-1.5 text-[14px] leading-relaxed text-app-muted">{cut.description}</p>
                 </div>
