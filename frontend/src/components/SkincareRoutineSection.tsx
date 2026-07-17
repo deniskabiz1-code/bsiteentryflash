@@ -55,7 +55,7 @@ export default function SkincareRoutineSection({
           <span className="pill-green">Под вашу кожу</span>
         </div>
         <p className="mb-3 px-1 text-[13px] leading-snug text-app-muted">
-          Несколько средств, которые лучше всего подходят по анализу. Когда и как наносить, ссылки на WB и Ozon.
+          Несколько средств, которые лучше всего подходят по анализу: когда и как наносить, ссылки на WB и Ozon.
         </p>
         <div className="card !p-0 overflow-hidden">
           {enrichedRoutine.map((item, i) => {
