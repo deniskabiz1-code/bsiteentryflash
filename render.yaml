@@ -26,6 +26,14 @@ services:
         sync: false
       - key: OPENAI_REASONING_EFFORT
         sync: false
+      - key: OPENAI_REASONING_EFFORT_FREE
+        sync: false
+      - key: OPENAI_REASONING_EFFORT_FULL
+        sync: false
+      - key: OPENAI_MAX_TOKENS_FREE
+        sync: false
+      - key: OPENAI_MAX_TOKENS_FULL
+        sync: false
       - key: ENABLE_TEST_CREDITS
         sync: false
       - key: FRONTEND_URL

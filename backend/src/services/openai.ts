@@ -438,6 +438,10 @@ function imageToBase64(filePath: string): string {
 
 type VisionRequestOptions = {
   temperature?: number;
+  /** Overrides global OPENAI_REASONING_EFFORT for this call (e.g. low free / high paid). */
+  reasoningEffort?: string;
+  /** Cap completion size — keep free/lite small so thinking tokens cannot explode. */
+  maxOutputTokens?: number;
 };
 
 type VisionStrategy = {
@@ -448,6 +452,20 @@ type VisionStrategy = {
   useTemperature: boolean;
   timeoutMs: number;
 };
+
+function resolveReasoningEffort(mode: 'free' | 'full'): string | undefined {
+  if (mode === 'free') {
+    return (
+      process.env.OPENAI_REASONING_EFFORT_FREE?.trim()
+      || 'low'
+    );
+  }
+  return (
+    process.env.OPENAI_REASONING_EFFORT_FULL?.trim()
+    || process.env.OPENAI_REASONING_EFFORT?.trim()
+    || 'high'
+  );
+}
 
 async function requestVision(
   systemPrompt: string,
@@ -464,6 +482,7 @@ async function requestVision(
     image_url: { url: imageToBase64(p), detail: strategy.visionDetail },
   }));
 
+  const maxOut = options.maxOutputTokens ?? 4096;
   const body: Record<string, unknown> = {
     model: config.model,
     messages: [
@@ -479,9 +498,9 @@ async function requestVision(
   };
 
   if (modelUsesCompletionTokens(config.model)) {
-    body.max_completion_tokens = 4096;
+    body.max_completion_tokens = maxOut;
   } else {
-    body.max_tokens = 4096;
+    body.max_tokens = maxOut;
   }
 
   if (strategy.useTemperature && options.temperature !== undefined) {
@@ -490,8 +509,11 @@ async function requestVision(
   if (strategy.jsonMode) {
     body.response_format = { type: 'json_object' };
   }
-  if (strategy.useReasoning && config.reasoningEffort && modelSupportsReasoning(config.model)) {
-    body.reasoning_effort = config.reasoningEffort;
+
+  // Per-call effort (free vs paid) takes priority over global env default
+  const effort = options.reasoningEffort ?? config.reasoningEffort;
+  if (effort && modelSupportsReasoning(config.model)) {
+    body.reasoning_effort = effort;
   }
 
   const client = new OpenAI({
@@ -653,11 +675,24 @@ export async function analyzeFace(
     };
   }
 
+  const reasoningEffort = resolveReasoningEffort(lite ? 'free' : 'full');
+  // Free JSON is tiny; cap hard so reasoning cannot burn 1k+ tokens on a preview
+  const maxOutputTokens = lite
+    ? Number(process.env.OPENAI_MAX_TOKENS_FREE || 768)
+    : Number(process.env.OPENAI_MAX_TOKENS_FULL || 4096);
+
   try {
+    console.log(
+      `[ai] Face analysis mode=${mode} reasoning=${reasoningEffort ?? 'none'} maxOut=${maxOutputTokens}`,
+    );
     const raw = await callVision(
       lite ? FACE_ANALYSIS_LITE_PROMPT : getFaceAnalysisPrompt(),
       [photoPath],
-      { temperature: lite ? 0.7 : 0.85 },
+      {
+        temperature: lite ? 0.7 : 0.85,
+        reasoningEffort,
+        maxOutputTokens,
+      },
       userText,
     ) as Record<string, unknown>;
     const data = lite
@@ -695,8 +730,13 @@ export async function analyzeHairstyle(
   }
 
   try {
+    // Hairstyle is subscription-only → same effort as full face analysis
+    const reasoningEffort = resolveReasoningEffort('full');
     const data = scrubJawlineFromAiText(
-      await callVision(HAIRSTYLE_ANALYSIS_PROMPT, [frontPath, sidePath]),
+      await callVision(HAIRSTYLE_ANALYSIS_PROMPT, [frontPath, sidePath], {
+        reasoningEffort,
+        maxOutputTokens: Number(process.env.OPENAI_MAX_TOKENS_FULL || 4096),
+      }),
     ) as Record<string, unknown>;
     return { data, demo: false };
   } catch (err) {
