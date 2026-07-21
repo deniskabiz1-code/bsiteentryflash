@@ -135,14 +135,23 @@ export default function AnalysisResult() {
   };
 
   const handleUnlockWithCredit = async () => {
-    if (!result?.id || unlocking || paying) return;
+    if (unlocking || paying) return;
+    const analysisId =
+      result?.id
+      ?? (id && !Number.isNaN(parseInt(id, 10)) ? parseInt(id, 10) : null);
+    if (!analysisId) {
+      setActionError('Не найден id анализа. Откройте разбор из истории и попробуйте снова.');
+      haptic('error');
+      return;
+    }
     setUnlocking(true);
     setActionError('');
     try {
-      const data = await unlockAnalysis(result.id);
+      const data = await unlockAnalysis(analysisId);
       const next = toAnalysisResultView(data.analysis);
       setResult({
         ...next,
+        id: next.id ?? analysisId,
         accessTier: next.accessTier || 'full',
         contentLevel: next.contentLevel || 'full',
       });
@@ -161,7 +170,10 @@ export default function AnalysisResult() {
       };
       let msg = ax.response?.data?.error;
       if (!msg && (ax.code === 'ECONNABORTED' || ax.message?.includes('timeout'))) {
-        msg = 'ИИ слишком долго отвечает. Кредит возвращён. Попробуйте ещё раз.';
+        msg = 'ИИ слишком долго отвечает. Кредит не списан. Попробуйте ещё раз.';
+      }
+      if (!msg && !ax.response) {
+        msg = 'Нет связи с сервером. Проверьте интернет и попробуйте снова.';
       }
       if (!msg) msg = ax.message || 'Не удалось открыть полный разбор';
       setActionError(msg);
@@ -289,28 +301,22 @@ export default function AnalysisResult() {
         )}
 
         {isPreview && (
-          <>
-            {actionError && (
-              <p className="rounded-2xl bg-red-50 px-4 py-3 text-center text-[13px] font-medium text-red-600">
-                {actionError}
-              </p>
-            )}
-            <AnalysisPaywallBanner
-              onSubscribe={handleSubscribe}
-              onGoToFreeAnalysis={() => navigate('/free-analysis')}
-              onUnlockWithCredit={
-                referralCredits > 0 && result.id ? handleUnlockWithCredit : undefined
-              }
-              referralCredits={referralCredits}
-              unlocking={unlocking}
-              paying={paying}
-              overallScore={overall}
-              scores={scores}
-              skinType={result.skin_type}
-              puffiness={result.puffiness}
-              problemZones={result.problem_zones}
-            />
-          </>
+          <AnalysisPaywallBanner
+            onSubscribe={handleSubscribe}
+            onGoToFreeAnalysis={() => navigate('/free-analysis')}
+            onUnlockWithCredit={
+              referralCredits > 0 && (result.id || id) ? handleUnlockWithCredit : undefined
+            }
+            referralCredits={referralCredits}
+            unlocking={unlocking}
+            paying={paying}
+            unlockError={actionError}
+            overallScore={overall}
+            scores={scores}
+            skinType={result.skin_type}
+            puffiness={result.puffiness}
+            problemZones={result.problem_zones}
+          />
         )}
 
         {showFullSections && result.strengths && result.strengths.length > 0 && (

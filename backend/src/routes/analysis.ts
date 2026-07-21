@@ -366,17 +366,20 @@ router.get('/history', validateTelegramAuth, async (req: AuthRequest, res: Respo
   }
 });
 
+function bytesToBuffer(data: Uint8Array | Buffer): Buffer {
+  if (Buffer.isBuffer(data)) return data;
+  return Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+}
+
 /**
  * Spend 1 referral credit to re-run full AI on a past free (preview) face analysis.
+ * Credit is charged only after AI succeeds so a failed unlock never burns a free credit.
  */
 router.post('/:id/unlock', validateTelegramAuth, async (req: AuthRequest, res: Response) => {
-  let usedReferralCredit = false;
-  let userId: number | null = null;
   let tempPhotoPath: string | null = null;
 
   try {
     const user = await findOrCreateUser(req.telegramUser!);
-    userId = user.id;
     const analysisId = parseInt(String(req.params.id), 10);
 
     if (Number.isNaN(analysisId)) {
@@ -390,7 +393,9 @@ router.post('/:id/unlock', validateTelegramAuth, async (req: AuthRequest, res: R
     }
 
     if (user.referralCredits < 1) {
-      res.status(403).json({ error: 'Нет бесплатных полных анализов. Пригласите друга или оформите подписку.' });
+      res.status(403).json({
+        error: 'Нет бесплатных полных анализов. Пригласите друга или оформите подписку.',
+      });
       return;
     }
 
@@ -408,36 +413,26 @@ router.post('/:id/unlock', validateTelegramAuth, async (req: AuthRequest, res: R
       return;
     }
 
-    const reserved = await prisma.user.updateMany({
-      where: { id: user.id, referralCredits: { gt: 0 } },
-      data: { referralCredits: { decrement: 1 } },
-    });
-    if (reserved.count === 0) {
-      res.status(403).json({ error: 'Нет бесплатных полных анализов' });
-      return;
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
-    usedReferralCredit = true;
 
     const diskPath = path.join(uploadDir, path.basename(analysis.photoUrl));
     let photoPath = diskPath;
     if (!fs.existsSync(diskPath)) {
       if (analysis.photoData && analysis.photoData.length > 0) {
         tempPhotoPath = path.join(uploadDir, `unlock-${analysis.id}-${Date.now()}.jpg`);
-        fs.writeFileSync(
-          tempPhotoPath,
-          Buffer.from(
-            analysis.photoData.buffer,
-            analysis.photoData.byteOffset,
-            analysis.photoData.byteLength,
-          ),
-        );
+        fs.writeFileSync(tempPhotoPath, bytesToBuffer(analysis.photoData));
         photoPath = tempPhotoPath;
       } else {
         throw new Error('PHOTO_MISSING');
       }
     }
 
-    const usePersonalized = wantsPersonalizedAnalysis(user.personalizedAnalysis, req.body?.personalized);
+    const usePersonalized = wantsPersonalizedAnalysis(
+      user.personalizedAnalysis,
+      req.body?.personalized,
+    );
     const priorFace = usePersonalized
       ? await prisma.analysis.findMany({
           where: {
@@ -451,6 +446,7 @@ router.post('/:id/unlock', validateTelegramAuth, async (req: AuthRequest, res: R
         })
       : [];
 
+    // Full AI first — only then spend the credit (avoids silent credit loss on AI/proxy errors)
     const { data: result, demo } = await analyzeFace(
       photoPath,
       usePersonalized
@@ -467,15 +463,32 @@ router.post('/:id/unlock', validateTelegramAuth, async (req: AuthRequest, res: R
     );
 
     const overallScore = (result.overall_score as number) || analysis.overallScore || 0;
-    const updated = await prisma.analysis.update({
-      where: { id: analysis.id },
-      data: {
-        resultJson: result as Prisma.InputJsonValue,
-        overallScore,
-        accessTier: 'full',
-        demo,
-      },
+
+    const charged = await prisma.$transaction(async (tx) => {
+      const reserved = await tx.user.updateMany({
+        where: { id: user.id, referralCredits: { gt: 0 } },
+        data: { referralCredits: { decrement: 1 } },
+      });
+      if (reserved.count === 0) {
+        return null;
+      }
+      const updated = await tx.analysis.update({
+        where: { id: analysis.id },
+        data: {
+          resultJson: result as Prisma.InputJsonValue,
+          overallScore,
+          accessTier: 'full',
+          demo,
+        },
+      });
+      const refreshedUser = await tx.user.findUnique({ where: { id: user.id } });
+      return { updated, referralCredits: refreshedUser?.referralCredits ?? 0 };
     });
+
+    if (!charged) {
+      res.status(403).json({ error: 'Нет бесплатных полных анализов' });
+      return;
+    }
 
     const contentLevel = resolveContentLevel('full', false);
     const clientResult = sanitizeFaceResultForClient(
@@ -483,28 +496,20 @@ router.post('/:id/unlock', validateTelegramAuth, async (req: AuthRequest, res: R
       contentLevel,
     );
 
-    const refreshedUser = await prisma.user.findUnique({ where: { id: user.id } });
-
     res.json({
       analysis: {
-        id: updated.id,
+        id: charged.updated.id,
         ...clientResult,
-        photoUrl: updated.photoUrl,
+        photoUrl: charged.updated.photoUrl,
         accessTier: 'full',
         contentLevel,
-        demo: updated.demo,
-        createdAt: updated.createdAt,
+        demo: charged.updated.demo,
+        createdAt: charged.updated.createdAt,
       },
-      referralCredits: refreshedUser?.referralCredits ?? 0,
+      referralCredits: charged.referralCredits,
     });
   } catch (err) {
     console.error('Unlock analysis error:', err);
-    if (usedReferralCredit && userId !== null) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { referralCredits: { increment: 1 } },
-      }).catch(() => {});
-    }
     const message = err instanceof Error ? err.message : String(err);
     if (message === 'PHOTO_MISSING') {
       res.status(404).json({ error: 'Фото анализа не найдено. Сделайте новый анализ.' });
@@ -517,12 +522,17 @@ router.post('/:id/unlock', validateTelegramAuth, async (req: AuthRequest, res: R
       || message.includes('Лимит')
       || message.includes('API')
       || message.includes('фото')
+      || message.toLowerCase().includes('timeout')
     ) {
-      res.status(503).json({ error: message });
+      res.status(503).json({
+        error: message.includes('ИИ') || message.includes('Модель') || message.includes('Лимит')
+          ? message
+          : 'ИИ слишком долго отвечает. Кредит не списан. Попробуйте ещё раз.',
+      });
       return;
     }
     res.status(500).json({
-      error: message.slice(0, 200) || 'Не удалось открыть полный разбор',
+      error: message.slice(0, 200) || 'Не удалось открыть полный разбор. Кредит не списан.',
     });
   } finally {
     if (tempPhotoPath && fs.existsSync(tempPhotoPath)) {
@@ -558,7 +568,7 @@ router.get('/:id/photo', validateTelegramAuth, async (req: AuthRequest, res: Res
 
     if (analysis.photoData && analysis.photoData.length > 0) {
       res.type(mime);
-      res.send(Buffer.from(analysis.photoData.buffer, analysis.photoData.byteOffset, analysis.photoData.byteLength));
+      res.send(bytesToBuffer(analysis.photoData));
       return;
     }
 

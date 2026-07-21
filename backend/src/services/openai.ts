@@ -467,6 +467,50 @@ function resolveReasoningEffort(mode: 'free' | 'full'): string | undefined {
   );
 }
 
+function extractMessageContent(response: OpenAI.Chat.ChatCompletion): string {
+  const choice = response.choices?.[0];
+  const message = choice?.message as
+    | (OpenAI.Chat.ChatCompletionMessage & {
+        refusal?: string | null;
+      })
+    | undefined;
+
+  if (!message) {
+    throw new Error('Пустой ответ от ИИ');
+  }
+
+  if (typeof message.refusal === 'string' && message.refusal.trim()) {
+    throw new Error(`ИИ отказал: ${message.refusal.trim().slice(0, 160)}`);
+  }
+
+  const raw = message.content;
+  if (typeof raw === 'string' && raw.trim()) {
+    return raw;
+  }
+
+  if (Array.isArray(raw)) {
+    const joined = raw
+      .map((part) => {
+        if (typeof part === 'string') return part;
+        if (part && typeof part === 'object' && 'text' in part) {
+          return String((part as { text?: string }).text || '');
+        }
+        return '';
+      })
+      .join('')
+      .trim();
+    if (joined) return joined;
+  }
+
+  const finish = choice?.finish_reason;
+  if (finish === 'length') {
+    throw new Error(
+      'Пустой ответ от ИИ (лимит токенов). Увеличьте OPENAI_MAX_TOKENS_FULL на Render',
+    );
+  }
+  throw new Error('Пустой ответ от ИИ');
+}
+
 async function requestVision(
   systemPrompt: string,
   imagePaths: string[],
@@ -503,6 +547,7 @@ async function requestVision(
     body.max_tokens = maxOut;
   }
 
+  // Reasoning models often reject temperature; only send when strategy allows
   if (strategy.useTemperature && options.temperature !== undefined) {
     body.temperature = options.temperature;
   }
@@ -510,9 +555,10 @@ async function requestVision(
     body.response_format = { type: 'json_object' };
   }
 
-  // Per-call effort (free vs paid) takes priority over global env default
+  // Only attach reasoning when the strategy opts in — fallbacks must stay non-reasoning
+  // so unlock/full analysis can recover from empty high-reasoning outputs.
   const effort = options.reasoningEffort ?? config.reasoningEffort;
-  if (effort && modelSupportsReasoning(config.model)) {
+  if (strategy.useReasoning && effort && modelSupportsReasoning(config.model)) {
     body.reasoning_effort = effort;
   }
 
@@ -531,10 +577,7 @@ async function requestVision(
     `AI vision (${strategy.label})`,
   );
   const response = parseCompletionResponse(raw);
-
-  const content = response.choices[0]?.message?.content;
-  if (!content) throw new Error('Пустой ответ от ИИ');
-  return content;
+  return extractMessageContent(response);
 }
 
 function parseJsonResponse(content: string): Record<string, unknown> {
@@ -548,10 +591,30 @@ function parseJsonResponse(content: string): Record<string, unknown> {
   }
 }
 
-function buildVisionStrategies(config: AiConfig): VisionStrategy[] {
+function buildVisionStrategies(
+  config: AiConfig,
+  options: VisionRequestOptions = {},
+): VisionStrategy[] {
   const detail = config.visionDetail;
   const strategies: VisionStrategy[] = [];
+  const wantsReasoning = Boolean(
+    (options.reasoningEffort ?? config.reasoningEffort)
+    && modelSupportsReasoning(config.model),
+  );
 
+  // Prefer a reasoning pass first when the caller requested effort (free=low / full=high)
+  if (wantsReasoning) {
+    strategies.push({
+      label: `reason-${config.jsonMode ? 'json' : 'plain'}-low`,
+      jsonMode: config.jsonMode,
+      visionDetail: 'low',
+      useReasoning: true,
+      useTemperature: false,
+      timeoutMs: AI_REQUEST_TIMEOUT_MS,
+    });
+  }
+
+  // Reliable non-reasoning fallbacks (critical for unlock: high reasoning often empties content)
   if (config.jsonMode) {
     strategies.push({
       label: 'json-low',
@@ -559,7 +622,7 @@ function buildVisionStrategies(config: AiConfig): VisionStrategy[] {
       visionDetail: 'low',
       useReasoning: false,
       useTemperature: true,
-      timeoutMs: AI_REQUEST_TIMEOUT_MS,
+      timeoutMs: wantsReasoning ? AI_RETRY_TIMEOUT_MS : AI_REQUEST_TIMEOUT_MS,
     });
   }
 
@@ -595,7 +658,7 @@ async function callVision(
   const config = resolveAiConfig();
   if (!config) throw new Error('AI not configured');
 
-  const strategies = buildVisionStrategies(config);
+  const strategies = buildVisionStrategies(config, options);
   const errors: string[] = [];
 
   for (const strategy of strategies) {
@@ -613,6 +676,10 @@ async function callVision(
       const detail = err instanceof Error ? err.message : String(err);
       console.warn(`[ai] Vision failed (${strategy.label}):`, detail);
       errors.push(`${strategy.label}: ${detail}`);
+      // Do not chain 90s+ retries after a hard timeout — proxy (Render) will kill the request
+      if (detail.toLowerCase().includes('timeout')) {
+        break;
+      }
     }
   }
 
@@ -676,10 +743,11 @@ export async function analyzeFace(
   }
 
   const reasoningEffort = resolveReasoningEffort(lite ? 'free' : 'full');
-  // Free JSON is tiny; cap hard so reasoning cannot burn 1k+ tokens on a preview
+  // Free JSON is tiny; cap hard so reasoning cannot burn 1k+ tokens on a preview.
+  // Full needs headroom: on gpt-5 / o-series max_completion_tokens includes reasoning.
   const maxOutputTokens = lite
     ? Number(process.env.OPENAI_MAX_TOKENS_FREE || 768)
-    : Number(process.env.OPENAI_MAX_TOKENS_FULL || 4096);
+    : Number(process.env.OPENAI_MAX_TOKENS_FULL || 8192);
 
   try {
     console.log(

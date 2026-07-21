@@ -10,6 +10,8 @@ type AnalysisPaywallBannerProps = {
   referralCredits?: number;
   unlocking?: boolean;
   paying?: boolean;
+  /** Shown directly under the free-unlock button so failures are not missed */
+  unlockError?: string;
   overallScore?: number;
   scores?: Record<string, number>;
   skinType?: string;
@@ -43,6 +45,7 @@ export default function AnalysisPaywallBanner({
   referralCredits = 0,
   unlocking = false,
   paying = false,
+  unlockError = '',
   overallScore,
   scores = {},
   skinType,
@@ -123,6 +126,11 @@ export default function AnalysisPaywallBanner({
                 ? 'Открываем полный разбор (до 1–2 мин)...'
                 : `Открыть этот разбор бесплатно (${referralCredits})`}
             </button>
+          )}
+          {unlockError && (
+            <p className="rounded-xl bg-red-50 px-3 py-2.5 text-center text-[12px] font-medium leading-snug text-red-600">
+              {unlockError}
+            </p>
           )}
           <button
             type="button"
