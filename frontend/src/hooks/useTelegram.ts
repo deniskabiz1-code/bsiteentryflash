@@ -4,7 +4,22 @@ import { getTgWebApp, openTmeLink } from '@/lib/tgWebApp';
 export function useTelegram() {
 
   const openLink = useCallback((url: string) => {
-    getTgWebApp()?.openLink(url);
+    if (!url) return;
+    const webApp = getTgWebApp();
+    try {
+      if (webApp?.openLink) {
+        webApp.openLink(url);
+        return;
+      }
+    } catch {
+      /* fall through */
+    }
+    // Fallback outside Telegram or if openLink is blocked
+    try {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch {
+      window.location.href = url;
+    }
   }, []);
 
   const openTelegramLink = useCallback((url: string, usernameFallback?: string) => {

@@ -505,16 +505,25 @@ router.post('/:id/unlock', validateTelegramAuth, async (req: AuthRequest, res: R
         data: { referralCredits: { increment: 1 } },
       }).catch(() => {});
     }
-    const message = err instanceof Error ? err.message : '';
+    const message = err instanceof Error ? err.message : String(err);
     if (message === 'PHOTO_MISSING') {
       res.status(404).json({ error: 'Фото анализа не найдено. Сделайте новый анализ.' });
       return;
     }
-    if (message.startsWith('ИИ ')) {
+    // Surface AI / config errors so the client can show them (not a silent button reset)
+    if (
+      message.includes('ИИ')
+      || message.includes('Модель')
+      || message.includes('Лимит')
+      || message.includes('API')
+      || message.includes('фото')
+    ) {
       res.status(503).json({ error: message });
       return;
     }
-    res.status(500).json({ error: 'Не удалось открыть полный разбор' });
+    res.status(500).json({
+      error: message.slice(0, 200) || 'Не удалось открыть полный разбор',
+    });
   } finally {
     if (tempPhotoPath && fs.existsSync(tempPhotoPath)) {
       try {

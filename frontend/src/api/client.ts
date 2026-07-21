@@ -101,7 +101,8 @@ export async function getAnalysis(id: number) {
 /** Spend 1 referral credit to upgrade a past free face analysis to full AI. */
 export async function unlockAnalysis(id: number) {
   if (MOCK) return mockApi.unlockAnalysis(id);
-  const { data } = await api.post(`/analysis/${id}/unlock`, {});
+  // Full vision re-run can take 1–2 minutes
+  const { data } = await api.post(`/analysis/${id}/unlock`, {}, { timeout: 180000 });
   return data;
 }
 

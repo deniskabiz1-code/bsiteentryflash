@@ -9,6 +9,7 @@ type AnalysisPaywallBannerProps = {
   onUnlockWithCredit?: () => void;
   referralCredits?: number;
   unlocking?: boolean;
+  paying?: boolean;
   overallScore?: number;
   scores?: Record<string, number>;
   skinType?: string;
@@ -41,6 +42,7 @@ export default function AnalysisPaywallBanner({
   onUnlockWithCredit,
   referralCredits = 0,
   unlocking = false,
+  paying = false,
   overallScore,
   scores = {},
   skinType,
@@ -114,23 +116,28 @@ export default function AnalysisPaywallBanner({
             <button
               type="button"
               onClick={onUnlockWithCredit}
-              disabled={unlocking}
+              disabled={unlocking || paying}
               className="btn-accent w-full disabled:opacity-60"
             >
               {unlocking
-                ? 'Открываем полный разбор...'
+                ? 'Открываем полный разбор (до 1–2 мин)...'
                 : `Открыть этот разбор бесплатно (${referralCredits})`}
             </button>
           )}
-          <button type="button" onClick={onSubscribe} className="btn-dark w-full" disabled={unlocking}>
-            400 ₽/мес
+          <button
+            type="button"
+            onClick={onSubscribe}
+            className="btn-dark w-full disabled:opacity-60"
+            disabled={unlocking || paying}
+          >
+            {paying ? 'Открываем оплату...' : '400 ₽/мес'}
           </button>
           {onGoToFreeAnalysis && (
             <button
               type="button"
               onClick={onGoToFreeAnalysis}
-              disabled={unlocking}
-              className="btn-light w-full"
+              disabled={unlocking || paying}
+              className="btn-light w-full disabled:opacity-60"
             >
               Как получить полный анализ бесплатно
             </button>
@@ -223,8 +230,19 @@ export default function AnalysisPaywallBanner({
             </div>
           ))}
           <div className="px-4 pb-4 pt-3">
-            <button type="button" onClick={onSubscribe} className="btn-accent w-full">
-              Открыть полный уход и разбор
+            <button
+              type="button"
+              onClick={referralCredits > 0 && onUnlockWithCredit ? onUnlockWithCredit : onSubscribe}
+              disabled={unlocking || paying}
+              className="btn-accent w-full disabled:opacity-60"
+            >
+              {unlocking
+                ? 'Открываем полный разбор...'
+                : paying
+                  ? 'Открываем оплату...'
+                  : referralCredits > 0 && onUnlockWithCredit
+                    ? `Открыть этот разбор бесплатно (${referralCredits})`
+                    : '400 ₽/мес'}
             </button>
           </div>
         </div>

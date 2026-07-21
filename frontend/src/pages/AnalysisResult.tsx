@@ -47,7 +47,8 @@ export default function AnalysisResult() {
   const [loading, setLoading] = useState(Boolean(id && !stateAnalysis));
   const [error, setError] = useState('');
   const [unlocking, setUnlocking] = useState(false);
-  const [unlockError, setUnlockError] = useState('');
+  const [paying, setPaying] = useState(false);
+  const [actionError, setActionError] = useState('');
 
   useEffect(() => {
     if (!id) {
@@ -112,21 +113,39 @@ export default function AnalysisResult() {
   }
 
   const handleSubscribe = async () => {
+    if (paying || unlocking) return;
+    setPaying(true);
+    setActionError('');
     try {
       const data = await createPayment();
+      if (!data?.paymentUrl) {
+        throw new Error('Нет ссылки на оплату');
+      }
       openLink(data.paymentUrl);
-    } catch {
+      haptic('success');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } }; message?: string })?.response
+        ?.data?.error
+        || (err as { message?: string })?.message;
+      setActionError(msg || 'Не удалось открыть оплату. Проверьте Robokassa на сервере.');
       haptic('error');
+    } finally {
+      setPaying(false);
     }
   };
 
   const handleUnlockWithCredit = async () => {
-    if (!result?.id || unlocking) return;
+    if (!result?.id || unlocking || paying) return;
     setUnlocking(true);
-    setUnlockError('');
+    setActionError('');
     try {
       const data = await unlockAnalysis(result.id);
-      setResult(toAnalysisResultView(data.analysis));
+      const next = toAnalysisResultView(data.analysis);
+      setResult({
+        ...next,
+        accessTier: next.accessTier || 'full',
+        contentLevel: next.contentLevel || 'full',
+      });
       if (user && typeof data.referralCredits === 'number') {
         applyUser({ ...user, referralCredits: data.referralCredits });
       } else {
@@ -135,8 +154,17 @@ export default function AnalysisResult() {
       haptic('success');
       scheduleScrollToTop();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      setUnlockError(msg || 'Не удалось открыть полный разбор');
+      const ax = err as {
+        response?: { data?: { error?: string }; status?: number };
+        code?: string;
+        message?: string;
+      };
+      let msg = ax.response?.data?.error;
+      if (!msg && (ax.code === 'ECONNABORTED' || ax.message?.includes('timeout'))) {
+        msg = 'ИИ слишком долго отвечает. Кредит возвращён. Попробуйте ещё раз.';
+      }
+      if (!msg) msg = ax.message || 'Не удалось открыть полный разбор';
+      setActionError(msg);
       haptic('error');
     } finally {
       setUnlocking(false);
@@ -262,6 +290,11 @@ export default function AnalysisResult() {
 
         {isPreview && (
           <>
+            {actionError && (
+              <p className="rounded-2xl bg-red-50 px-4 py-3 text-center text-[13px] font-medium text-red-600">
+                {actionError}
+              </p>
+            )}
             <AnalysisPaywallBanner
               onSubscribe={handleSubscribe}
               onGoToFreeAnalysis={() => navigate('/free-analysis')}
@@ -270,15 +303,13 @@ export default function AnalysisResult() {
               }
               referralCredits={referralCredits}
               unlocking={unlocking}
+              paying={paying}
               overallScore={overall}
               scores={scores}
               skinType={result.skin_type}
               puffiness={result.puffiness}
               problemZones={result.problem_zones}
             />
-            {unlockError && (
-              <p className="px-1 text-center text-[13px] font-medium text-red-500">{unlockError}</p>
-            )}
           </>
         )}
 
