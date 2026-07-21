@@ -70,7 +70,11 @@ function resolveAiConfig(): AiConfig | null {
     visionRaw === 'low' || visionRaw === 'auto' || visionRaw === 'high'
       ? visionRaw
       : 'low';
-  const reasoningEffort = process.env.OPENAI_REASONING_EFFORT?.trim() || undefined;
+  // Global default only — never applied raw in requestVision (see clampReasoningEffort).
+  const reasoningEffort = clampReasoningEffort(
+    process.env.OPENAI_REASONING_EFFORT?.trim(),
+    'full',
+  );
 
   return { apiKey, baseURL, model, jsonMode, visionDetail, reasoningEffort, provider };
 }
@@ -450,6 +454,8 @@ type VisionRequestOptions = {
    * Skips slow high-reasoning first pass; uses one fast strategy + one fallback.
    */
   preferSpeed?: boolean;
+  /** Used to hard-cap xhigh/high (free/unlock never above low). */
+  effortMode?: 'free' | 'full' | 'unlock';
 };
 
 type VisionStrategy = {
@@ -461,20 +467,60 @@ type VisionStrategy = {
   timeoutMs: number;
 };
 
+/**
+ * Sanitize provider reasoning_effort values.
+ * xhigh/high burn 10k–50k+ tokens and routinely time out on vision JSON.
+ * Free/unlock are hard-capped at `low`. Full caps at `medium` unless explicitly allowed.
+ */
+function clampReasoningEffort(
+  raw: string | undefined | null,
+  mode: 'free' | 'full' | 'unlock',
+): string | undefined {
+  if (raw == null || !String(raw).trim()) return undefined;
+  const e = String(raw).trim().toLowerCase();
+  if (e === 'none' || e === 'off' || e === 'false' || e === '0') return undefined;
+
+  const allowed = new Set(['minimal', 'low', 'medium', 'high', 'xhigh']);
+  if (!allowed.has(e)) {
+    console.warn(`[ai] Unknown reasoning_effort "${raw}" → low`);
+    return 'low';
+  }
+
+  // Free preview + credit unlock: never medium/high/xhigh (cost + timeout)
+  if (mode === 'free' || mode === 'unlock') {
+    if (e === 'minimal' || e === 'low') return e;
+    console.warn(`[ai] Clamping ${mode} reasoning_effort ${e} → low (xhigh/high blocked)`);
+    return 'low';
+  }
+
+  // Paid full analysis: block xhigh always; high only with explicit opt-in
+  if (e === 'xhigh') {
+    console.warn('[ai] Clamping full reasoning_effort xhigh → medium');
+    return 'medium';
+  }
+  if (e === 'high' && process.env.OPENAI_ALLOW_HIGH_REASONING !== 'true') {
+    console.warn(
+      '[ai] Clamping full reasoning_effort high → medium (set OPENAI_ALLOW_HIGH_REASONING=true to allow)',
+    );
+    return 'medium';
+  }
+  return e;
+}
+
 function resolveReasoningEffort(mode: 'free' | 'full' | 'unlock'): string | undefined {
   if (mode === 'free' || mode === 'unlock') {
-    // Unlock must finish inside HTTP limits — same low effort as free (which already works).
     const key = mode === 'unlock'
       ? process.env.OPENAI_REASONING_EFFORT_UNLOCK?.trim()
       : process.env.OPENAI_REASONING_EFFORT_FREE?.trim();
-    return key || 'low';
+    // Do NOT fall back to global OPENAI_REASONING_EFFORT here — that is often xhigh in dashboards.
+    return clampReasoningEffort(key || 'low', mode);
   }
-  // medium is the practical default: high often exceeds 60–90s on vision + JSON
-  return (
+
+  const raw =
     process.env.OPENAI_REASONING_EFFORT_FULL?.trim()
     || process.env.OPENAI_REASONING_EFFORT?.trim()
-    || 'medium'
-  );
+    || 'medium';
+  return clampReasoningEffort(raw, 'full') || 'medium';
 }
 
 function extractMessageContent(response: OpenAI.Chat.ChatCompletion): string {
@@ -565,11 +611,20 @@ async function requestVision(
     body.response_format = { type: 'json_object' };
   }
 
-  // Only attach reasoning when the strategy opts in — fallbacks must stay non-reasoning
-  // so unlock/full analysis can recover from empty high-reasoning outputs.
-  const effort = options.reasoningEffort ?? config.reasoningEffort;
+  // Only attach reasoning when the strategy opts in. Never fall back to raw global env
+  // (config.reasoningEffort) — that used to leak OPENAI_REASONING_EFFORT=xhigh into every call.
+  const effortMode = options.effortMode
+    || (options.preferSpeed ? 'unlock' : 'full');
+  const effort = options.reasoningEffort
+    ? clampReasoningEffort(options.reasoningEffort, effortMode)
+    : undefined;
   if (strategy.useReasoning && effort && modelSupportsReasoning(config.model)) {
     body.reasoning_effort = effort;
+    console.log(
+      `[ai] Request ${strategy.label} reasoning_effort=${effort} maxOut=${maxOut}`,
+    );
+  } else if (strategy.useReasoning) {
+    console.log(`[ai] Request ${strategy.label} reasoning_effort=none maxOut=${maxOut}`);
   }
 
   const client = new OpenAI({
@@ -787,9 +842,12 @@ export async function analyzeFace(
     };
   }
 
-  const reasoningEffort = resolveReasoningEffort(
-    lite ? 'free' : unlock ? 'unlock' : 'full',
-  );
+  const effortMode: 'free' | 'full' | 'unlock' = lite
+    ? 'free'
+    : unlock
+      ? 'unlock'
+      : 'full';
+  const reasoningEffort = resolveReasoningEffort(effortMode);
   // Free JSON is tiny; cap hard so reasoning cannot burn 1k+ tokens on a preview.
   // Unlock: smaller output = faster. Full default still needs reasoning headroom.
   const maxOutputTokens = lite
@@ -810,6 +868,7 @@ export async function analyzeFace(
         reasoningEffort,
         maxOutputTokens,
         preferSpeed: unlock,
+        effortMode,
       },
       userText,
     ) as Record<string, unknown>;
@@ -848,12 +907,13 @@ export async function analyzeHairstyle(
   }
 
   try {
-    // Hairstyle is subscription-only → same effort as full face analysis
+    // Hairstyle is subscription-only → same effort as full face analysis (never xhigh)
     const reasoningEffort = resolveReasoningEffort('full');
     const data = scrubJawlineFromAiText(
       await callVision(HAIRSTYLE_ANALYSIS_PROMPT, [frontPath, sidePath], {
         reasoningEffort,
         maxOutputTokens: Number(process.env.OPENAI_MAX_TOKENS_FULL || 4096),
+        effortMode: 'full',
       }),
     ) as Record<string, unknown>;
     return { data, demo: false };
