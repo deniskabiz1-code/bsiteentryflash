@@ -124,10 +124,42 @@ export function toUserFacingAiError(detail: string): string {
     return 'ИИ слишком долго отвечает. Попробуйте ещё раз через минуту';
   }
   if (lower.includes('html') || lower.includes('openai_base_url')) {
-    return 'Ошибка настройки ИИ на сервере';
+    return 'Ошибка настройки ИИ на сервере (OPENAI_BASE_URL)';
   }
-  if (lower.includes('api key') || lower.includes('authentication') || lower.includes('401')) {
+  if (
+    lower.includes('api key')
+    || lower.includes('authentication')
+    || lower.includes('unauthorized')
+    || lower.includes('401')
+  ) {
     return 'ИИ временно недоступен. Проверьте ключ API на сервере';
+  }
+  if (
+    lower.includes('model') && (lower.includes('not found') || lower.includes('does not exist') || lower.includes('invalid'))
+    || lower.includes('404')
+  ) {
+    return 'Модель не найдена. Проверьте OPENAI_MODEL на Render';
+  }
+  if (lower.includes('429') || lower.includes('rate limit') || lower.includes('quota')) {
+    return 'Лимит запросов к ИИ. Подождите минуту или проверьте баланс API';
+  }
+  if (
+    lower.includes('vision')
+    || lower.includes('image') && (lower.includes('not support') || lower.includes('unsupported'))
+    || lower.includes('multimodal')
+  ) {
+    return 'Эта модель не поддерживает фото. Выберите vision-модель';
+  }
+  if (lower.includes('empty') || lower.includes('пустой')) {
+    return 'ИИ вернул пустой ответ. Попробуйте другую модель или позже';
+  }
+  if (lower.includes('json')) {
+    return 'ИИ вернул некорректный ответ. Попробуйте ещё раз';
+  }
+  // Keep a short technical hint for operators (shown in app; still user-readable)
+  const short = detail.replace(/\s+/g, ' ').trim().slice(0, 120);
+  if (short.length > 20) {
+    return `ИИ временно недоступен (${short})`;
   }
   return 'ИИ временно недоступен. Попробуйте позже';
 }
