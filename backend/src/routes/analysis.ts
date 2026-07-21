@@ -8,7 +8,7 @@ import {
   isSubscriptionActive,
   notifyAdminAnalysisSubmission,
 } from '../services/telegram';
-import { toFaceHistoryEntry } from '../services/analysisHistory';
+import { toFaceHistoryEntry, toLockedFacePreview } from '../services/analysisHistory';
 import {
   analyzeFace,
   analyzeHairstyle,
@@ -446,24 +446,29 @@ router.post('/:id/unlock', validateTelegramAuth, async (req: AuthRequest, res: R
         })
       : [];
 
-    // Full AI first (speed profile: low reasoning, short attempts) — credit only after success
+    // Full AI expands the free preview — scores/summary stay locked to what the user already saw
+    const lockedPreview = toLockedFacePreview(analysis.resultJson, analysis.overallScore);
     const { data: result, demo } = await analyzeFace(
       photoPath,
-      usePersonalized
-        ? {
-            name: user.name,
-            age: user.age,
-            goals: user.goals,
-            previousAnalyses: priorFace.map((a) =>
-              toFaceHistoryEntry(a.createdAt, a.overallScore, a.resultJson),
-            ),
-          }
-        : undefined,
+      {
+        name: usePersonalized ? user.name : undefined,
+        age: usePersonalized ? user.age : undefined,
+        goals: usePersonalized ? user.goals : undefined,
+        previousAnalyses: priorFace.map((a) =>
+          toFaceHistoryEntry(a.createdAt, a.overallScore, a.resultJson),
+        ),
+        lockedPreview,
+      },
       'full',
       'unlock',
     );
 
-    const overallScore = (result.overall_score as number) || analysis.overallScore || 0;
+    const overallScore =
+      (typeof lockedPreview?.overall_score === 'number'
+        ? lockedPreview.overall_score
+        : (result.overall_score as number))
+      || analysis.overallScore
+      || 0;
 
     const charged = await prisma.$transaction(async (tx) => {
       const reserved = await tx.user.updateMany({

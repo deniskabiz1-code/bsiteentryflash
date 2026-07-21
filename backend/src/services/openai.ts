@@ -9,6 +9,7 @@ import {
 import {
   buildFaceAnalysisUserMessage,
   type FaceAnalysisUserContext,
+  type LockedFacePreview,
 } from './analysisHistory';
 import {
   buildSkincareCatalogPromptSection,
@@ -386,6 +387,31 @@ function normalizeLiteFaceAnalysisResult(
     puffiness: data.puffiness,
     summary: data.summary,
   }) as Record<string, unknown>;
+}
+
+/** Force free-preview fields after unlock so ratings never jump (e.g. 72 → 52). */
+function applyLockedPreview(
+  data: Record<string, unknown>,
+  locked?: LockedFacePreview | null,
+): Record<string, unknown> {
+  if (!locked) return data;
+  const next = { ...data };
+  if (typeof locked.overall_score === 'number') {
+    next.overall_score = locked.overall_score;
+  }
+  if (locked.scores && typeof locked.scores === 'object') {
+    next.scores = { ...(locked.scores as Record<string, unknown>) };
+  }
+  if (typeof locked.summary === 'string' && locked.summary.trim()) {
+    next.summary = locked.summary;
+  }
+  if (typeof locked.skin_type === 'string' && locked.skin_type) {
+    next.skin_type = locked.skin_type;
+  }
+  if (typeof locked.puffiness === 'string' && locked.puffiness) {
+    next.puffiness = locked.puffiness;
+  }
+  return next;
 }
 
 function toLiteDemoResult(): Record<string, unknown> {
@@ -824,6 +850,7 @@ export async function analyzeFace(
 ): Promise<AnalysisRunResult> {
   const lite = mode === 'lite';
   const unlock = profile === 'unlock';
+  const locked = context?.lockedPreview;
   const userText = lite
     ? 'Проанализируй это фото и верни JSON с оценками и кратким обзором.'
     : buildFaceAnalysisUserMessage(context);
@@ -834,10 +861,15 @@ export async function analyzeFace(
     return {
       data: lite
         ? normalizeLiteFaceAnalysisResult(toLiteDemoResult())
-        : normalizeFaceAnalysisResult({
-            ...DEMO_FACE_RESULT,
-            ...buildDemoProgress(context),
-          }),
+        : normalizeFaceAnalysisResult(
+          applyLockedPreview(
+            {
+              ...DEMO_FACE_RESULT,
+              ...buildDemoProgress(context),
+            },
+            locked,
+          ),
+        ),
       demo: true,
     };
   }
@@ -858,7 +890,7 @@ export async function analyzeFace(
 
   try {
     console.log(
-      `[ai] Face analysis mode=${mode} profile=${profile} reasoning=${reasoningEffort ?? 'none'} maxOut=${maxOutputTokens}`,
+      `[ai] Face analysis mode=${mode} profile=${profile} reasoning=${reasoningEffort ?? 'none'} maxOut=${maxOutputTokens} lockedScores=${Boolean(locked)}`,
     );
     const raw = await callVision(
       lite ? FACE_ANALYSIS_LITE_PROMPT : getFaceAnalysisPrompt(),
@@ -872,9 +904,11 @@ export async function analyzeFace(
       },
       userText,
     ) as Record<string, unknown>;
+    // Unlock: always restore free preview scores/summary so the user never sees a rescore
+    const merged = unlock || locked ? applyLockedPreview(raw, locked) : raw;
     const data = lite
-      ? normalizeLiteFaceAnalysisResult(raw)
-      : normalizeFaceAnalysisResult(raw);
+      ? normalizeLiteFaceAnalysisResult(merged)
+      : normalizeFaceAnalysisResult(merged);
     return { data, demo: false };
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
@@ -885,10 +919,15 @@ export async function analyzeFace(
       return {
         data: lite
           ? normalizeLiteFaceAnalysisResult(toLiteDemoResult())
-          : normalizeFaceAnalysisResult({
-              ...DEMO_FACE_RESULT,
-              ...buildDemoProgress(context),
-            }),
+          : normalizeFaceAnalysisResult(
+            applyLockedPreview(
+              {
+                ...DEMO_FACE_RESULT,
+                ...buildDemoProgress(context),
+              },
+              locked,
+            ),
+          ),
         demo: true,
       };
     }
