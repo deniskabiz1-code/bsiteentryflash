@@ -169,8 +169,11 @@ export type AnalysisRunResult = {
   demo: boolean;
 };
 
-const AI_REQUEST_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 90_000);
-const AI_RETRY_TIMEOUT_MS = Number(process.env.OPENAI_RETRY_TIMEOUT_MS || 45_000);
+// Keep under typical reverse-proxy limits (~100s on Render free/starter).
+const AI_REQUEST_TIMEOUT_MS = Number(process.env.OPENAI_TIMEOUT_MS || 75_000);
+const AI_RETRY_TIMEOUT_MS = Number(process.env.OPENAI_RETRY_TIMEOUT_MS || 40_000);
+// First (reasoning) attempt must be shorter so a non-reasoning fallback can still run.
+const AI_REASONING_ATTEMPT_MS = Number(process.env.OPENAI_REASONING_TIMEOUT_MS || 40_000);
 
 function getOpenAI(): OpenAI {
   const config = resolveAiConfig();
@@ -442,6 +445,11 @@ type VisionRequestOptions = {
   reasoningEffort?: string;
   /** Cap completion size — keep free/lite small so thinking tokens cannot explode. */
   maxOutputTokens?: number;
+  /**
+   * Prefer finishing under proxy limits over maximum quality.
+   * Skips slow high-reasoning first pass; uses one fast strategy + one fallback.
+   */
+  preferSpeed?: boolean;
 };
 
 type VisionStrategy = {
@@ -453,17 +461,19 @@ type VisionStrategy = {
   timeoutMs: number;
 };
 
-function resolveReasoningEffort(mode: 'free' | 'full'): string | undefined {
-  if (mode === 'free') {
-    return (
-      process.env.OPENAI_REASONING_EFFORT_FREE?.trim()
-      || 'low'
-    );
+function resolveReasoningEffort(mode: 'free' | 'full' | 'unlock'): string | undefined {
+  if (mode === 'free' || mode === 'unlock') {
+    // Unlock must finish inside HTTP limits — same low effort as free (which already works).
+    const key = mode === 'unlock'
+      ? process.env.OPENAI_REASONING_EFFORT_UNLOCK?.trim()
+      : process.env.OPENAI_REASONING_EFFORT_FREE?.trim();
+    return key || 'low';
   }
+  // medium is the practical default: high often exceeds 60–90s on vision + JSON
   return (
     process.env.OPENAI_REASONING_EFFORT_FULL?.trim()
     || process.env.OPENAI_REASONING_EFFORT?.trim()
-    || 'high'
+    || 'medium'
   );
 }
 
@@ -597,12 +607,13 @@ function buildVisionStrategies(
 ): VisionStrategy[] {
   const detail = config.visionDetail;
   const strategies: VisionStrategy[] = [];
+  const speed = Boolean(options.preferSpeed);
+  const effort = options.reasoningEffort ?? config.reasoningEffort;
   const wantsReasoning = Boolean(
-    (options.reasoningEffort ?? config.reasoningEffort)
-    && modelSupportsReasoning(config.model),
+    effort && modelSupportsReasoning(config.model) && !speed,
   );
 
-  // Prefer a reasoning pass first when the caller requested effort (free=low / full=high)
+  // Slow path: optional reasoning first (short timeout so fallback still fits in ~100s)
   if (wantsReasoning) {
     strategies.push({
       label: `reason-${config.jsonMode ? 'json' : 'plain'}-low`,
@@ -610,11 +621,23 @@ function buildVisionStrategies(
       visionDetail: 'low',
       useReasoning: true,
       useTemperature: false,
-      timeoutMs: AI_REQUEST_TIMEOUT_MS,
+      timeoutMs: AI_REASONING_ATTEMPT_MS,
     });
   }
 
-  // Reliable non-reasoning fallbacks (critical for unlock: high reasoning often empties content)
+  // Speed / unlock: one reasoning-low attempt (if model supports) OR plain json — still short
+  if (speed && effort && modelSupportsReasoning(config.model)) {
+    strategies.push({
+      label: `speed-reason-${config.jsonMode ? 'json' : 'plain'}`,
+      jsonMode: config.jsonMode,
+      visionDetail: 'low',
+      useReasoning: true,
+      useTemperature: false,
+      timeoutMs: Math.min(AI_REQUEST_TIMEOUT_MS, 55_000),
+    });
+  }
+
+  // Reliable non-reasoning fallback (works when high/medium reasoning times out or empties)
   if (config.jsonMode) {
     strategies.push({
       label: 'json-low',
@@ -622,7 +645,7 @@ function buildVisionStrategies(
       visionDetail: 'low',
       useReasoning: false,
       useTemperature: true,
-      timeoutMs: wantsReasoning ? AI_RETRY_TIMEOUT_MS : AI_REQUEST_TIMEOUT_MS,
+      timeoutMs: speed ? Math.min(AI_REQUEST_TIMEOUT_MS, 55_000) : AI_REQUEST_TIMEOUT_MS,
     });
   }
 
@@ -635,7 +658,8 @@ function buildVisionStrategies(
     timeoutMs: AI_RETRY_TIMEOUT_MS,
   });
 
-  if (detail === 'high' || detail === 'auto') {
+  // Skip high-detail on speed path — larger images + high detail = slow
+  if (!speed && (detail === 'high' || detail === 'auto')) {
     strategies.push({
       label: 'plain-high',
       jsonMode: false,
@@ -644,6 +668,11 @@ function buildVisionStrategies(
       useTemperature: true,
       timeoutMs: AI_RETRY_TIMEOUT_MS,
     });
+  }
+
+  // Unlock/speed: at most 2 attempts total (budget for reverse proxy)
+  if (speed) {
+    return strategies.slice(0, 2);
   }
 
   return strategies;
@@ -660,26 +689,38 @@ async function callVision(
 
   const strategies = buildVisionStrategies(config, options);
   const errors: string[] = [];
+  const started = Date.now();
+  // Leave headroom under ~100s proxy cutoffs
+  const hardBudgetMs = Number(process.env.OPENAI_HARD_BUDGET_MS || 95_000);
 
   for (const strategy of strategies) {
+    const elapsed = Date.now() - started;
+    if (elapsed + 5_000 >= hardBudgetMs) {
+      console.warn(`[ai] Stopping strategies: hard budget ${hardBudgetMs}ms`);
+      break;
+    }
+    // Clamp strategy timeout to remaining budget
+    const remaining = hardBudgetMs - elapsed;
+    const clamped: VisionStrategy = {
+      ...strategy,
+      timeoutMs: Math.min(strategy.timeoutMs, remaining),
+    };
+
     try {
       const content = await requestVision(
         systemPrompt,
         imagePaths,
-        strategy,
+        clamped,
         options,
         userText,
       );
-      console.log(`[ai] Vision success via ${strategy.label}`);
+      console.log(`[ai] Vision success via ${clamped.label} (${Date.now() - started}ms)`);
       return parseJsonResponse(content);
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
-      console.warn(`[ai] Vision failed (${strategy.label}):`, detail);
-      errors.push(`${strategy.label}: ${detail}`);
-      // Do not chain 90s+ retries after a hard timeout — proxy (Render) will kill the request
-      if (detail.toLowerCase().includes('timeout')) {
-        break;
-      }
+      console.warn(`[ai] Vision failed (${clamped.label}):`, detail);
+      errors.push(`${clamped.label}: ${detail}`);
+      // Continue to next strategy after timeout — first attempt is intentionally short
     }
   }
 
@@ -718,18 +759,22 @@ function buildDemoProgress(context?: FaceAnalysisUserContext): Record<string, un
   };
 }
 
+export type AnalyzeFaceProfile = 'default' | 'unlock';
+
 export async function analyzeFace(
   photoPath: string,
   context?: FaceAnalysisUserContext,
   mode: 'lite' | 'full' = 'full',
+  profile: AnalyzeFaceProfile = 'default',
 ): Promise<AnalysisRunResult> {
   const lite = mode === 'lite';
+  const unlock = profile === 'unlock';
   const userText = lite
     ? 'Проанализируй это фото и верни JSON с оценками и кратким обзором.'
     : buildFaceAnalysisUserMessage(context);
 
   if (shouldUseDemoAnalysis()) {
-    console.log(`[demo] Face analysis (${mode}). Demo mode`);
+    console.log(`[demo] Face analysis (${mode}/${profile}). Demo mode`);
     await demoDelay();
     return {
       data: lite
@@ -742,16 +787,20 @@ export async function analyzeFace(
     };
   }
 
-  const reasoningEffort = resolveReasoningEffort(lite ? 'free' : 'full');
+  const reasoningEffort = resolveReasoningEffort(
+    lite ? 'free' : unlock ? 'unlock' : 'full',
+  );
   // Free JSON is tiny; cap hard so reasoning cannot burn 1k+ tokens on a preview.
-  // Full needs headroom: on gpt-5 / o-series max_completion_tokens includes reasoning.
+  // Unlock: smaller output = faster. Full default still needs reasoning headroom.
   const maxOutputTokens = lite
     ? Number(process.env.OPENAI_MAX_TOKENS_FREE || 768)
-    : Number(process.env.OPENAI_MAX_TOKENS_FULL || 8192);
+    : unlock
+      ? Number(process.env.OPENAI_MAX_TOKENS_UNLOCK || 4096)
+      : Number(process.env.OPENAI_MAX_TOKENS_FULL || 8192);
 
   try {
     console.log(
-      `[ai] Face analysis mode=${mode} reasoning=${reasoningEffort ?? 'none'} maxOut=${maxOutputTokens}`,
+      `[ai] Face analysis mode=${mode} profile=${profile} reasoning=${reasoningEffort ?? 'none'} maxOut=${maxOutputTokens}`,
     );
     const raw = await callVision(
       lite ? FACE_ANALYSIS_LITE_PROMPT : getFaceAnalysisPrompt(),
@@ -760,6 +809,7 @@ export async function analyzeFace(
         temperature: lite ? 0.7 : 0.85,
         reasoningEffort,
         maxOutputTokens,
+        preferSpeed: unlock,
       },
       userText,
     ) as Record<string, unknown>;

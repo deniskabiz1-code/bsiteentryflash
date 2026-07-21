@@ -446,7 +446,7 @@ router.post('/:id/unlock', validateTelegramAuth, async (req: AuthRequest, res: R
         })
       : [];
 
-    // Full AI first — only then spend the credit (avoids silent credit loss on AI/proxy errors)
+    // Full AI first (speed profile: low reasoning, short attempts) — credit only after success
     const { data: result, demo } = await analyzeFace(
       photoPath,
       usePersonalized
@@ -460,6 +460,7 @@ router.post('/:id/unlock', validateTelegramAuth, async (req: AuthRequest, res: R
           }
         : undefined,
       'full',
+      'unlock',
     );
 
     const overallScore = (result.overall_score as number) || analysis.overallScore || 0;
