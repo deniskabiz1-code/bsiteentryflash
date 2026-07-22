@@ -115,12 +115,58 @@ function shouldFallbackToDemoOnError(): boolean {
 
 function modelUsesCompletionTokens(model: string): boolean {
   const m = model.toLowerCase();
-  return /(^|[-/])(o\d|gpt-5)/.test(m);
+  // gpt-5 / o-series need max_completion_tokens (includes reasoning). If we only send
+  // max_tokens, some gateways ignore the cap → 10k–60k+ "output" token bills.
+  return (
+    modelSupportsReasoning(m)
+    || m.includes('gpt-5')
+    || m.includes('gpt-4.1')
+    || /(^|[-/])o\d/.test(m)
+    || m.includes('o1')
+    || m.includes('o3')
+    || m.includes('o4')
+  );
 }
 
 function modelSupportsReasoning(model: string): boolean {
   const m = model.toLowerCase();
-  return /(^|[-/])(o\d|gpt-5)/.test(m);
+  return (
+    m.includes('gpt-5')
+    || /(^|[-/])o\d/.test(m)
+    || m.includes('o1')
+    || m.includes('o3')
+    || m.includes('o4')
+  );
+}
+
+/** Absolute ceilings — env can only lower these, never raise past the hard cap. */
+const MAX_TOKENS_HARD = {
+  free: 1024,
+  unlock: 2560,
+  full: 4096,
+} as const;
+
+function resolveMaxOutputTokens(mode: 'free' | 'unlock' | 'full'): number {
+  const defaults = { free: 768, unlock: 2560, full: 4096 } as const;
+  const envName =
+    mode === 'free'
+      ? 'OPENAI_MAX_TOKENS_FREE'
+      : mode === 'unlock'
+        ? 'OPENAI_MAX_TOKENS_UNLOCK'
+        : 'OPENAI_MAX_TOKENS_FULL';
+  const raw = Number(process.env[envName] || defaults[mode]);
+  const requested = Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : defaults[mode];
+  const hard = MAX_TOKENS_HARD[mode];
+  // Only allow above hard cap with explicit opt-in (and still cap at 8k)
+  if (process.env.OPENAI_ALLOW_HIGH_MAX_TOKENS === 'true') {
+    return Math.min(requested, 8192);
+  }
+  if (requested > hard) {
+    console.warn(
+      `[ai] Clamping ${envName}=${requested} → ${hard} (set OPENAI_ALLOW_HIGH_MAX_TOKENS=true to raise)`,
+    );
+  }
+  return Math.min(Math.max(256, requested), hard);
 }
 
 export function toUserFacingAiError(detail: string): string {
@@ -326,7 +372,13 @@ INSIGHT RULES (make the analysis useful, not just scores):
 
 All text fields must be in Russian. Be honest but encouraging. Do not include any text outside the JSON object.`;
 
-function getFaceAnalysisPrompt(): string {
+function getFaceAnalysisPrompt(includeSkincareCatalog = true): string {
+  if (!includeSkincareCatalog) {
+    // Server fills skincare_routine from catalog after the call (saves prompt + output tokens)
+    return `${FACE_ANALYSIS_PROMPT}
+
+SKINCARE: Do NOT invent a product catalog. Set "skincare_routine" to [] (empty array). The app will attach products server-side.`;
+  }
   return `${FACE_ANALYSIS_PROMPT}${buildSkincareCatalogPromptSection()}`;
 }
 
@@ -534,10 +586,14 @@ function clampReasoningEffort(
 }
 
 function resolveReasoningEffort(mode: 'free' | 'full' | 'unlock'): string | undefined {
-  if (mode === 'free' || mode === 'unlock') {
-    const key = mode === 'unlock'
-      ? process.env.OPENAI_REASONING_EFFORT_UNLOCK?.trim()
-      : process.env.OPENAI_REASONING_EFFORT_FREE?.trim();
+  if (mode === 'unlock') {
+    // Default: no reasoning on unlock (expand write-up only) — cuts huge "out" token rows
+    const key = process.env.OPENAI_REASONING_EFFORT_UNLOCK?.trim();
+    if (!key || key === 'none' || key === 'off') return undefined;
+    return clampReasoningEffort(key, 'unlock');
+  }
+  if (mode === 'free') {
+    const key = process.env.OPENAI_REASONING_EFFORT_FREE?.trim();
     // Do NOT fall back to global OPENAI_REASONING_EFFORT here — that is often xhigh in dashboards.
     return clampReasoningEffort(key || 'low', mode);
   }
@@ -608,7 +664,11 @@ async function requestVision(
     image_url: { url: imageToBase64(p), detail: strategy.visionDetail },
   }));
 
-  const maxOut = options.maxOutputTokens ?? 4096;
+  // Never trust a huge env value — 60k "output" rows usually mean the cap was missing/ignored
+  const maxOut = Math.min(
+    Math.max(256, options.maxOutputTokens ?? 4096),
+    process.env.OPENAI_ALLOW_HIGH_MAX_TOKENS === 'true' ? 8192 : 4096,
+  );
   const body: Record<string, unknown> = {
     model: config.model,
     messages: [
@@ -623,7 +683,8 @@ async function requestVision(
     ],
   };
 
-  if (modelUsesCompletionTokens(config.model)) {
+  // Always apply a hard completion cap. Prefer max_completion_tokens for modern models.
+  if (modelUsesCompletionTokens(config.model) || strategy.useReasoning) {
     body.max_completion_tokens = maxOut;
   } else {
     body.max_tokens = maxOut;
@@ -668,6 +729,22 @@ async function requestVision(
     `AI vision (${strategy.label})`,
   );
   const response = parseCompletionResponse(raw);
+  const usage = response.usage as
+    | {
+        prompt_tokens?: number;
+        completion_tokens?: number;
+        total_tokens?: number;
+        completion_tokens_details?: { reasoning_tokens?: number };
+      }
+    | undefined;
+  if (usage) {
+    const reasoning = usage.completion_tokens_details?.reasoning_tokens;
+    console.log(
+      `[ai] usage ${strategy.label}: in=${usage.prompt_tokens ?? '?'} out=${usage.completion_tokens ?? '?'}`
+        + (reasoning != null ? ` reasoning=${reasoning}` : '')
+        + ` total=${usage.total_tokens ?? '?'} maxOut=${maxOut}`,
+    );
+  }
   return extractMessageContent(response);
 }
 
@@ -880,20 +957,18 @@ export async function analyzeFace(
       ? 'unlock'
       : 'full';
   const reasoningEffort = resolveReasoningEffort(effortMode);
-  // Free JSON is tiny; cap hard so reasoning cannot burn 1k+ tokens on a preview.
-  // Unlock: smaller output = faster. Full default still needs reasoning headroom.
-  const maxOutputTokens = lite
-    ? Number(process.env.OPENAI_MAX_TOKENS_FREE || 768)
-    : unlock
-      ? Number(process.env.OPENAI_MAX_TOKENS_UNLOCK || 4096)
-      : Number(process.env.OPENAI_MAX_TOKENS_FULL || 8192);
+  // Hard-capped: free ≤1k, unlock ≤2.5k, full ≤4k (prevents 60k output bills)
+  const maxOutputTokens = resolveMaxOutputTokens(effortMode);
 
   try {
     console.log(
       `[ai] Face analysis mode=${mode} profile=${profile} reasoning=${reasoningEffort ?? 'none'} maxOut=${maxOutputTokens} lockedScores=${Boolean(locked)}`,
     );
     const raw = await callVision(
-      lite ? FACE_ANALYSIS_LITE_PROMPT : getFaceAnalysisPrompt(),
+      // Unlock: skip product catalog in prompt (server attaches skincare after)
+      lite
+        ? FACE_ANALYSIS_LITE_PROMPT
+        : getFaceAnalysisPrompt(!unlock),
       [photoPath],
       {
         temperature: lite ? 0.7 : 0.85,
@@ -951,7 +1026,7 @@ export async function analyzeHairstyle(
     const data = scrubJawlineFromAiText(
       await callVision(HAIRSTYLE_ANALYSIS_PROMPT, [frontPath, sidePath], {
         reasoningEffort,
-        maxOutputTokens: Number(process.env.OPENAI_MAX_TOKENS_FULL || 4096),
+        maxOutputTokens: resolveMaxOutputTokens('full'),
         effortMode: 'full',
       }),
     ) as Record<string, unknown>;
